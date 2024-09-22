@@ -6,7 +6,7 @@ In comparson to VContainer in general:
 - Faster binding time
 - Smaller build size
 - No allocations on resolve stage except instances
-- Few allocations and reallocation on binding stage in core functional - GC.Alloc **270**972 vs GC.Alloc **618**832
+- Few allocations and reallocation on binding stage in core functional
 > [!NOTE]
 > Its hard to explain how less allocations CleanResolver have, but for example in this benchmark on bindings stage:
 > CleanResolver call _GC.Alloc_ **270**972 times, while VContainer call **618**832 _GC.Alloc_. 
