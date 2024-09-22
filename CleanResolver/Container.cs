@@ -1,0 +1,122 @@
+﻿using System;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
+using Unity.IL2CPP.CompilerServices;
+
+namespace CleanResolver
+{
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    public class Container
+    {
+        private readonly Dependency[] _dependencies;
+        private readonly Implementation[] _implementations;
+        private readonly int[] _dependencyImplementations;
+        private readonly int[] _dependencyReferences;
+
+        internal Container(Dependency[] dependencies, Implementation[] implementations, int[] dependencyImplementations, int[] dependencyReferences)
+        {
+            _dependencies = dependencies;
+            _implementations = implementations;
+            _dependencyImplementations = dependencyImplementations;
+            _dependencyReferences = dependencyReferences;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ContainerBuilder CreateChild()
+        {
+            
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Resolve<T>() where T : class
+        {
+            var dependencyId = TypeCompileInfo<T>.GetRuntimeDependencyId();
+
+            return (T) Resolve(dependencyId);
+        }
+
+        private object Resolve(int dependencyId)
+        {
+            ref var dependency = ref _dependencies[dependencyId];
+
+            if (dependency.ImplementationsCount == 1)
+            {
+                ref var implementationId = ref _dependencyImplementations[dependency.ImplementationsIndex];
+                ref var implementation = ref _implementations[implementationId];
+
+                if (implementation.SingletonFlag == SingletonFlag.SingletonWithValue)
+                {
+                    return implementation.SingletonValue;
+                }
+
+                var instance = FormatterServices.GetUninitializedObject(implementation.Type);
+                var reserved = ArrayCache<object>.PullReserved(implementation.ConstructorDependenciesCount);
+
+                for (var i = 0; i < implementation.ConstructorDependenciesCount; i++)
+                {
+                    reserved.Array[i + reserved.StartIndex] = Resolve(_dependencyReferences[i + implementation.ConstructorDependenciesIndex]);
+                }
+
+                var constructorParameters = ArrayCache<object>.Pull(implementation.ConstructorDependenciesCount);
+                Array.Copy(reserved.Array, reserved.StartIndex, constructorParameters, 0, implementation.ConstructorDependenciesCount);
+
+                implementation.ConstructorInfo.Invoke(instance, BindingFlags.Default,
+                    binder: null, parameters: constructorParameters, culture: null);
+
+                ArrayCache<object>.PushReserved(ref reserved);
+                ArrayCache<object>.Push(constructorParameters);
+
+                if (implementation.SingletonFlag == SingletonFlag.Singleton)
+                {
+                    implementation.SingletonValue = instance;
+                    implementation.SingletonFlag = SingletonFlag.SingletonWithValue;
+                }
+
+                return instance;
+            }
+
+            var instances = Array.CreateInstance(dependency.Type, dependency.ImplementationsCount);
+
+            for (var i = 0; i < dependency.ImplementationsCount; i++)
+            {
+                ref var implementationId = ref _dependencyImplementations[dependency.ImplementationsIndex + i];
+                ref var implementation = ref _implementations[implementationId];
+
+                if (implementation.SingletonFlag == SingletonFlag.SingletonWithValue)
+                {
+                    return implementation.SingletonValue;
+                }
+
+                var instance = FormatterServices.GetUninitializedObject(implementation.Type);
+                var reserved = ArrayCache<object>.PullReserved(implementation.ConstructorDependenciesCount);
+
+                for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
+                {
+                    reserved.Array[j + reserved.StartIndex] = Resolve(_dependencyReferences[j + implementation.ConstructorDependenciesIndex]);
+                }
+
+                var constructorParameters = ArrayCache<object>.Pull(implementation.ConstructorDependenciesCount);
+                Array.Copy(reserved.Array, reserved.StartIndex, constructorParameters, 0, implementation.ConstructorDependenciesCount);
+
+                implementation.ConstructorInfo.Invoke(instance, BindingFlags.Default,
+                    binder: null, parameters: constructorParameters, culture: null);
+
+                ArrayCache<object>.PushReserved(ref reserved);
+                ArrayCache<object>.Push(constructorParameters);
+
+                if (implementation.SingletonFlag == SingletonFlag.Singleton)
+                {
+                    implementation.SingletonValue = instance;
+                    implementation.SingletonFlag = SingletonFlag.SingletonWithValue;
+                }
+
+                instances.SetValue(instance, i);
+            }
+
+            return instances;
+        }
+    }
+}
