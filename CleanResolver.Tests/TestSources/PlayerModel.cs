@@ -1,11 +1,12 @@
-﻿namespace CleanResolver.Tests.TestSources;
-
-public class PlayerModel : IPlayerModel
+﻿namespace CleanResolver.Tests.TestSources
 {
+    public class PlayerModel : IPlayerModel
+    {
     
-}
+    }
 
-public interface IPlayerModel
-{
+    public interface IPlayerModel
+    {
     
+    }
 }

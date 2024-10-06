@@ -1,11 +1,12 @@
-﻿namespace CleanResolver.Tests.TestSources;
-
-public class PlayerView : IPlayerView
+﻿namespace CleanResolver.Tests.TestSources
 {
+    public class PlayerView : IPlayerView
+    {
     
-}
+    }
 
-public interface IPlayerView
-{
+    public interface IPlayerView
+    {
     
+    }
 }

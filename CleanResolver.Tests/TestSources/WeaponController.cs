@@ -1,19 +1,20 @@
-﻿namespace CleanResolver.Tests.TestSources;
-
-public class WeaponController : ITickable
+﻿namespace CleanResolver.Tests.TestSources
 {
-    private readonly IWeaponControllerProcessor[] _processors;
-
-    public WeaponController(IWeaponControllerProcessor[] processors)
+    public class WeaponController : ITickable
     {
-        _processors = processors;
-    }
+        private readonly IWeaponControllerProcessor[] _processors;
 
-    public void Tick(float deltaTime)
-    {
-        foreach (var processor in _processors)
+        public WeaponController(IWeaponControllerProcessor[] processors)
         {
-            processor.Process(deltaTime);
-        }        
+            _processors = processors;
+        }
+
+        public void Tick(float deltaTime)
+        {
+            foreach (var processor in _processors)
+            {
+                processor.Process(deltaTime);
+            }        
+        }
     }
 }

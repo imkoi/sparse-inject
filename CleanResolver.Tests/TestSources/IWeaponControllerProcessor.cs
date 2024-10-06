@@ -1,6 +1,7 @@
-﻿namespace CleanResolver.Tests.TestSources;
-
-public interface IWeaponControllerProcessor
+﻿namespace CleanResolver.Tests.TestSources
 {
-    void Process(float deltaTime);
+    public interface IWeaponControllerProcessor
+    {
+        void Process(float deltaTime);
+    }
 }

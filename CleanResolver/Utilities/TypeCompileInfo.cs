@@ -14,17 +14,20 @@ namespace CleanResolver
         public static readonly Type Type = typeof(T);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool RegisterDependency(out int id)
+        public static bool RegisterDependency(out int id, out Type type)
         {
             if (_dependencyId < 0)
             {
                 _dependencyId = TypeIdLocator.AddDependencyId(Type);
+                
                 id = _dependencyId;
-
+                type = Type;
+                
                 return true;
             }
 
             id = _dependencyId;
+            type = Type;
 
             return false;
         }
@@ -43,17 +46,20 @@ namespace CleanResolver
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool RegisterImplementation(out int id)
+        public static bool RegisterImplementation(out int id, out Type type)
         {
             if (_implementationId < 0)
             {
                 _implementationId = TypeIdLocator.AddImplementationId(Type);
+                
                 id = _implementationId;
-
+                type = Type;
+                
                 return true;
             }
 
             id = _implementationId;
+            type = Type;
 
             return false;
         }

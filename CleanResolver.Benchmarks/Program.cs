@@ -17,14 +17,14 @@ sw.Stop();
 
 var bindTime = sw.ElapsedTicks / 10000f;
 
-sw.Restart();
-
-for (var i = 0; i < iter; i++)
-{
-    var highestDependency = container.Resolve<Class0>();
-}
-
-sw.Stop();
+// sw.Restart();
+//
+// for (var i = 0; i < iter; i++)
+// {
+//     var highestDependency = container.Resolve<Class0>();
+// }
+//
+// sw.Stop();
 
 var resolveTime = sw.ElapsedTicks / 10000f;
 

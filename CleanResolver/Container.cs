@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
 using Unity.IL2CPP.CompilerServices;
 
 namespace CleanResolver
@@ -23,13 +22,7 @@ namespace CleanResolver
             _dependencyImplementations = dependencyImplementations;
             _dependencyReferences = dependencyReferences;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ContainerBuilder CreateChild()
-        {
-            
-        }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Resolve<T>() where T : class
         {
@@ -51,8 +44,7 @@ namespace CleanResolver
                 {
                     return implementation.SingletonValue;
                 }
-
-                var instance = FormatterServices.GetUninitializedObject(implementation.Type);
+                
                 var reserved = ArrayCache<object>.PullReserved(implementation.ConstructorDependenciesCount);
 
                 for (var i = 0; i < implementation.ConstructorDependenciesCount; i++)
@@ -63,8 +55,8 @@ namespace CleanResolver
                 var constructorParameters = ArrayCache<object>.Pull(implementation.ConstructorDependenciesCount);
                 Array.Copy(reserved.Array, reserved.StartIndex, constructorParameters, 0, implementation.ConstructorDependenciesCount);
 
-                implementation.ConstructorInfo.Invoke(instance, BindingFlags.Default,
-                    binder: null, parameters: constructorParameters, culture: null);
+                var instance = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                    parameters: constructorParameters, culture: null);
 
                 ArrayCache<object>.PushReserved(ref reserved);
                 ArrayCache<object>.Push(constructorParameters);
@@ -89,8 +81,7 @@ namespace CleanResolver
                 {
                     return implementation.SingletonValue;
                 }
-
-                var instance = FormatterServices.GetUninitializedObject(implementation.Type);
+                
                 var reserved = ArrayCache<object>.PullReserved(implementation.ConstructorDependenciesCount);
 
                 for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
@@ -101,8 +92,8 @@ namespace CleanResolver
                 var constructorParameters = ArrayCache<object>.Pull(implementation.ConstructorDependenciesCount);
                 Array.Copy(reserved.Array, reserved.StartIndex, constructorParameters, 0, implementation.ConstructorDependenciesCount);
 
-                implementation.ConstructorInfo.Invoke(instance, BindingFlags.Default,
-                    binder: null, parameters: constructorParameters, culture: null);
+                var instance = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                    parameters: constructorParameters, culture: null);
 
                 ArrayCache<object>.PushReserved(ref reserved);
                 ArrayCache<object>.Push(constructorParameters);

@@ -1,6 +1,7 @@
-﻿namespace CleanResolver.Tests.TestSources;
-
-public interface ITickable
+﻿namespace CleanResolver.Tests.TestSources
 {
-    void Tick(float deltaTime);
+    public interface ITickable
+    {
+        void Tick(float deltaTime);
+    }
 }
