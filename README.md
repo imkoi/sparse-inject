@@ -1,20 +1,19 @@
 # CleanResolver
 DI Container forged for game development
 
-### Performance
-In comparson to VContainer in general:
-- Faster binding time
-- Smaller build size
-- No allocations on resolve stage except instances
-- Few allocations and reallocation on binding stage in core functional
-> [!NOTE]
-> Its hard to explain how less allocations CleanResolver have, but for example in this benchmark on bindings stage:
-> CleanResolver call _GC.Alloc_ **270**972 times, while VContainer call **618**832 _GC.Alloc_. 
-> CleanResolver allocated 25.7 MB of ram (mostly for reflection) while VContainer allocated 32.7 MB
+### Features
+- Transient and Singleton bindings - singletons will be disposed on container / scopes dispose
+- Value bindings - bind values as singletons
+- Collections injection - its possible to inject ISomeType[] collection into constructors
+- Scopes - gives possibility to provide new isolated bindings that will be disposed after scope destroy
+- Separated binding and resolving stages - you cant bind new dependencies into container on runtime
+- Container only injection - there is no possibility to inject methods, properties and fields
 
+### Performance
 In comparison to VContainer with Reflection:
 - 11x faster binding times than VContainer
 - 40% faster resolve than VContainer
+- 30% less allocations
 - Smaller build size than VContainer
 - Careful usage of reflection functional - even typeof are always cached
 
@@ -30,6 +29,7 @@ In comparison to VContainer with Reflection:
 In comparison to VContainer with **Reflection Baking enabled**:
 - 15x faster binding times than VContainer
 - Same resolve speed on first resolve, 15% slower on next resolves, **BUT** Its important to remember that most games use instances that resolved just once
+- 30% less allocations
 - Up to 2x smaller build size (depend on amount of methods and fields in classes, 2x improve with constructors only)
 
 | Metric                                       | CleanResolver   | VContainer **Reflection Baking** | Difference             |
@@ -41,8 +41,11 @@ In comparison to VContainer with **Reflection Baking enabled**:
 | Resolve Time [Total Spend]                   | **32161**,5 ms  | **26991**,45 ms                  | **19**.15%    Slower   |
 | **Session Time** [DI time spent per session] | **35135**,79 ms | **74175**,89 ms                  | **52**.63%  **Faster** |
 
-
-### Allocations In Depths
+### Allocations
+> [!NOTE]
+> Its hard to explain how much allocations CleanResolver have, but for example in this benchmark on bindings stage:
+> CleanResolver call _GC.Alloc_ **270**972 times, while VContainer call **618**832 _GC.Alloc_.
+> CleanResolver allocated 25.7 MB of ram (mostly for reflection) while VContainer allocated 32.7 MB
 #### Container Configuration Stage
 On this stage we registering dependencies to our container, to get information about types we will want to resolve
 - allocated 3 big arrays (default 4k elements) to store info regarding dependencies - could be reallocated when capacity reached (are you making gta 7 or just playing with code in bad way?)
@@ -58,11 +61,3 @@ On this stage we building container to have ability to resolve instances, but be
 On this stage we resolving our instances
 - allocated object foreach instance through FormatterService - depend on number of resolving dependencies
 - allocated arrays **in case of Collection injection** - we should provide unique collection foreach instance
-
-### Features
-- Separated binding and resolving stages - you cant bind new dependencies into container unless its created subcontainer
-- Singleton and Transient bindings - singletons will be disposed when on container / scopes dispose
-- Value bindings - bind values as singleton
-- Container only injection - there is no possibility to inject methods, properties and fields
-- Collections injection - its possible to inject ISomeType[] collection into container
-- Scopes - gives possibility to provide new isolated bindings that will be disposed after scope destroy
