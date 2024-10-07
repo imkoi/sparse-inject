@@ -48,7 +48,7 @@ namespace CleanResolver
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int TryGetDependencyId(Type type)
         {
-            return _dependencyTypeToIdMap.GetValueOrDefault(type, -1);
+            return _dependencyTypeToIdMap.TryGetValue(type, out var value) ? value : -1;
         }
     }
 }

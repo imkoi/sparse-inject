@@ -34,43 +34,9 @@ namespace CleanResolver
         private object Resolve(int dependencyId)
         {
             ref var dependency = ref _dependencies[dependencyId];
-
-            if (dependency.ImplementationsCount == 1)
-            {
-                ref var implementationId = ref _dependencyImplementations[dependency.ImplementationsIndex];
-                ref var implementation = ref _implementations[implementationId];
-
-                if (implementation.SingletonFlag == SingletonFlag.SingletonWithValue)
-                {
-                    return implementation.SingletonValue;
-                }
-                
-                var reserved = ArrayCache<object>.PullReserved(implementation.ConstructorDependenciesCount);
-
-                for (var i = 0; i < implementation.ConstructorDependenciesCount; i++)
-                {
-                    reserved.Array[i + reserved.StartIndex] = Resolve(_dependencyReferences[i + implementation.ConstructorDependenciesIndex]);
-                }
-
-                var constructorParameters = ArrayCache<object>.Pull(implementation.ConstructorDependenciesCount);
-                Array.Copy(reserved.Array, reserved.StartIndex, constructorParameters, 0, implementation.ConstructorDependenciesCount);
-
-                var instance = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
-                    parameters: constructorParameters, culture: null);
-
-                ArrayCache<object>.PushReserved(ref reserved);
-                ArrayCache<object>.Push(constructorParameters);
-
-                if (implementation.SingletonFlag == SingletonFlag.Singleton)
-                {
-                    implementation.SingletonValue = instance;
-                    implementation.SingletonFlag = SingletonFlag.SingletonWithValue;
-                }
-
-                return instance;
-            }
-
-            var instances = Array.CreateInstance(dependency.Type, dependency.ImplementationsCount);
+            var instances = dependency.ImplementationsCount == 1
+                ? null
+                : Array.CreateInstance(dependency.Type, dependency.ImplementationsCount);
 
             for (var i = 0; i < dependency.ImplementationsCount; i++)
             {
@@ -83,10 +49,33 @@ namespace CleanResolver
                 }
                 
                 var reserved = ArrayCache<object>.PullReserved(implementation.ConstructorDependenciesCount);
-
-                for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
+                
+                if (implementation.ScopeConfigurator != null)
                 {
-                    reserved.Array[j + reserved.StartIndex] = Resolve(_dependencyReferences[j + implementation.ConstructorDependenciesIndex]);
+                    var containerBuilder = new ContainerBuilder(64);
+                    
+                    implementation.ScopeConfigurator.Invoke(containerBuilder);
+
+                    var container = containerBuilder.Build();
+                    
+                    for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
+                    {
+                        var constructorDependencyId = _dependencyReferences[j + implementation.ConstructorDependenciesIndex];
+
+                        if (constructorDependencyId < 0)
+                        {
+                            _dependencyReferences[j + implementation.ConstructorDependenciesIndex] = 0;
+                        }
+                        
+                        reserved.Array[j + reserved.StartIndex] = container.Resolve(constructorDependencyId);
+                    }
+                }
+                else
+                {
+                    for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
+                    {
+                        reserved.Array[j + reserved.StartIndex] = Resolve(_dependencyReferences[j + implementation.ConstructorDependenciesIndex]);
+                    }
                 }
 
                 var constructorParameters = ArrayCache<object>.Pull(implementation.ConstructorDependenciesCount);
@@ -104,10 +93,20 @@ namespace CleanResolver
                     implementation.SingletonFlag = SingletonFlag.SingletonWithValue;
                 }
 
+                if (dependency.ImplementationsCount == 1)
+                {
+                    return instance;
+                }
+                
                 instances.SetValue(instance, i);
             }
 
             return instances;
+        }
+
+        internal bool HasDependency(int dependencyId)
+        {
+            return _dependencies[dependencyId].Type != null;
         }
     }
 }

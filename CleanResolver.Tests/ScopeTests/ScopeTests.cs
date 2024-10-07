@@ -1,29 +1,26 @@
-﻿using NUnit.Framework;
+﻿using CleanResolver;
+using CleanResolver.Tests.Scopes;
+using NUnit.Framework;
 
-namespace CleanResolver.Tests.Scopes
+[TestFixture]
+public class ScopeTests
 {
-    [TestFixture]
-    public class ScopeTests
+    [Test]
+    public void ScopeTest()
     {
-        [Test]
-        public void ScopeTest()
-        {
-            var containerBuilder = new ContainerBuilder();
+        var containerBuilder = new ContainerBuilder();
         
-            containerBuilder.Register<GameController>();
+        containerBuilder.Register<GameController>();
             
-            containerBuilder.RegisterScope<LevelScope>(configurator =>
-            {
-                configurator.Register<LevelEndPopup>();
-            });
+        containerBuilder.RegisterScope<LevelScope>(configurator =>
+        {
+            configurator.Register<LevelEndPopup>();
+        });
 
-            var container = containerBuilder.Build();
+        var container = containerBuilder.Build();
 
-            var gameController = container.Resolve<GameController>();
+        var gameController = container.Resolve<GameController>();
             
-            container.Resolve<LevelEndPopup>();
-            
-            Assert.DoesNotThrow(gameController.Execute);
-        }
+        Assert.DoesNotThrow(gameController.Execute);
     }
 }
