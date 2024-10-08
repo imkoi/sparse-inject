@@ -14,13 +14,23 @@ namespace CleanResolver
         private readonly Implementation[] _implementations;
         private readonly int[] _dependencyImplementations;
         private readonly int[] _dependencyReferences;
+        private readonly int _dependenciesOffset;
+        private readonly int _implementationsOffset;
 
-        internal Container(Dependency[] dependencies, Implementation[] implementations, int[] dependencyImplementations, int[] dependencyReferences)
+        internal Container(
+            Dependency[] dependencies,
+            Implementation[] implementations,
+            int[] dependencyImplementations,
+            int[] dependencyReferences,
+            int dependenciesOffset,
+            int implementationsOffset)
         {
             _dependencies = dependencies;
             _implementations = implementations;
             _dependencyImplementations = dependencyImplementations;
             _dependencyReferences = dependencyReferences;
+            _dependenciesOffset = dependenciesOffset;
+            _implementationsOffset = implementationsOffset;
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -64,7 +74,8 @@ namespace CleanResolver
 
                         if (constructorDependencyId < 0)
                         {
-                            _dependencyReferences[j + implementation.ConstructorDependenciesIndex] = 0;
+                            constructorDependencyId = container._dependenciesOffset;
+                            _dependencyReferences[j + implementation.ConstructorDependenciesIndex] = constructorDependencyId;
                         }
                         
                         reserved.Array[j + reserved.StartIndex] = container.Resolve(constructorDependencyId);

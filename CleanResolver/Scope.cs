@@ -2,8 +2,10 @@
 
 namespace CleanResolver
 {
-    public class Scope : IDisposable
+    public abstract class Scope : IDisposable
     {
+        internal Container _container;
+        
         public void Dispose()
         {
             

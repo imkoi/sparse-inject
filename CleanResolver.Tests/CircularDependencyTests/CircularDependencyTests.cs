@@ -22,6 +22,6 @@ public class CircularDependencyTests
         _containerBuilder.Register<ServiceA>();
         _containerBuilder.Register<ServiceB>();
 
-        Assert.Throws<Exception>(() => _containerBuilder.Build());
+        Assert.Throws<CleanResolverException>(() => _containerBuilder.Build());
     }
 }

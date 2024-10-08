@@ -19,8 +19,8 @@ namespace CleanResolver
         private int _dependenciesCount;
         private int _dependencyImplementationIndex;
 
-        private int _dependenciesOffset;
-        private int _implementationsOffset;
+        private int _dependenciesOffset = int.MaxValue;
+        private int _implementationsOffset = int.MaxValue;
 
         public ContainerBuilder(int capacity = 4096)
         {
@@ -129,7 +129,12 @@ namespace CleanResolver
 
             BuildThrowIfCircularDependencyExist(implementationDependencyIds);
             
-            return new Container(_dependencies, _implementations, _dependencyImplementations, implementationDependencyIds);
+            return new Container(_dependencies, 
+                _implementations,
+                _dependencyImplementations,
+                implementationDependencyIds,
+                _dependenciesOffset,
+                _implementationsOffset);
         }
 
         private void RegisterDependency<TKey>(int implementationId)
@@ -276,7 +281,8 @@ namespace CleanResolver
                 {
                     circularDependencyChecker.Clear();
                     
-                    CircularDependencyValidator.ThrowIfInvalid(_implementations[j + dependency.ImplementationsIndex], circularDependencyChecker, implementationDependencyIds);
+                    CircularDependencyValidator.ThrowIfInvalid(_implementations[j + dependency.ImplementationsIndex],
+                        circularDependencyChecker, _dependencies, _implementations, _dependencyImplementations, implementationDependencyIds);
                 }
             }
         }
