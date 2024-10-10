@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
@@ -12,21 +11,23 @@ namespace CleanResolver
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class ContainerBuilder : IScopeConfigurator
     {
-        private Dependency[] _dependencies;
-        private Implementation[] _implementations;
-        private int[] _dependencyImplementations;
+        private int[] _dependenciesSparse;
+        private Dependency[] _dependenciesDense;
 
         private int _dependenciesCount;
-        private int _dependencyImplementationIndex;
+        private int _implementationsCount;
 
-        private int _dependenciesOffset = int.MaxValue;
-        private int _implementationsOffset = int.MaxValue;
-
+        private int _denseCount;
+        
         public ContainerBuilder(int capacity = 4096)
         {
-            _dependencies = new Dependency[capacity];
-            _implementations = new Implementation[capacity];
-            _dependencyImplementations = new int[capacity];
+            _dependenciesSparse = new int[capacity];
+            _dependenciesDense = new Dependency[capacity];
+
+            for (var i = 0; i < capacity; i++)
+            {
+                _dependenciesSparse[i] = -1;
+            }
         }
 
         public void Register<TKey>(RegisterType registerType = RegisterType.Transient)
@@ -39,24 +40,12 @@ namespace CleanResolver
             where TKey : class
             where TImplementation : class, TKey
         {
-            if (TypeCompileInfo<TImplementation>.RegisterImplementation(out var implementationId, out var implementationType))
-            {
-                if (implementationId < _implementationsOffset)
-                {
-                    _implementationsOffset = implementationId;
-                }
-                
-                if (implementationId >= _implementations.Length)
-                {
-                    Array.Resize(ref _implementations, implementationId * 2);
-                }
+            RegisterDependency<TKey, TImplementation>(out var implementationIndex);
 
-                ref var implementation = ref _implementations[implementationId];
-                implementation.Type = implementationType;
-                implementation.SingletonFlag = registerType == RegisterType.Singleton ? SingletonFlag.Singleton : SingletonFlag.NotSingleton;
-            }
-
-            RegisterDependency<TKey>(implementationId);
+            ref var implementation = ref _dependenciesDense[implementationIndex];
+            implementation.SingletonFlag = registerType == RegisterType.Singleton 
+                ? SingletonFlag.Singleton 
+                : SingletonFlag.NotSingleton;
         }
 
         public void Register<TKey>(TKey value)
@@ -69,221 +58,248 @@ namespace CleanResolver
             where TKey : class
             where TImplementation : class, TKey
         {
-            if (TypeCompileInfo<TImplementation>.RegisterImplementation(out var implementationId, out var implementationType))
-            {
-                if (implementationId < _implementationsOffset)
-                {
-                    _implementationsOffset = implementationId;
-                }
-                
-                if (implementationId >= _implementations.Length)
-                {
-                    Array.Resize(ref _implementations, implementationId * 2);
-                }
-
-                ref var implementation = ref _implementations[implementationId];
-                implementation.Type = implementationType;
-                implementation.SingletonFlag = SingletonFlag.SingletonWithValue;
-                implementation.SingletonValue = value;
-            }
-
-            RegisterDependency<TKey>(implementationId);
+            RegisterDependency<TKey, TImplementation>(out var implementationIndex);
+            
+            ref var implementation = ref _dependenciesDense[implementationIndex];
+            implementation.SingletonFlag = SingletonFlag.SingletonWithValue;
+            implementation.SingletonValue = value;
         }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public void RegisterScope<TScope>(Action<IScopeConfigurator> install)
             where TScope : Scope
         {
             RegisterScope<TScope, TScope>(install);
         }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public void RegisterScope<TScope, TScopeImplementation>(Action<IScopeConfigurator> install)
             where TScope : Scope
+            where TScopeImplementation : TScope
         {
-            if (TypeCompileInfo<TScopeImplementation>.RegisterImplementation(out var implementationId, out var implementationType))
+            install += configurator =>
             {
-                if (implementationId < _implementationsOffset)
-                {
-                    _implementationsOffset = implementationId;
-                }
-                
-                if (implementationId >= _implementations.Length)
-                {
-                    Array.Resize(ref _implementations, implementationId * 2);
-                }
+                configurator.Register<TScope, TScopeImplementation>();
+            };
 
-                ref var implementation = ref _implementations[implementationId];
-                implementation.Type = implementationType;
-                implementation.SingletonFlag = SingletonFlag.NotSingleton;
-                implementation.ScopeConfigurator = install;
-            }
-
-            RegisterDependency<TScope>(implementationId);
+            RegisterDependency<TScope, TScopeImplementation>(out var implementationIndex);
+            
+            ref var implementation = ref _dependenciesDense[implementationIndex];
+            implementation.SingletonFlag = SingletonFlag.NotSingleton;
+            implementation.ScopeConfigurator = install;
         }
         
         public Container Build()
         {
-            var (implementationsCount, implementationDependenciesCount) = BuildPrecomputeDependenciesCount();
-            var implementationDependencyIds = BuildBakeImplementationDependencyIds(implementationsCount, implementationDependenciesCount);
-
-            BuildThrowIfCircularDependencyExist(implementationDependencyIds);
-            
-            return new Container(_dependencies, 
-                _implementations,
-                _dependencyImplementations,
-                implementationDependencyIds,
-                _dependenciesOffset,
-                _implementationsOffset);
+            return BuildInternal(null);
         }
 
-        private void RegisterDependency<TKey>(int implementationId)
+        internal Container BuildInternal(Container parentContainer)
         {
-            var isNewDependency = false;
+            var (implementationDependenciesCount, implementationConstructorParameters) = BuildPrecomputeDependenciesCount();
+            var implementationDependencyIds = BuildBakeImplementationDependencyIds(implementationDependenciesCount, implementationConstructorParameters);
             
-            if (TypeCompileInfo<TKey>.RegisterDependency(out var dependencyId, out var type))
+            BuildThrowIfCircularDependencyExist(implementationDependencyIds);
+            
+            return new Container(
+                parentContainer,
+                _dependenciesDense, 
+                _dependenciesSparse,
+                implementationDependencyIds,
+                _dependenciesCount,
+                _implementationsCount);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void RegisterDependency<TKey, TImplementation>(out int implementationIndex)
+        {
+            var dependencyId = TypeCompileInfo<TKey>.GetId(out var dependencyType);
+            var implementationType = TypeCompileInfo<TImplementation>.Type;
+
+            if (dependencyId >= _dependenciesSparse.Length)
             {
-                if (dependencyId < _dependenciesOffset)
-                {
-                    _dependenciesOffset = dependencyId;
-                }
+                var oldSize = _dependenciesSparse.Length;
+                var newSize = dependencyId * 2;
+
+                Array.Resize(ref _dependenciesSparse, newSize);
                 
-                if (dependencyId >= _dependencies.Length)
+                for (var i = oldSize; i < newSize; i++)
                 {
-                    Array.Resize(ref _dependencies, dependencyId * 2);
+                    _dependenciesSparse[i] = -1;
+                }
+            }
+
+            ref var dependencyIndex = ref _dependenciesSparse[dependencyId];
+
+            if (dependencyIndex < 0)
+            {
+                var sizeWithImplementation = _denseCount + 2;
+                
+                if (sizeWithImplementation >= _dependenciesDense.Length)
+                {
+                    Array.Resize(ref _dependenciesDense, sizeWithImplementation * 2);
                 }
 
                 _dependenciesCount++;
-                isNewDependency = true;
-            }
 
-            ref var dependency = ref _dependencies[dependencyId];
-            dependency.Type = type;
+                dependencyIndex = _denseCount;
 
-            if (isNewDependency)
-            {
-                dependency.ImplementationsIndex = _dependencyImplementationIndex;
-            }
-            
-            if (isNewDependency || _dependencyImplementationIndex ==
-                     dependency.ImplementationsIndex + dependency.ImplementationsCount)
-            {
-                if (_dependencyImplementationIndex >= _dependencyImplementations.Length)
-                {
-                    Array.Resize(ref _dependencyImplementations, _dependencyImplementationIndex * 2);
-                }
-                
-                _dependencyImplementations[_dependencyImplementationIndex] = implementationId;
+                _denseCount += 2;
             }
             else
             {
-                ArrayUtility.Insert(ref _dependencyImplementations, _dependencyImplementationIndex, implementationId, dependency.ImplementationsIndex + dependency.ImplementationsCount);
-                
-                for (var i = dependencyId; i < _dependenciesCount; i++)
+                if (dependencyIndex >= _dependenciesDense.Length)
                 {
-                    ref var dependencyToProcess = ref _dependencies[i];
-                    
-                    if (i != dependencyId)
-                    {
-                        dependencyToProcess.ImplementationsIndex += 1;
-                    }
+                    Array.Resize(ref _dependenciesDense, dependencyIndex * 2);
                 }
+                
+                _denseCount += 1;
+            }
+            
+            ref var dependency = ref _dependenciesDense[dependencyIndex];
+            dependency.Type = dependencyType;
+
+            implementationIndex = dependencyIndex + 1;
+
+            if (dependency.ImplementationsCount == 0 || false)
+            {
+                _dependenciesDense[implementationIndex].Type = implementationType;
+            }
+            else
+            {
+                // ArrayUtility.Insert(ref _dependencyImplementationIds, _dependencyImplementationIndex, implementationId, dependency.ImplementationsIndex + dependency.ImplementationsCount);
+                //
+                // for (var i = dependencyId; i < _dependenciesCount; i++)
+                // {
+                //     ref var dependencyToProcess = ref _dependenciesDense[i];
+                //     
+                //     if (i != dependencyId)
+                //     {
+                //         dependencyToProcess.ImplementationsIndex += 1;
+                //     }
+                // }
+
+                throw new NotImplementedException();
             }
 
             dependency.ImplementationsCount++;
-            _dependencyImplementationIndex++;
+            _implementationsCount++;
         }
 
-        private (int implementationsCount, int implementationDependenciesCount) BuildPrecomputeDependenciesCount()
+        private (int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameters) BuildPrecomputeDependenciesCount()
         {
-            var implementationsCount = 0;
+            var implementationConstructorParameters = new ParameterInfo[_implementationsCount][];
             var implementationDependenciesCount = 0;
+            var index = 0;
+            var implementationIndex = 0;
             
-            for (var j = 0; j < _implementations.Length; j++)
+            while (implementationIndex < _implementationsCount)
             {
-                ref var implementation = ref _implementations[j];
-
-                if (implementation.Type == null)
-                {
-                    break;
-                }
+                ref var dependency = ref _dependenciesDense[index];
+                index++;
                 
-                implementation.ConstructorInfo = implementation.Type.GetConstructors()[0];
-                implementation.ConstructorParameters = implementation.ConstructorInfo.GetParameters();
-                implementation.ConstructorDependenciesCount = implementation.ConstructorParameters.Length;
+                for (var i = 0; i < dependency.ImplementationsCount; i++)
+                {
+                    ref var implementation = ref _dependenciesDense[index + i];
 
-                implementationDependenciesCount += implementation.ConstructorDependenciesCount;
-                implementationsCount++;
+                    implementation.ConstructorInfo = implementation.Type.GetConstructors()[0];
+                    
+                    var constructorParameters = implementation.ConstructorInfo.GetParameters();
+                    implementationConstructorParameters[implementationIndex] = constructorParameters;
+                    
+                    implementation.ConstructorDependenciesCount = constructorParameters.Length;
+
+                    implementationDependenciesCount += implementation.ConstructorDependenciesCount;
+                    implementationIndex++;
+                }
+
+                index += dependency.ImplementationsCount;
             }
 
-            return (implementationsCount, implementationDependenciesCount);
+            return (implementationDependenciesCount, implementationConstructorParameters);
         }
 
-        private int[] BuildBakeImplementationDependencyIds(int implementationsCount, int implementationDependenciesCount)
+        private int[] BuildBakeImplementationDependencyIds(int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameters)
         {
             var dependencyReferences = new int[implementationDependenciesCount];
             var dependencyReferenceIndex = 0;
             
-            for (var j = 0; j < implementationsCount; j++)
+            var index = 0;
+            var implementationIndex = 0;
+            
+            while (implementationIndex < _implementationsCount)
             {
-                ref var implementation = ref _implementations[j];
+                ref var dependency = ref _dependenciesDense[index];
+                index++;
                 
-                implementation.ConstructorDependenciesIndex = dependencyReferenceIndex;
-
-                for (var i = 0; i < implementation.ConstructorDependenciesCount; i++)
+                for (var i = 0; i < dependency.ImplementationsCount; i++)
                 {
-                    var parameterType = implementation.ConstructorParameters[i].ParameterType;
+                    ref var implementation = ref _dependenciesDense[index + i];
 
-                    if (parameterType.IsArray)
+                    implementation.ConstructorDependenciesIndex = dependencyReferenceIndex;
+                    
+                    for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
                     {
-                        var elementType = parameterType.GetElementType();
+                        var parameterType = implementationConstructorParameters[implementationIndex][j].ParameterType;
 
-                        var dependencyId = TypeIdLocator.TryGetDependencyId(elementType);
-
-                        if (dependencyId < 0)
+                        if (parameterType.IsArray)
                         {
-                            dependencyId = TypeIdLocator.AddDependencyId(elementType);
-                        }
+                            var elementType = parameterType.GetElementType();
 
-                        if (dependencyId >= _dependencies.Length)
+                            var constructorDependencyId = TypeIdLocator.TryGetDependencyId(elementType);
+
+                            if (constructorDependencyId < 0)
+                            {
+                                constructorDependencyId = TypeIdLocator.AddDependencyId(elementType);
+                            }
+
+                            if (constructorDependencyId >= _dependenciesDense.Length)
+                            {
+                                Array.Resize(ref dependencyReferences, constructorDependencyId * 2);
+                            }
+
+                            ref var constructorDependency = ref _dependenciesDense[constructorDependencyId]; 
+                            constructorDependency.Type = elementType;
+
+                            dependencyReferences[j + dependencyReferenceIndex] = constructorDependencyId;
+                        }
+                        else
                         {
-                            Array.Resize(ref dependencyReferences, dependencyId * 2);
+                            dependencyReferences[j + dependencyReferenceIndex] = TypeIdLocator.TryGetDependencyId(parameterType);
                         }
-
-                        ref var dependency = ref _dependencies[dependencyId]; 
-                        dependency.Type = elementType;
-
-                        dependencyReferences[i + dependencyReferenceIndex] = dependencyId;
                     }
-                    else
-                    {
-                        dependencyReferences[i + dependencyReferenceIndex] = TypeIdLocator.TryGetDependencyId(parameterType);
-                    }
+                    
+                    dependencyReferenceIndex += implementation.ConstructorDependenciesCount;
+                    implementationIndex++;
                 }
-                
-                implementation.ConstructorParameters = null;
 
-                dependencyReferenceIndex += implementation.ConstructorDependenciesCount;
+                index += dependency.ImplementationsCount;
             }
-
+            
             return dependencyReferences;
         }
 
         private void BuildThrowIfCircularDependencyExist(int[] implementationDependencyIds)
         {
-            var circularDependencyChecker = new Stack<Implementation>();
+            var circularDependencyChecker = new Stack<Dependency>();
             
-            for (var i = 0; i < _dependenciesCount; i++)
+            var index = 0;
+            var implementationIndex = 0;
+            
+            while (implementationIndex < _implementationsCount)
             {
-                ref var dependency = ref _dependencies[i];
-            
-                for (var j = 0; j < dependency.ImplementationsCount; j++)
+                ref var dependency = ref _dependenciesDense[index];
+                index++;
+                
+                for (var i = 0; i < dependency.ImplementationsCount; i++)
                 {
                     circularDependencyChecker.Clear();
                     
-                    CircularDependencyValidator.ThrowIfInvalid(_implementations[j + dependency.ImplementationsIndex],
-                        circularDependencyChecker, _dependencies, _implementations, _dependencyImplementations, implementationDependencyIds);
+                    CircularDependencyValidator.ThrowIfInvalid(index + i + 1,
+                        circularDependencyChecker, _dependenciesDense, implementationDependencyIds);
+
+                    implementationIndex++;
                 }
+
+                index += dependency.ImplementationsCount;
             }
         }
     }
@@ -291,19 +307,12 @@ namespace CleanResolver
     public struct Dependency
     {
         public Type Type;
-        public int ImplementationsIndex;
         public int ImplementationsCount;
-    }
-
-    public struct Implementation
-    {
-        public Type Type;
-        public byte SingletonFlag;
-        public object SingletonValue;
-        public ConstructorInfo ConstructorInfo;
-        public ParameterInfo[] ConstructorParameters;
         public int ConstructorDependenciesIndex;
         public int ConstructorDependenciesCount;
+        public ConstructorInfo ConstructorInfo;
+        public int SingletonFlag;
+        public object SingletonValue;
         public Action<IScopeConfigurator> ScopeConfigurator;
     }
 }

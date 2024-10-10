@@ -1,4 +1,5 @@
-﻿using Unity.IL2CPP.CompilerServices;
+﻿using System.Runtime.CompilerServices;
+using Unity.IL2CPP.CompilerServices;
 
 namespace CleanResolver
 {
@@ -16,6 +17,7 @@ namespace CleanResolver
             Array = _reserved
         };
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T[] Pull(int length)
         {
             if (_cache == null)
@@ -31,11 +33,13 @@ namespace CleanResolver
             return _cache[length];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Push(T[] array)
         {
             _cache[array.Length] = array;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Reserved PullReserved(int length)
         {
             ref var reserved = ref _originalReserved;
@@ -48,6 +52,7 @@ namespace CleanResolver
             return reserved;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void PushReserved(ref Reserved reserved)
         {
             _count -= reserved.Count;

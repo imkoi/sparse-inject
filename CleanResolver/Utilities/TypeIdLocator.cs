@@ -11,9 +11,7 @@ namespace CleanResolver
     internal static class TypeIdLocator
     {
         private static int _currentDependencyId;
-        private static int _currentImplementationId;
         private static readonly Dictionary<Type, int> _dependencyTypeToIdMap = new Dictionary<Type, int>(4096);
-        private static readonly Dictionary<Type, int> _implementationTypeToIdMap = new Dictionary<Type, int>(4096);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int AddDependencyId(Type type)
@@ -23,18 +21,6 @@ namespace CleanResolver
             _dependencyTypeToIdMap.Add(type, id);
 
             _currentDependencyId++;
-
-            return id;
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int AddImplementationId(Type type)
-        {
-            var id = _currentImplementationId;
-
-            _implementationTypeToIdMap.Add(type, id);
-
-            _currentImplementationId++;
 
             return id;
         }
