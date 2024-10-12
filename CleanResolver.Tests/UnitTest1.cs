@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Runtime.Serialization;
 using CleanResolver.Tests.TestSources;
 using FluentAssertions;
 using NUnit.Framework;
@@ -25,6 +27,42 @@ namespace CleanResolver.Tests
             var highestDependency = container.Resolve<Class0>();
         
             highestDependency.Should().NotBeNull();
+        }
+
+        [Test]
+        public void ConstructorCheck()
+        {
+            var constructor = typeof(NoConstructorWithInitializedField).GetConstructors().First();
+
+            var instance = constructor.Invoke(new object[0]);
+        }
+
+        public class NoConstructor
+        {
+            
+        }
+        
+        public class NoConstructorWithInitializedField
+        {
+            private int[] _array = new int[10];
+        }
+
+        public class EmptyConstructor
+        {
+            public EmptyConstructor()
+            {
+                
+            }
+        }
+        
+        public class EmptyConstructorWithLogic
+        {
+            private int[] _array;
+            
+            public EmptyConstructorWithLogic()
+            {
+                _array = new int[10];
+            }
         }
     }
 }

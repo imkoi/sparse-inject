@@ -1,4 +1,6 @@
-﻿using CleanResolver;
+﻿using System;
+using System.Threading;
+using CleanResolver;
 using CleanResolver.Tests.Simple;
 using FluentAssertions;
 using NUnit.Framework;
@@ -22,7 +24,7 @@ public class SimpleTests
 
         var container = containerBuilder.Build();
         var processors = container.Resolve<PlayerService>();
-
+        
         processors.Should().NotBeNull();
     }
     
