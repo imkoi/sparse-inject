@@ -1,4 +1,4 @@
-# CleanResolver
+# SparseInject
 DI Container forged for game development
 
 ### Features
