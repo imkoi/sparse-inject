@@ -61,7 +61,7 @@ namespace CleanResolver
             {
                 var constructorDependencyId = implementationDependencyIds[i + implementation.ConstructorDependenciesIndex];
 
-                if (constructorDependencyId < 0 && implementation.ScopeConfigurator != null)
+                if (implementation.ScopeConfigurator != null)
                 {
                     continue;
                 }

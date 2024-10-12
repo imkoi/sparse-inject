@@ -252,13 +252,23 @@ namespace CleanResolver
 
                             var constructorDependencyId = TypeIdLocator.TryGetDependencyId(elementType);
                             
+                            if (constructorDependencyId < 0)
+                            {
+                                constructorDependencyId = TypeIdLocator.AddDependencyId(parameterType);
+                            }
+                            
                             dependencyReferences[j + dependencyReferenceIndex] = constructorDependencyId;
                         }
                         else
                         {
-                            int dependencyId = TypeIdLocator.TryGetDependencyId(parameterType);
+                            var constructorDependencyId = TypeIdLocator.TryGetDependencyId(parameterType);
+
+                            if (constructorDependencyId < 0)
+                            {
+                                constructorDependencyId = TypeIdLocator.AddDependencyId(parameterType);
+                            }
                             
-                            dependencyReferences[j + dependencyReferenceIndex] = dependencyId;
+                            dependencyReferences[j + dependencyReferenceIndex] = constructorDependencyId;
                         }
                     }
                     
