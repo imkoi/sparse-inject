@@ -44,8 +44,8 @@ In comparison to VContainer with **Reflection Baking enabled**:
 ### Allocations
 > [!NOTE]
 > Its hard to explain how much allocations SparseInject have, but for example in this benchmark on bindings stage:
-> CleanResolver call _GC.Alloc_ **270**972 times, while VContainer call **618**832 _GC.Alloc_.
-> CleanResolver allocated 25.7 MB of ram (mostly for reflection) while VContainer allocated 32.7 MB
+> SparseInject call _GC.Alloc_ **270**972 times, while VContainer call **618**832 _GC.Alloc_.
+> SparseInject allocated 25.7 MB of ram (mostly for reflection) while VContainer allocated 32.7 MB
 #### Container Configuration Stage
 On this stage we registering dependencies to our container, to get information about types we will want to resolve
 - allocated 3 big arrays (default 4k elements) to store info regarding dependencies - could be reallocated when capacity reached (are you making gta 7 or just playing with code in bad way?)
