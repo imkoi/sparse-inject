@@ -12,9 +12,7 @@ namespace CleanResolver
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Insert<T>(ref T[] array, int elementsCount, T value, int index)
         {
-            Array.Copy(array, index, array, index + 1, elementsCount - index);
-
-            array[index] = value;
+            
         }
     }
 }

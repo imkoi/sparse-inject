@@ -73,13 +73,8 @@ namespace CleanResolver
 
         public void RegisterScope<TScope, TScopeImplementation>(Action<IScopeConfigurator> install)
             where TScope : Scope
-            where TScopeImplementation : TScope
+            where TScopeImplementation : class, TScope
         {
-            install += configurator =>
-            {
-                configurator.Register<TScope, TScopeImplementation>();
-            };
-
             RegisterDependency<TScope, TScopeImplementation>(out var implementationIndex);
             
             ref var implementation = ref _dependenciesDense[implementationIndex];
@@ -94,22 +89,26 @@ namespace CleanResolver
 
         internal Container BuildInternal(Container parentContainer)
         {
-            var (implementationDependenciesCount, implementationConstructorParameters) = BuildPrecomputeDependenciesCount();
-            var implementationDependencyIds = BuildBakeImplementationDependencyIds(implementationDependenciesCount, implementationConstructorParameters);
+            var stats = BuildPrecomputeDependenciesCount();
+            var implementationDependencyIds = BuildBakeImplementationDependencyIds(
+                stats.implementationDependenciesCount,
+                stats.implementationConstructorParameters);
             
-            BuildThrowIfCircularDependencyExist(implementationDependencyIds);
+            CircularDependencyValidator.ThrowIfInvalid(_implementationsCount, _dependenciesDense,
+                _dependenciesSparse, implementationDependencyIds);
             
             return new Container(
                 parentContainer,
                 _dependenciesDense, 
                 _dependenciesSparse,
                 implementationDependencyIds,
-                _dependenciesCount,
-                _implementationsCount);
+                stats.maxConstructorLength);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void RegisterDependency<TKey, TImplementation>(out int implementationIndex)
+            where TKey : class
+            where TImplementation : class
         {
             var dependencyId = TypeCompileInfo<TKey>.GetId(out var dependencyType);
             var implementationType = TypeCompileInfo<TImplementation>.Type;
@@ -157,16 +156,15 @@ namespace CleanResolver
             ref var dependency = ref _dependenciesDense[dependencyIndex];
             dependency.Type = dependencyType;
 
-            implementationIndex = dependencyIndex + 1;
+            implementationIndex = dependencyIndex + dependency.ImplementationsCount + 1;
+            ref var implementation = ref _dependenciesDense[implementationIndex];
 
-            if (dependency.ImplementationsCount == 0 || false)
+            if (implementation.Type == null)
             {
-                _dependenciesDense[implementationIndex].Type = implementationType;
+                implementation.Type = implementationType;
             }
             else
             {
-                // ArrayUtility.Insert(ref _dependencyImplementationIds, _dependencyImplementationIndex, implementationId, dependency.ImplementationsIndex + dependency.ImplementationsCount);
-                //
                 // for (var i = dependencyId; i < _dependenciesCount; i++)
                 // {
                 //     ref var dependencyToProcess = ref _dependenciesDense[i];
@@ -176,20 +174,24 @@ namespace CleanResolver
                 //         dependencyToProcess.ImplementationsIndex += 1;
                 //     }
                 // }
+                
+                Array.Copy(_dependenciesDense, implementationIndex, _dependenciesDense, implementationIndex + 1, _denseCount - implementationIndex);
 
-                throw new NotImplementedException();
+                _dependenciesDense[implementationIndex].Type = implementationType;
             }
 
             dependency.ImplementationsCount++;
             _implementationsCount++;
         }
 
-        private (int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameters) BuildPrecomputeDependenciesCount()
+        private (int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameters, int maxConstructorLength) BuildPrecomputeDependenciesCount()
         {
             var implementationConstructorParameters = new ParameterInfo[_implementationsCount][];
             var implementationDependenciesCount = 0;
             var index = 0;
             var implementationIndex = 0;
+
+            var maxConstructorLength = int.MinValue;
             
             while (implementationIndex < _implementationsCount)
             {
@@ -200,12 +202,16 @@ namespace CleanResolver
                 {
                     ref var implementation = ref _dependenciesDense[index + i];
 
-                    implementation.ConstructorInfo = implementation.Type.GetConstructors()[0];
-                    
+                    implementation.ConstructorInfo = implementation.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)[0];
                     var constructorParameters = implementation.ConstructorInfo.GetParameters();
                     implementationConstructorParameters[implementationIndex] = constructorParameters;
                     
                     implementation.ConstructorDependenciesCount = constructorParameters.Length;
+
+                    if (implementation.ConstructorDependenciesCount > maxConstructorLength)
+                    {
+                        maxConstructorLength = implementation.ConstructorDependenciesCount;
+                    }
 
                     implementationDependenciesCount += implementation.ConstructorDependenciesCount;
                     implementationIndex++;
@@ -214,7 +220,7 @@ namespace CleanResolver
                 index += dependency.ImplementationsCount;
             }
 
-            return (implementationDependenciesCount, implementationConstructorParameters);
+            return (implementationDependenciesCount, implementationConstructorParameters, maxConstructorLength);
         }
 
         private int[] BuildBakeImplementationDependencyIds(int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameters)
@@ -245,25 +251,14 @@ namespace CleanResolver
                             var elementType = parameterType.GetElementType();
 
                             var constructorDependencyId = TypeIdLocator.TryGetDependencyId(elementType);
-
-                            if (constructorDependencyId < 0)
-                            {
-                                constructorDependencyId = TypeIdLocator.AddDependencyId(elementType);
-                            }
-
-                            if (constructorDependencyId >= _dependenciesDense.Length)
-                            {
-                                Array.Resize(ref dependencyReferences, constructorDependencyId * 2);
-                            }
-
-                            ref var constructorDependency = ref _dependenciesDense[constructorDependencyId]; 
-                            constructorDependency.Type = elementType;
-
+                            
                             dependencyReferences[j + dependencyReferenceIndex] = constructorDependencyId;
                         }
                         else
                         {
-                            dependencyReferences[j + dependencyReferenceIndex] = TypeIdLocator.TryGetDependencyId(parameterType);
+                            int dependencyId = TypeIdLocator.TryGetDependencyId(parameterType);
+                            
+                            dependencyReferences[j + dependencyReferenceIndex] = dependencyId;
                         }
                     }
                     
@@ -275,32 +270,6 @@ namespace CleanResolver
             }
             
             return dependencyReferences;
-        }
-
-        private void BuildThrowIfCircularDependencyExist(int[] implementationDependencyIds)
-        {
-            var circularDependencyChecker = new Stack<Dependency>();
-            
-            var index = 0;
-            var implementationIndex = 0;
-            
-            while (implementationIndex < _implementationsCount)
-            {
-                ref var dependency = ref _dependenciesDense[index];
-                index++;
-                
-                for (var i = 0; i < dependency.ImplementationsCount; i++)
-                {
-                    circularDependencyChecker.Clear();
-                    
-                    CircularDependencyValidator.ThrowIfInvalid(index + i + 1,
-                        circularDependencyChecker, _dependenciesDense, implementationDependencyIds);
-
-                    implementationIndex++;
-                }
-
-                index += dependency.ImplementationsCount;
-            }
         }
     }
 

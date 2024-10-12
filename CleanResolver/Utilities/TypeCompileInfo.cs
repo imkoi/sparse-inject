@@ -17,7 +17,14 @@ namespace CleanResolver
         {
             if (_dependencyId < 0)
             {
-                _dependencyId = TypeIdLocator.AddDependencyId(Type);
+                var id = TypeIdLocator.TryGetDependencyId(Type);
+
+                if (id < 0)
+                {
+                    id = TypeIdLocator.AddDependencyId(Type);
+                }
+
+                _dependencyId = id;
             }
 
             type = Type;

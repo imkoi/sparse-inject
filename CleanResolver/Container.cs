@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using Unity.IL2CPP.CompilerServices;
 
 namespace CleanResolver
@@ -12,26 +13,25 @@ namespace CleanResolver
     {
         private readonly Container _parentContainer;
 
-        private readonly Dependency[] _dependencies;
-        private readonly int[] _dependencySparse;
+        private readonly Dependency[] _dense;
+        private readonly int[] _sparse;
         private readonly int[] _dependencyReferences;
-        private readonly int _dependenciesOffset;
-        private readonly int _implementationsOffset;
+        
+        private readonly object[][] _arrays;
 
         internal Container(
             Container parentContainer,
             Dependency[] dependenciesDense,
-            int[] dependencySparse,
+            int[] sparse,
             int[] dependencyReferences,
-            int dependenciesOffset,
-            int implementationsOffset)
+            int maxConstructorLength)
         {
             _parentContainer = parentContainer;
-            _dependencies = dependenciesDense;
-            _dependencySparse = dependencySparse;
+            _dense = dependenciesDense;
+            _sparse = sparse;
             _dependencyReferences = dependencyReferences;
-            _dependenciesOffset = dependenciesOffset;
-            _implementationsOffset = implementationsOffset;
+
+            _arrays = ArrayCache.GetConstructorParametersPool(maxConstructorLength);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -44,8 +44,8 @@ namespace CleanResolver
 
         private object Resolve(int dependencyId)
         {
-            dependencyId = _dependencySparse[dependencyId];
-            ref var dependency = ref _dependencies[dependencyId];
+            dependencyId = _sparse[dependencyId];
+            ref var dependency = ref _dense[dependencyId];
             var instances = dependency.ImplementationsCount == 1
                 ? null
                 : Array.CreateInstance(dependency.Type, dependency.ImplementationsCount);
@@ -54,37 +54,56 @@ namespace CleanResolver
 
             for (var i = 0; i < dependency.ImplementationsCount; i++)
             {
-                ref var implementation = ref _dependencies[dependencyId + i];
+                ref var implementation = ref _dense[dependencyId + i];
 
                 if (implementation.SingletonFlag == SingletonFlag.SingletonWithValue)
                 {
                     return implementation.SingletonValue;
                 }
 
-                var reserved = ArrayCache<object>.PullReserved(implementation.ConstructorDependenciesCount);
+                if (implementation.ConstructorDependenciesCount == 0)
+                {
+                    var instanceOne = FormatterServices.GetUninitializedObject(implementation.Type);
+                    
+                    if (implementation.SingletonFlag == SingletonFlag.Singleton)
+                    {
+                        implementation.SingletonValue = instanceOne;
+                        implementation.SingletonFlag = SingletonFlag.SingletonWithValue;
+                    }
+
+                    if (dependency.ImplementationsCount == 1)
+                    {
+                        return instanceOne;
+                    }
+
+                    instances.SetValue(instanceOne, i);
+                    
+                    continue;
+                }
+
+                var reserved = ArrayCache.PullReserved(implementation.ConstructorDependenciesCount);
 
                 if (implementation.ScopeConfigurator != null)
                 {
-                    // var containerBuilder = new ContainerBuilder(64, _dependenciesOffset, _implementationsOffset);
-                    //
-                    // implementation.ScopeConfigurator.Invoke(containerBuilder);
-                    //
-                    // var container = containerBuilder.BuildInternal(this);
-                    //
-                    // for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
-                    // {
-                    //     var constructorDependencyId = _dependencyReferences[j + implementation.ConstructorDependenciesIndex];
-                    //
-                    //     if (constructorDependencyId < 0)
-                    //     {
-                    //         constructorDependencyId = container._dependenciesOffset;
-                    //         _dependencyReferences[j + implementation.ConstructorDependenciesIndex] = constructorDependencyId;
-                    //         
-                    //         reserved.Array[j + reserved.StartIndex] = container.Resolve(constructorDependencyId);
-                    //     }
-                    //     
-                    //     reserved.Array[j + reserved.StartIndex] = Resolve(constructorDependencyId);
-                    // }
+                    var containerBuilder = new ContainerBuilder(64);
+                    
+                    implementation.ScopeConfigurator.Invoke(containerBuilder);
+                    
+                    var container = containerBuilder.BuildInternal(this);
+                    
+                    for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
+                    {
+                        var constructorDependencyId = _dependencyReferences[j + implementation.ConstructorDependenciesIndex];
+
+                        if (_sparse[constructorDependencyId] < 0)
+                        {
+                            reserved.Array[j + reserved.StartIndex] = container.Resolve(constructorDependencyId);
+                        }
+                        else
+                        {
+                            reserved.Array[j + reserved.StartIndex] = Resolve(constructorDependencyId);
+                        }
+                    }
                 }
                 else
                 {
@@ -94,7 +113,7 @@ namespace CleanResolver
                     }
                 }
 
-                var constructorParameters = ArrayCache<object>.Pull(implementation.ConstructorDependenciesCount);
+                var constructorParameters = _arrays[implementation.ConstructorDependenciesCount];
 
                 for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
                 {
@@ -107,94 +126,7 @@ namespace CleanResolver
                 var instance = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
                     parameters: constructorParameters, culture: null);
 
-                ArrayCache<object>.PushReserved(ref reserved);
-                ArrayCache<object>.Push(constructorParameters);
-
-                if (implementation.SingletonFlag == SingletonFlag.Singleton)
-                {
-                    implementation.SingletonValue = instance;
-                    implementation.SingletonFlag = SingletonFlag.SingletonWithValue;
-                }
-
-                if (dependency.ImplementationsCount == 1)
-                {
-                    return instance;
-                }
-
-                instances.SetValue(instance, i);
-            }
-
-            return instances;
-        }
-        
-        private object ResolveOptimized(int temp)
-        {
-            temp = _dependencySparse[temp];
-            var deps = _dependencies;
-            ref var dependency = ref deps[temp];
-            var instances = dependency.ImplementationsCount == 1
-                ? null
-                : Array.CreateInstance(dependency.Type, dependency.ImplementationsCount);
-
-            temp++;
-
-            for (var i = 0; i < dependency.ImplementationsCount; i++)
-            {
-                ref var implementation = ref deps[temp + i];
-                temp = implementation.ConstructorDependenciesCount;
-
-                if (implementation.SingletonFlag == SingletonFlag.SingletonWithValue)
-                {
-                    return implementation.SingletonValue;
-                }
-
-                var reserved = ArrayCache<object>.PullReserved(temp);
-
-                if (implementation.ScopeConfigurator != null)
-                {
-                    // var containerBuilder = new ContainerBuilder(64, _dependenciesOffset, _implementationsOffset);
-                    //
-                    // implementation.ScopeConfigurator.Invoke(containerBuilder);
-                    //
-                    // var container = containerBuilder.BuildInternal(this);
-                    //
-                    // for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
-                    // {
-                    //     var constructorDependencyId = _dependencyReferences[j + implementation.ConstructorDependenciesIndex];
-                    //
-                    //     if (constructorDependencyId < 0)
-                    //     {
-                    //         constructorDependencyId = container._dependenciesOffset;
-                    //         _dependencyReferences[j + implementation.ConstructorDependenciesIndex] = constructorDependencyId;
-                    //         
-                    //         reserved.Array[j + reserved.StartIndex] = container.Resolve(constructorDependencyId);
-                    //     }
-                    //     
-                    //     reserved.Array[j + reserved.StartIndex] = Resolve(constructorDependencyId);
-                    // }
-                }
-                else
-                {
-                    var depRefs = _dependencyReferences;
-                    
-                    for (var j = 0; j < temp; j++)
-                    {
-                        reserved.Array[j + reserved.StartIndex] = ResolveOptimized(depRefs[j + implementation.ConstructorDependenciesIndex]);
-                    }
-                }
-
-                var constructorParameters = ArrayCache<object>.Pull(temp);
-
-                for (var j = 0; j < temp; j++)
-                {
-                    constructorParameters[j] = reserved.Array[j + reserved.StartIndex];
-                }
-
-                var instance = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
-                    parameters: constructorParameters, culture: null);
-
-                ArrayCache<object>.PushReserved(ref reserved);
-                ArrayCache<object>.Push(constructorParameters);
+                ArrayCache.PushReserved(implementation.ConstructorDependenciesCount);
 
                 if (implementation.SingletonFlag == SingletonFlag.Singleton)
                 {
@@ -215,7 +147,7 @@ namespace CleanResolver
 
         internal bool HasDependency(int dependencyId)
         {
-            return _dependencies[dependencyId].Type != null;
+            return _dense[dependencyId].Type != null;
         }
     }
 }

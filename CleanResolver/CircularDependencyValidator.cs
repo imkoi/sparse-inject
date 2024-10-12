@@ -1,54 +1,81 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace CleanResolver
 {
     public static class CircularDependencyValidator
     {
-        public static void ThrowIfInvalid(int implementationId, Stack<Dependency> stack,
-            Dependency[] dependencies, int[] implementationDependencyIds)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ThrowIfInvalid(int implementationsCount, Dependency[] dense, int[] sparse, int[] implementationDependencyIds)
         {
-            var i = 0;
-
-            ref var implementation = ref dependencies[implementationId];
-
-            foreach (var dependency in stack)
+            var circularDependencyChecker = new List<Dependency>();
+            
+            var index = 0;
+            var implementationIndex = 0;
+            
+            while (implementationIndex < implementationsCount)
             {
-                if (implementation.Type == dependency.Type)
+                ref var dependency = ref dense[index];
+                index++;
+                
+                for (var i = 0; i < dependency.ImplementationsCount; i++)
                 {
-                    stack.Push(implementation);
+                    circularDependencyChecker.Clear();
+                    
+                    ThrowIfInvalidRecursive(index + i,
+                        circularDependencyChecker, dense, sparse, implementationDependencyIds);
+
+                    implementationIndex++;
+                }
+
+                index += dependency.ImplementationsCount;
+            }
+        }
+        
+        private static void ThrowIfInvalidRecursive(int implementationId, List<Dependency> stack,
+            Dependency[] dense, int[] sparse, int[] implementationDependencyIds)
+        {
+            ref var implementation = ref dense[implementationId];
+            var stackCount = stack.Count;
+
+            for (var i = 0; i < stackCount; i++)
+            {
+                if (implementation.Type == stack[i].Type)
+                {
+                    stack.Add(implementation);
 
                     var path = string.Join("\n",
                         stack.Take(i + 1)
                             .Reverse()
                             .Select((item, itemIndex) => $"    [{itemIndex + 1}] {item} --> {item.Type.FullName}"));
                     
-                    throw new Exception($"{implementation.Type}: Circular dependency detected!\n{path}");
+                    throw new CleanResolverException($"{implementation.Type}: Circular dependency detected!\n{path}");
                 }
-                i++;
             }
 
-            stack.Push(implementation);
+            stack.Add(implementation);
 
-            for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
+            for (var i = 0; i < implementation.ConstructorDependenciesCount; i++)
             {
-                var constructorDependencyId = implementationDependencyIds[j + implementation.ConstructorDependenciesIndex];
+                var constructorDependencyId = implementationDependencyIds[i + implementation.ConstructorDependenciesIndex];
 
                 if (constructorDependencyId < 0 && implementation.ScopeConfigurator != null)
                 {
                     continue;
                 }
-                
-                ref var constructorDependency = ref dependencies[constructorDependencyId];
 
-                for (var k = 0; k < constructorDependency.ImplementationsCount; k++)
+                var constructorDependencyIndex = sparse[constructorDependencyId];
+                ref var constructorDependency = ref dense[constructorDependencyIndex];
+
+                for (var j = 0; j < constructorDependency.ImplementationsCount; j++)
                 {
-                    ThrowIfInvalid(k + j + 1, stack, dependencies, implementationDependencyIds);
+                    ThrowIfInvalidRecursive(constructorDependencyIndex + 1 + j, stack, dense, sparse, implementationDependencyIds);
                 }
             }
 
-            stack.Pop();
+            stack.RemoveAt(stack.Count - 1);
         }
     }
 }

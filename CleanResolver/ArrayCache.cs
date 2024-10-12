@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 
 namespace CleanResolver
@@ -6,10 +7,10 @@ namespace CleanResolver
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.DivideByZeroChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    internal static class ArrayCache<T>
+    internal static class ArrayCache
     {
-        private static T[][] _cache;
-        private static T[] _reserved = new T[1024 * 64];
+        internal static object[][] _cache;
+        private static object[] _reserved = new object[1024 * 64];
         private static int _count;
 
         private static Reserved _originalReserved = new Reserved()
@@ -17,34 +18,42 @@ namespace CleanResolver
             Array = _reserved
         };
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T[] Pull(int length)
+        public static object[][] GetConstructorParametersPool(int maxConstructorLength)
         {
+            var requestedArrayLength = maxConstructorLength + 1;
+            
             if (_cache == null)
             {
-                _cache = new T[64][];
-
-                for (var i = 0; i < 64; i++)
+                _cache = new object[requestedArrayLength][];
+            
+                for (var i = 0; i < requestedArrayLength; i++)
                 {
-                    _cache[i] = new T[i];
+                    _cache[i] = new object[i];
+                }
+
+                return _cache;
+            }
+            
+            var arrayLength = _cache.Length;
+
+            if (requestedArrayLength >= arrayLength)
+            {
+                Array.Resize(ref _cache, requestedArrayLength);
+
+                for (var i = arrayLength; i < requestedArrayLength; i++)
+                {
+                    _cache[i] = new object[i];
                 }
             }
 
-            return _cache[length];
+            return _cache;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Push(T[] array)
-        {
-            _cache[array.Length] = array;
-        }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Reserved PullReserved(int length)
         {
             ref var reserved = ref _originalReserved;
-
-            reserved.Count = length;
+            
             reserved.StartIndex = _count;
 
             _count += length;
@@ -53,16 +62,15 @@ namespace CleanResolver
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void PushReserved(ref Reserved reserved)
+        public static void PushReserved(int count)
         {
-            _count -= reserved.Count;
+            _count -= count;
         }
         
         public struct Reserved
         {
-            public T[] Array;
+            public object[] Array;
             public int StartIndex;
-            public int Count;
         }
     }
 }
