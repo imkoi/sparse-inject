@@ -1,6 +1,6 @@
 ﻿namespace CleanResolver.Tests.Scopes
 {
-    public class LevelEndPopup
+    public class FeaturePopup : IFeaturePopup
     {
         public void Show()
         {

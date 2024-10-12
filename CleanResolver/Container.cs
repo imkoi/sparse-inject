@@ -109,7 +109,16 @@ namespace CleanResolver
                 {
                     for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
                     {
-                        reserved.Array[j + reserved.StartIndex] = Resolve(_dependencyReferences[j + implementation.ConstructorDependenciesIndex]);
+                        var constructorDependencyId = _dependencyReferences[j + implementation.ConstructorDependenciesIndex];
+
+                        if (_sparse[constructorDependencyId] < 0)
+                        {
+                            reserved.Array[j + reserved.StartIndex] = _parentContainer.Resolve(constructorDependencyId);
+                        }
+                        else
+                        {
+                            reserved.Array[j + reserved.StartIndex] = Resolve(constructorDependencyId);
+                        }
                     }
                 }
 

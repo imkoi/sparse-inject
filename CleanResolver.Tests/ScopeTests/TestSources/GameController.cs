@@ -2,17 +2,17 @@
 {
     public class GameController
     {
-        private readonly LevelScope _levelScope;
+        private readonly FeatureScope _featureScope;
 
-        public GameController(LevelScope levelScope)
+        public GameController(FeatureScope featureScope)
         {
-            _levelScope = levelScope;
+            _featureScope = featureScope;
         }
 
         public void Execute()
         {
-            _levelScope.Execute();
-            _levelScope.Dispose();
+            _featureScope.Execute();
+            _featureScope.Dispose();
         }
     }
 }

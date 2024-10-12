@@ -67,12 +67,17 @@ namespace CleanResolver
                 }
 
                 var constructorDependencyIndex = sparse[constructorDependencyId];
-                ref var constructorDependency = ref dense[constructorDependencyIndex];
 
-                for (var j = 0; j < constructorDependency.ImplementationsCount; j++)
+                if (constructorDependencyIndex > 0)
                 {
-                    ThrowIfInvalidRecursive(constructorDependencyIndex + 1 + j, stack, dense, sparse, implementationDependencyIds);
+                    ref var constructorDependency = ref dense[constructorDependencyIndex];
+
+                    for (var j = 0; j < constructorDependency.ImplementationsCount; j++)
+                    {
+                        ThrowIfInvalidRecursive(constructorDependencyIndex + 1 + j, stack, dense, sparse, implementationDependencyIds);
+                    }
                 }
+                
             }
 
             stack.RemoveAt(stack.Count - 1);
