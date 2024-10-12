@@ -17,7 +17,7 @@ In comparison to VContainer with Reflection:
 - Smaller build size than VContainer
 - Careful usage of reflection functional - even typeof are always cached
 
-  | Metric                                       | CleanResolver    | VContainer      | Difference            |
+  | Metric                                       | SparseInject    | VContainer      | Difference            |
   |----------------------------------------------|------------------|-----------------|-----------------------|
   | Bind Time                                    | **2923**,563 ms  | **34114,22** ms | **91**.43% **Faster** |
   | Resolve Time [Min]                           | **40**,5466 ms   | **67**,8947 ms  | **40**.26% Faster     |
@@ -32,7 +32,7 @@ In comparison to VContainer with **Reflection Baking enabled**:
 - 30% less allocations
 - Up to 2x smaller build size (depend on amount of methods and fields in classes, 2x improve with constructors only)
 
-| Metric                                       | CleanResolver   | VContainer **Reflection Baking** | Difference             |
+| Metric                                       | SparseInject   | VContainer **Reflection Baking** | Difference             |
 |----------------------------------------------|-----------------|----------------------------------|------------------------|
 | Bind Time                                    | **2974**,29 ms  | **47184**,44 ms                  | **93**.7% **Faster**   |
 | Resolve Time [Min]                           | **36**,1111 ms  | **31**,1136 ms                   | **16**.06% Slower      |
@@ -43,7 +43,7 @@ In comparison to VContainer with **Reflection Baking enabled**:
 
 ### Allocations
 > [!NOTE]
-> Its hard to explain how much allocations CleanResolver have, but for example in this benchmark on bindings stage:
+> Its hard to explain how much allocations SparseInject have, but for example in this benchmark on bindings stage:
 > CleanResolver call _GC.Alloc_ **270**972 times, while VContainer call **618**832 _GC.Alloc_.
 > CleanResolver allocated 25.7 MB of ram (mostly for reflection) while VContainer allocated 32.7 MB
 #### Container Configuration Stage
