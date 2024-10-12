@@ -24,4 +24,8 @@
       <ProjectReference Include="..\CleanResolver\CleanResolver.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="ComplexTests\TestSources\Features\Inventory\" />
+    </ItemGroup>
+
 </Project>

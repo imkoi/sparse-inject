@@ -68,7 +68,7 @@ namespace CleanResolver
 
                 var constructorDependencyIndex = sparse[constructorDependencyId];
 
-                if (constructorDependencyIndex > 0)
+                if (constructorDependencyIndex >= 0)
                 {
                     ref var constructorDependency = ref dense[constructorDependencyIndex];
 

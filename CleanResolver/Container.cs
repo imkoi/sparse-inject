@@ -9,7 +9,7 @@ namespace CleanResolver
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.DivideByZeroChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public class Container
+    public class Container : IScopeResolver
     {
         private readonly Container _parentContainer;
 
@@ -63,7 +63,8 @@ namespace CleanResolver
 
                 if (implementation.ConstructorDependenciesCount == 0)
                 {
-                    var instanceOne = FormatterServices.GetUninitializedObject(implementation.Type);
+                    var instanceOne = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                        parameters: _arrays[0], culture: null);
                     
                     if (implementation.SingletonFlag == SingletonFlag.Singleton)
                     {
@@ -87,7 +88,7 @@ namespace CleanResolver
                 {
                     var containerBuilder = new ContainerBuilder(64);
                     
-                    implementation.ScopeConfigurator.Invoke(containerBuilder);
+                    implementation.ScopeConfigurator.Invoke(containerBuilder, this);
                     
                     var container = containerBuilder.BuildInternal(this);
                     
