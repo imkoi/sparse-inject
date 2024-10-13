@@ -158,7 +158,7 @@ namespace SparseInject
             {
                 var sizeWithImplementation = _denseCount + 2;
                 
-                if (sizeWithImplementation >= _dense.Length)
+                if (sizeWithImplementation > _dense.Length)
                 {
                     Array.Resize(ref _dense, sizeWithImplementation * 2);
                 }
@@ -171,9 +171,11 @@ namespace SparseInject
             }
             else
             {
-                if (dependencyIndex >= _dense.Length)
+                var requiredIndex = dependencyIndex + 1;
+                
+                if (requiredIndex >= _dense.Length)
                 {
-                    Array.Resize(ref _dense, dependencyIndex * 2);
+                    Array.Resize(ref _dense, requiredIndex * 2);
                 }
                 
                 _denseCount += 1;

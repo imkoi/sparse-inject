@@ -3,7 +3,7 @@
 using System.Diagnostics;
 using SparseInject;
 
-var containerBuilder = new ContainerBuilder();
+var containerBuilder = new ContainerBuilder(96 * 1024);
 var sw = new Stopwatch();
 var iter = 100;
 
