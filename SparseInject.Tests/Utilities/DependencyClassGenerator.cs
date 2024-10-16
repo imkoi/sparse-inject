@@ -8,8 +8,6 @@ namespace SparseInject.Tests.Utilities
     public class DependencyClassGenerator
     {
         [Test]
-        [TestCase(4)]
-        [TestCase(5)]
         [TestCase(6)]
         public void GenerateDependencies(int depth)
         {
@@ -22,7 +20,7 @@ namespace SparseInject.Tests.Utilities
                 codeLines[i] = codeLines[i].Replace("\n", "").Replace("\r", "");
             }
         
-            File.WriteAllLines("C:/github/sharpdate/Resolver/SparseInject.Tests/TestSources/GeneratedDependencies.cs", codeLines);
+            File.WriteAllLines($"C:/github/sparseinject/SparseInject.Tests/TestSources/GeneratedDependencies.cs", codeLines);
 
 
             var sb = new StringBuilder();
@@ -31,7 +29,7 @@ namespace SparseInject.Tests.Utilities
             sb.AppendLine();
             sb.AppendLine("public static class ContainerBinder");
             sb.AppendLine("{");
-            sb.AppendLine("    public static void BindDeps(Container container)");
+            sb.AppendLine("    public static void BindDeps(ContainerBuilder container)");
             sb.AppendLine("    {");
             foreach (var typeName in typeNames)
             {
@@ -47,7 +45,7 @@ namespace SparseInject.Tests.Utilities
                 binder[i] = binder[i].Replace("\n", "").Replace("\r", "");
             }
         
-            File.WriteAllLines("C:/github/sharpdate/Resolver/SparseInject.Tests/TestSources/ContainerBinder.cs", binder);
+            File.WriteAllLines($"C:/github/sparseinject/SparseInject.Tests/TestSources/ContainerBinder.cs", binder);
         }
     
         public static (string source, List<string> typeNames) GenerateClasses(int depth)
@@ -110,7 +108,7 @@ namespace SparseInject.Tests.Utilities
                 for (int i = 1; i <= dependencies; i++)
                 {
                     string dependentClass = $"{className}Dep{i}";
-                    GenerateClass(dependentClass, currentLevel + 1, dependencies * 2, maxDepth, sb, typeNames);
+                    GenerateClass(dependentClass, currentLevel + 1, dependencies + 3, maxDepth, sb, typeNames);
                 }
             }
         }

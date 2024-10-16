@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
 using Unity.IL2CPP.CompilerServices;
 
 namespace SparseInject
@@ -39,10 +38,10 @@ namespace SparseInject
         {
             var dependencyId = TypeCompileInfo<T>.GetRuntimeDependencyId();
 
-            return (T)Resolve(dependencyId);
+            return (T) Resolve(dependencyId);
         }
 
-        private object Resolve(int dependencyId)
+        public object Resolve(int dependencyId)
         {
             dependencyId = _sparse[dependencyId];
             ref var dependency = ref _dense[dependencyId];
@@ -63,8 +62,17 @@ namespace SparseInject
 
                 if (implementation.ConstructorDependenciesCount == 0)
                 {
-                    var instanceOne = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
-                        parameters: _arrays[0], culture: null);
+                    var instanceOne = default(object);
+
+                    if (implementation.GeneratedInstanceFactory != null)
+                    {
+                        instanceOne = implementation.GeneratedInstanceFactory.Create(null);
+                    }
+                    else
+                    {
+                        instanceOne = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                            parameters: _arrays[0], culture: null);
+                    }
                     
                     if (implementation.SingletonFlag == SingletonFlag.Singleton)
                     {
@@ -129,12 +137,18 @@ namespace SparseInject
                 {
                     constructorParameters[j] = reserved.Array[j + reserved.StartIndex];
                 }
-                // TODO: compare raw copy vs Array.Copy
-                // Array.Copy(reserved.Array, reserved.StartIndex, constructorParameters, 0,
-                //     implementation.ConstructorDependenciesCount);
 
-                var instance = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
-                    parameters: constructorParameters, culture: null);
+                var instance = default(object);
+                
+                if (implementation.GeneratedInstanceFactory != null)
+                {
+                    instance = implementation.GeneratedInstanceFactory.Create(constructorParameters);
+                }
+                else
+                {
+                    instance = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                        parameters: constructorParameters, culture: null);
+                }
 
                 ArrayCache.PushReserved(implementation.ConstructorDependenciesCount);
 

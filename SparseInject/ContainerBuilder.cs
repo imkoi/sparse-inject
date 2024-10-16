@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using Unity.IL2CPP.CompilerServices;
 
 namespace SparseInject
@@ -113,7 +115,9 @@ namespace SparseInject
             var stats = BuildPrecomputeDependenciesCount();
             var implementationDependencyIds = BuildBakeImplementationDependencyIds(
                 stats.implementationDependenciesCount,
-                stats.implementationConstructorParameters);
+                stats.implementationConstructorParameterInfos,
+                stats.implementationConstructorParameters,
+                stats.maxConstructorLength);
             
             CircularDependencyValidator.ThrowIfInvalid(_implementationsCount, _dense,
                 _sparse, implementationDependencyIds);
@@ -210,9 +214,10 @@ namespace SparseInject
             _implementationsCount++;
         }
 
-        private (int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameters, int maxConstructorLength) BuildPrecomputeDependenciesCount()
+        private (int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters, int maxConstructorLength) BuildPrecomputeDependenciesCount()
         {
-            var implementationConstructorParameters = new ParameterInfo[_implementationsCount][];
+            var implementationConstructorParameterInfos = new ParameterInfo[_implementationsCount][];
+            var implementationConstructorParameters = new Type[_implementationsCount][];
             var implementationDependenciesCount = 0;
             var index = 0;
             var implementationIndex = 0;
@@ -227,30 +232,47 @@ namespace SparseInject
                 for (var i = 0; i < dependency.ImplementationsCount; i++)
                 {
                     ref var implementation = ref _dense[index + i];
-
-                    implementation.ConstructorInfo = implementation.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)[0];
-                    var constructorParameters = implementation.ConstructorInfo.GetParameters();
-                    implementationConstructorParameters[implementationIndex] = constructorParameters;
                     
-                    implementation.ConstructorDependenciesCount = constructorParameters.Length;
-
-                    if (implementation.ConstructorDependenciesCount > maxConstructorLength)
+                    var constructorParametersCount = 0;
+                    
+                    if (ReflectionBakingProviderCache.TryGetInstanceFactory(implementation.Type, out var factory))
                     {
-                        maxConstructorLength = implementation.ConstructorDependenciesCount;
+                        constructorParametersCount = factory.ConstructorParametersCount;
+
+                        implementationConstructorParameters[implementationIndex] = factory.GetConstructorParameters();
+                        implementation.GeneratedInstanceFactory = factory;
+                    }
+                    else
+                    {
+                        implementation.ConstructorInfo = implementation.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)[0];
+                        var constructorParameters = implementation.ConstructorInfo.GetParameters();
+
+                        constructorParametersCount = constructorParameters.Length;
+                        
+                        implementationConstructorParameterInfos[implementationIndex] = constructorParameters;
+                    }
+                    
+                    implementation.ConstructorDependenciesCount = constructorParametersCount;
+
+                    if (constructorParametersCount > maxConstructorLength)
+                    {
+                        maxConstructorLength = constructorParametersCount;
                     }
 
-                    implementationDependenciesCount += implementation.ConstructorDependenciesCount;
+                    implementationDependenciesCount += constructorParametersCount;
                     implementationIndex++;
                 }
 
                 index += dependency.ImplementationsCount;
             }
 
-            return (implementationDependenciesCount, implementationConstructorParameters, maxConstructorLength);
+            return (implementationDependenciesCount, implementationConstructorParameterInfos, implementationConstructorParameters, maxConstructorLength);
         }
 
-        private int[] BuildBakeImplementationDependencyIds(int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameters)
+        private int[] BuildBakeImplementationDependencyIds(int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters, int maxConstructorLength)
         {
+            var generatedInstanceFactoryDependencyIds = new int[maxConstructorLength];
+            
             var dependencyReferences = new int[implementationDependenciesCount];
             var dependencyReferenceIndex = 0;
             
@@ -265,12 +287,18 @@ namespace SparseInject
                 for (var i = 0; i < dependency.ImplementationsCount; i++)
                 {
                     ref var implementation = ref _dense[index + i];
-
+                    
                     implementation.ConstructorDependenciesIndex = dependencyReferenceIndex;
                     
                     for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
                     {
-                        var parameterType = implementationConstructorParameters[implementationIndex][j].ParameterType;
+                        var parameterType = implementationConstructorParameters[implementationIndex][j];
+
+                        if (parameterType == null)
+                        {
+                            parameterType = implementationConstructorParameterInfos[implementationIndex][j]
+                                .ParameterType;
+                        }
 
                         if (parameterType.IsArray)
                         {
@@ -284,6 +312,7 @@ namespace SparseInject
                             }
                             
                             dependencyReferences[j + dependencyReferenceIndex] = constructorDependencyId;
+                            generatedInstanceFactoryDependencyIds[j] = constructorDependencyId;
                         }
                         else
                         {
@@ -295,9 +324,10 @@ namespace SparseInject
                             }
                             
                             dependencyReferences[j + dependencyReferenceIndex] = constructorDependencyId;
+                            generatedInstanceFactoryDependencyIds[j] = constructorDependencyId;
                         }
                     }
-                    
+    
                     dependencyReferenceIndex += implementation.ConstructorDependenciesCount;
                     implementationIndex++;
                 }
@@ -316,6 +346,7 @@ namespace SparseInject
         public int ConstructorDependenciesIndex;
         public int ConstructorDependenciesCount;
         public ConstructorInfo ConstructorInfo;
+        public IInstanceFactory GeneratedInstanceFactory;
         public int SingletonFlag;
         public object SingletonValue;
         public Action<IScopeBuilder, IScopeResolver> ScopeConfigurator;

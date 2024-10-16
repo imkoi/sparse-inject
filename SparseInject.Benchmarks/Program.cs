@@ -9,7 +9,7 @@ var iter = 100;
 
 sw.Restart();
 
-ContainerBinder33868Bindings.BindDeps(containerBuilder);
+ContainerBinder.BindDeps(containerBuilder);
 
 var container = containerBuilder.Build();
 
