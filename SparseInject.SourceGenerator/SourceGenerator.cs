@@ -5,13 +5,13 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Text;
-using VContainer.SourceGenerator;
+
+namespace SparseInject.SourceGenerator;
 
 [Generator]
-public class RegisterTypeExtractor : ISourceGenerator
+public class SourceGenerator : ISourceGenerator
 {
     public void Initialize(GeneratorInitializationContext context)
     {
@@ -56,10 +56,14 @@ public class RegisterTypeExtractor : ISourceGenerator
         
         codeWriter.AppendLine("using System;");
         codeWriter.AppendLine("using System.Collections.Generic;");
+        codeWriter.AppendLine("using System.Runtime.CompilerServices;");
         codeWriter.AppendLine("using SparseInject;");
+        
         codeWriter.AppendLine("#if UNITY_EDITOR");
+        codeWriter.AppendLine("using Unity.IL2CPP.CompilerServices;");
         codeWriter.AppendLine("using UnityEngine.Scripting;");
         codeWriter.AppendLine("#endif");
+        
         codeWriter.AppendLine();
         
         foreach (var syntaxTree in compilation.SyntaxTrees)
@@ -119,31 +123,49 @@ public class RegisterTypeExtractor : ISourceGenerator
                         generatedClasses.Add(new GeneratedInstanceFactory()
                         {
                             ClassName = typeName,
-                            GeneratedFactoryName = generateTypeName
+                            GeneratedFactoryName = generateTypeName,
+                            ConstructorParameterTypes = typeMeta.ConstructorParameters
                         });
                     }
                 }
             }
         }
         
-        codeWriter.AppendLine($"#if UNITY_EDITOR");
+        codeWriter.AppendLine("#if UNITY_EDITOR");
+        codeWriter.AppendLine("[Il2CppSetOption(Option.NullChecks, false)]");
+        codeWriter.AppendLine("[Il2CppSetOption(Option.DivideByZeroChecks, false)]");
+        codeWriter.AppendLine("[Il2CppSetOption(Option.ArrayBoundsChecks, false)]");
         codeWriter.AppendLine("[Preserve]");
         codeWriter.AppendLine("#endif");
         using (codeWriter.BeginBlockScope("class SparseInject_ReflectionBakingProvider : IReflectionBakingProvider"))
         {
-            codeWriter.AppendLine("private Dictionary<Type, IInstanceFactory> _cache;");
+            codeWriter.AppendLine("public Type[] ConstructorParametersSpan => _constructorParameterTypes;");
+            
+            codeWriter.AppendLine("private Dictionary<Type, InstanceFactoryBase> _cache;");
+            codeWriter.AppendLine("private Type[] _constructorParameterTypes;");
             
             using (codeWriter.BeginBlockScope("public void Initialize()"))
             {
-                codeWriter.AppendLine("_cache = new Dictionary<Type, IInstanceFactory>();");
+                var allConstructorParameters = generatedClasses.Sum(d => d.ConstructorParameterTypes.Length);
+                
+                codeWriter.AppendLine($"_cache = new Dictionary<Type, InstanceFactoryBase>({generatedClasses.Count});");
+                codeWriter.AppendLine($"_constructorParameterTypes = new Type[{allConstructorParameters}];");
+
+                var constructorIndex = 0;
 
                 foreach (var data in generatedClasses)
                 {
-                    codeWriter.AppendLine($"_cache.Add(typeof({data.ClassName}), new {data.GeneratedFactoryName}());");
+                    codeWriter.AppendLine($"_cache.Add(typeof({data.ClassName}), new {data.GeneratedFactoryName}({constructorIndex}));");
+
+                    for (var i = 0; i < data.ConstructorParameterTypes.Length; i++)
+                    {
+                        codeWriter.AppendLine($"_constructorParameterTypes[{constructorIndex}] = typeof({data.ConstructorParameterTypes[i].paramType});");
+                        constructorIndex++;
+                    }
                 }
             }
             
-            using (codeWriter.BeginBlockScope("public IInstanceFactory GetInstanceFactory(Type type)"))
+            using (codeWriter.BeginBlockScope("public InstanceFactoryBase GetInstanceFactory(Type type)"))
             {
                 using (codeWriter.BeginBlockScope(
                            "if (_cache.TryGetValue(type, out var instanceFactory))"))
@@ -154,16 +176,9 @@ public class RegisterTypeExtractor : ISourceGenerator
                 codeWriter.AppendLine("return null;");
             }
         }
-
-        try
-        {
-            context.AddSource("SparseInject_GeneratedInstanceFactory.g.cs",
-                SourceText.From(codeWriter.ToString(), Encoding.UTF8));
-        }
-        catch (Exception)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.AssemblySourceGenerationFailed, Location.None, compilation.Assembly.Name));
-        }
+        
+        context.AddSource("SparseInject_GeneratedInstanceFactory.g.cs",
+            SourceText.From(codeWriter.ToString(), Encoding.UTF8));
     }
 }
 
@@ -171,6 +186,7 @@ class GeneratedInstanceFactory
 {
     public string ClassName;
     public string GeneratedFactoryName;
+    public (string paramType, string paramName)[] ConstructorParameterTypes;
 }
 
 class RegisterSyntaxReceiver : ISyntaxReceiver

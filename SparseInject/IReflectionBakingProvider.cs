@@ -4,7 +4,8 @@ namespace SparseInject
 {
     public interface IReflectionBakingProvider
     {
+        Type[] ConstructorParametersSpan { get; }
         void Initialize();
-        IInstanceFactory GetInstanceFactory(Type type);
+        InstanceFactoryBase GetInstanceFactory(Type type);
     }
 }

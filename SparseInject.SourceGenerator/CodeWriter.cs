@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace VContainer.SourceGenerator
+namespace SparseInject.SourceGenerator
 {
     public class CodeWriter
     {

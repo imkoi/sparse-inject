@@ -235,11 +235,11 @@ namespace SparseInject
                     
                     var constructorParametersCount = 0;
                     
-                    if (ReflectionBakingProviderCache.TryGetInstanceFactory(implementation.Type, out var factory))
+                    if (ReflectionBakingProviderCache.TryGetInstanceFactory(implementation.Type, out var factory, out var constructorParametersSpan))
                     {
                         constructorParametersCount = factory.ConstructorParametersCount;
 
-                        implementationConstructorParameters[implementationIndex] = factory.GetConstructorParameters();
+                        implementationConstructorParameters[implementationIndex] = constructorParametersSpan;
                         implementation.GeneratedInstanceFactory = factory;
                     }
                     else
@@ -296,7 +296,7 @@ namespace SparseInject
                         
                         if (implementationConstructorParameters[implementationIndex] != null)
                         {
-                            parameterType = implementationConstructorParameters[implementationIndex][j];
+                            parameterType = implementationConstructorParameters[implementationIndex][implementation.GeneratedInstanceFactory.ConstructorParametersIndex + j];
                         }
                         else
                         {
@@ -350,7 +350,7 @@ namespace SparseInject
         public int ConstructorDependenciesIndex;
         public int ConstructorDependenciesCount;
         public ConstructorInfo ConstructorInfo;
-        public IInstanceFactory GeneratedInstanceFactory;
+        public InstanceFactoryBase GeneratedInstanceFactory;
         public int SingletonFlag;
         public object SingletonValue;
         public Action<IScopeBuilder, IScopeResolver> ScopeConfigurator;

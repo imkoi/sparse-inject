@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace VContainer.SourceGenerator
+namespace SparseInject.SourceGenerator
 {
     static class DiagnosticDescriptors
     {

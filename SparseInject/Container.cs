@@ -38,7 +38,7 @@ namespace SparseInject
         {
             var dependencyId = TypeCompileInfo<T>.GetRuntimeDependencyId();
 
-            return (T) Resolve(dependencyId);
+            return Unsafe.As<T>(Resolve(dependencyId));
         }
 
         public object Resolve(int dependencyId)
@@ -167,11 +167,6 @@ namespace SparseInject
             }
 
             return instances;
-        }
-
-        internal bool HasDependency(int dependencyId)
-        {
-            return _dense[dependencyId].Type != null;
         }
     }
 }

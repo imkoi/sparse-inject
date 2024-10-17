@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SparseInject.SourceGenerator;
 
-namespace VContainer.SourceGenerator
+namespace SparseInject.SourceGenerator
 {
     static class Analyzer
 {

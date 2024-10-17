@@ -1,11 +1,6 @@
-using System;
-using System.Linq;
 using Microsoft.CodeAnalysis;
-#if ROSLYN3
-using SourceProductionContext = Microsoft.CodeAnalysis.GeneratorExecutionContext;
-#endif
 
-namespace VContainer.SourceGenerator;
+namespace SparseInject.SourceGenerator;
 
 static class Emitter
 {
@@ -30,22 +25,65 @@ static class Emitter
             .Replace("global::", "")
             .Replace("<", "_")
             .Replace(">", "_");
+        
+        var constructorSymbol = typeMeta.Constructor;
+
+        if (constructorSymbol != null)
+        {
+            if (!constructorSymbol.CanBeCallFromInternal())
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DiagnosticDescriptors.PrivateConstructorNotSupported,
+                    typeMeta.GetLocation(),
+                    typeMeta.TypeName));
+                return false;
+            }
+
+            if (constructorSymbol.Arity > 0)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DiagnosticDescriptors.GenericsNotSupported,
+                    typeMeta.GetLocation(),
+                    typeMeta.TypeName));
+                return false;
+            }
+        }
 
         var generateTypeName = $"{typeName}_SparseInject_GeneratedInstanceFactory";
 
-        codeWriter.AppendLine($"#if UNITY_EDITOR");
+        codeWriter.AppendLine("#if UNITY_EDITOR");
+        codeWriter.AppendLine("[Il2CppSetOption(Option.NullChecks, false)]");
+        codeWriter.AppendLine("[Il2CppSetOption(Option.DivideByZeroChecks, false)]");
+        codeWriter.AppendLine("[Il2CppSetOption(Option.ArrayBoundsChecks, false)]");
         codeWriter.AppendLine("[Preserve]");
         codeWriter.AppendLine("#endif");
-        using (codeWriter.BeginBlockScope($"class {generateTypeName} : IInstanceFactory"))
+        using (codeWriter.BeginBlockScope($"class {generateTypeName} : InstanceFactoryBase"))
         {
-            if (!TryEmitGetConstructorParameters(typeMeta, codeWriter, context))
+            using (codeWriter.BeginBlockScope($"public {generateTypeName}(int constructorParametersIndex)"))
             {
-                return false;
+                codeWriter.AppendLine("ConstructorParametersIndex = constructorParametersIndex;");
+                codeWriter.AppendLine($"ConstructorParametersCount = {typeMeta.ConstructorParameters.Length};");
             }
             
-            if (!TryEmitCreateInstanceMethod(typeMeta, codeWriter, context))
+            using (codeWriter.BeginBlockScope("public override object Create(object[] arguments)"))
             {
-                return false;
+                var parameters = typeMeta.ConstructorParameters;
+                
+                if (constructorSymbol != null)
+                {
+                    var args = new string[parameters.Length];
+                
+                    for (var i = 0; i < parameters.Length; i++)
+                    {
+                        args[i] = $"Unsafe.As<{parameters[i].paramType}>(arguments[{i}])";
+                    }
+
+                    codeWriter.AppendLine($"return new {typeMeta.TypeName}({string.Join(", ", args)});");
+                }
+                else
+                {
+                    codeWriter.AppendLine($"return new {typeMeta.TypeName}();");
+                }
             }
         }
 
@@ -54,132 +92,6 @@ static class Emitter
             codeWriter.EndBlock();
         }
 
-        return true;
-    }
-    
-    private static bool TryEmitGetConstructorParameters(
-        TypeMeta typeMeta,
-        CodeWriter codeWriter,
-        GeneratorExecutionContext context)
-    {
-        var constructorSymbol = typeMeta.Constructors.OrderByDescending(ctor => ctor.Parameters.Length).FirstOrDefault();
-
-        if (constructorSymbol != null)
-        {
-            if (!constructorSymbol.CanBeCallFromInternal())
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.PrivateConstructorNotSupported,
-                    typeMeta.GetLocation(),
-                    typeMeta.TypeName));
-                return false;
-            }
-
-            if (constructorSymbol.Arity > 0)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.GenericsNotSupported,
-                    typeMeta.GetLocation(),
-                    typeMeta.TypeName));
-                return false;
-            }
-        }
-        
-        var parameters = constructorSymbol != null ? constructorSymbol.Parameters
-            .Select(param =>
-            {
-                var paramType =
-                    param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                var paramName = param.Name;
-                return (paramType, paramName);
-            })
-            .ToArray() : Array.Empty<(string paramType, string paramName)>();
-        
-        
-        codeWriter.AppendLine($"public int ConstructorParametersCount => {parameters.Length};");
-        codeWriter.AppendLine();
-
-        using (codeWriter.BeginBlockScope("public Type[] GetConstructorParameters()"))
-        {
-            if (constructorSymbol != null)
-            {
-                var args = new string[parameters.Length];
-                
-                for (var i = 0; i < parameters.Length; i++)
-                {
-                    args[i] = $"typeof({parameters[i].paramType})";
-                }
-
-                var argsArray = "{" + string.Join(", ", args) + "}";
-
-                codeWriter.AppendLine($"return new Type[]{argsArray};");
-            }
-            else
-            {
-                codeWriter.AppendLine("return null;");
-            }
-        }
-        
-        return true;
-    }
-
-    private static bool TryEmitCreateInstanceMethod(
-        TypeMeta typeMeta,
-        CodeWriter codeWriter,
-        GeneratorExecutionContext context)
-    {
-        var constructorSymbol = typeMeta.Constructors.OrderByDescending(ctor => ctor.Parameters.Length).FirstOrDefault();
-
-        if (constructorSymbol != null)
-        {
-            if (!constructorSymbol.CanBeCallFromInternal())
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.PrivateConstructorNotSupported,
-                    typeMeta.GetLocation(),
-                    typeMeta.TypeName));
-                return false;
-            }
-
-            if (constructorSymbol.Arity > 0)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.GenericsNotSupported,
-                    typeMeta.GetLocation(),
-                    typeMeta.TypeName));
-                return false;
-            }
-        }
-        
-        var parameters = constructorSymbol != null ? constructorSymbol.Parameters
-            .Select(param =>
-            {
-                var paramType =
-                    param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                var paramName = param.Name;
-                return (paramType, paramName);
-            })
-            .ToArray() : Array.Empty<(string paramType, string paramName)>();
-
-        using (codeWriter.BeginBlockScope("public object Create(object[] arguments)"))
-        {
-            if (constructorSymbol != null)
-            {
-                var args = new string[parameters.Length];
-                
-                for (var i = 0; i < parameters.Length; i++)
-                {
-                    args[i] = $"({parameters[i].paramType})arguments[{i}]";
-                }
-
-                codeWriter.AppendLine($"return new {typeMeta.TypeName}({string.Join(", ", args)});");
-            }
-            else
-            {
-                codeWriter.AppendLine($"return new {typeMeta.TypeName}();");
-            }
-        }
-        
         return true;
     }
 }

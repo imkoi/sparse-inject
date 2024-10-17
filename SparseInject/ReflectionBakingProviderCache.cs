@@ -9,16 +9,18 @@ namespace SparseInject
     {
         private static Dictionary<Assembly, IReflectionBakingProvider> _cache = new Dictionary<Assembly, IReflectionBakingProvider>(32);
 
-        public static bool TryGetInstanceFactory(Type type, out IInstanceFactory instanceFactory)
+        public static bool TryGetInstanceFactory(Type type, out InstanceFactoryBase instanceFactory, out Type[] constructorParameterTypes)
         {
             if (TryGetProvider(type.Assembly, out var provider))
             {
                 instanceFactory = provider.GetInstanceFactory(type);
-
+                constructorParameterTypes = provider.ConstructorParametersSpan;
+                
                 return true;
             }
 
             instanceFactory = null;
+            constructorParameterTypes = null;
             
             return false;
         }

@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace VContainer.SourceGenerator;
+namespace SparseInject.SourceGenerator;
 
 class TypeMeta
 {
@@ -11,7 +12,8 @@ class TypeMeta
     public string TypeName { get; }
     public string FullTypeName { get; }
 
-    public IReadOnlyList<IMethodSymbol> Constructors { get; }
+    public IMethodSymbol? Constructor { get; }
+    public (string paramType, string paramName)[] ConstructorParameters { get; }
 
     public bool IsGenerics => Symbol.Arity > 0;
 
@@ -25,7 +27,8 @@ class TypeMeta
         TypeName = symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
         FullTypeName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
-        Constructors = GetConstructors();
+        Constructor = GetConstructor();
+        ConstructorParameters = GetConstructorParameters(Constructor);
     }
 
     public Location GetLocation()
@@ -55,11 +58,27 @@ class TypeMeta
         return false;
     }
 
-    IReadOnlyList<IMethodSymbol> GetConstructors()
+    private IMethodSymbol? GetConstructor()
     {
         return Symbol.InstanceConstructors
-            .Where(x => !x.IsImplicitlyDeclared) // remove empty ctor(struct always generate it), record's clone ctor
-            .ToArray();
+            .Where(x => !x.IsImplicitlyDeclared)
+            .OrderByDescending(ctor => ctor.Parameters.Length)
+            .FirstOrDefault();
+    }
+
+    private (string paramType, string paramName)[] GetConstructorParameters(IMethodSymbol? constructorSymbol)
+    {
+        var parameters = constructorSymbol != null ? constructorSymbol.Parameters
+            .Select(param =>
+            {
+                var paramType =
+                    param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                var paramName = param.Name;
+                return (paramType, paramName);
+            })
+            .ToArray() : Array.Empty<(string paramType, string paramName)>();
+
+        return parameters;
     }
 
     public bool IsNested()
