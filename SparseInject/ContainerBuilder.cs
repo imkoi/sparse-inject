@@ -292,9 +292,13 @@ namespace SparseInject
                     
                     for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
                     {
-                        var parameterType = implementationConstructorParameters[implementationIndex][j];
-
-                        if (parameterType == null)
+                        var parameterType = default(Type);
+                        
+                        if (implementationConstructorParameters[implementationIndex] != null)
+                        {
+                            parameterType = implementationConstructorParameters[implementationIndex][j];
+                        }
+                        else
                         {
                             parameterType = implementationConstructorParameterInfos[implementationIndex][j]
                                 .ParameterType;
