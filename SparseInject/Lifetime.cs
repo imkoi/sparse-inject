@@ -1,6 +1,6 @@
 ﻿namespace SparseInject
 {
-    public enum RegisterType
+    public enum Lifetime
     {
         Transient,
         Singleton

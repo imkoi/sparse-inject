@@ -6,13 +6,13 @@
         {
             scopeBuilder.Register<GameRootController>();
             
-            scopeBuilder.Register<IAuthorizationService, AuthorizationService>(RegisterType.Singleton);
+            scopeBuilder.Register<IAuthorizationService, AuthorizationService>(Lifetime.Singleton);
             
-            scopeBuilder.Register<ILoadingScreenService, LoadingScreenService>(RegisterType.Singleton);
+            scopeBuilder.Register<ILoadingScreenService, LoadingScreenService>(Lifetime.Singleton);
             
-            scopeBuilder.Register<IMainScreenService, MainScreenService>(RegisterType.Singleton);
+            scopeBuilder.Register<IMainScreenService, MainScreenService>(Lifetime.Singleton);
             
-            scopeBuilder.Register<ICurrencyService, CurrencyService>(RegisterType.Singleton);
+            scopeBuilder.Register<ICurrencyService, CurrencyService>(Lifetime.Singleton);
         }
     }
 }

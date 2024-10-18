@@ -6,9 +6,9 @@ namespace SparseInject
     {
         void Register(Action<IScopeBuilder> registerMethod);
         
-        public void Register<TKey>(RegisterType registerType = RegisterType.Transient)
+        public void Register<TKey>(Lifetime lifetime = Lifetime.Transient)
             where TKey : class;
-        public void Register<TKey, TImplementation>(RegisterType registerType = RegisterType.Transient)
+        public void Register<TKey, TImplementation>(Lifetime lifetime = Lifetime.Transient)
             where TKey : class
             where TImplementation : class, TKey;
         public void Register<TKey>(TKey value)

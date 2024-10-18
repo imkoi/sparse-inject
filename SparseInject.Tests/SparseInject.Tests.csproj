@@ -26,4 +26,8 @@
       <ProjectReference Include="..\SparseInject\SparseInject.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="VContainer\" />
+    </ItemGroup>
+
 </Project>

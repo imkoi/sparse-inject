@@ -37,22 +37,42 @@ namespace SparseInject
             registerMethod.Invoke(this);
         }
 
-        public void Register<TKey>(RegisterType registerType = RegisterType.Transient)
+        public void Register<TKey>(Lifetime lifetime = Lifetime.Transient)
             where TKey : class
         {
-            Register<TKey, TKey>(registerType);
+            Register<TKey, TKey>(lifetime);
         }
 
-        public void Register<TKey, TImplementation>(RegisterType registerType = RegisterType.Transient)
+        public void Register<TKey, TImplementation>(Lifetime lifetime = Lifetime.Transient)
             where TKey : class
             where TImplementation : class, TKey
         {
             RegisterDependency<TKey, TImplementation>(out var implementationIndex);
 
             ref var implementation = ref _dense[implementationIndex];
-            implementation.SingletonFlag = registerType == RegisterType.Singleton 
-                ? SingletonFlag.Singleton 
+            implementation.SingletonFlag = lifetime == Lifetime.Singleton 
+                ? SingletonFlag.Singleton
                 : SingletonFlag.NotSingleton;
+        }
+        
+        public void Register<TKey0, TKey1, TImplementation>(Lifetime lifetime = Lifetime.Transient)
+            where TKey0 : class
+            where TKey1 : class
+            where TImplementation : class, TKey0, TKey1
+        {
+            Register<TKey0, TImplementation>(lifetime);
+            Register<TKey1, TImplementation>(lifetime);
+        }
+        
+        public void Register<TKey0, TKey1, TKey2, TImplementation>(Lifetime lifetime = Lifetime.Transient)
+            where TKey0 : class
+            where TKey1 : class
+            where TKey2 : class
+            where TImplementation : class, TKey0, TKey1, TKey2
+        {
+            Register<TKey0, TImplementation>(lifetime);
+            Register<TKey1, TImplementation>(lifetime);
+            Register<TKey2, TImplementation>(lifetime);
         }
 
         public void Register<TKey>(TKey value)
