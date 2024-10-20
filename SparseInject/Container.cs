@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
@@ -11,23 +12,31 @@ namespace SparseInject
     public class Container : IScopeResolver
     {
         private readonly Container _parentContainer;
-
-        private readonly Dependency[] _dense;
-        private readonly int[] _sparse;
+        private readonly Dictionary<Type, int> _contractIds;
+        private readonly int[] _contractsSparse;
+        private readonly Contract[] _contractsDense;
+        private readonly int[] _contractsConcretesIndices;
+        private readonly Concrete[] _concretes;
         private readonly int[] _dependencyReferences;
         
         private readonly object[][] _arrays;
 
         internal Container(
             Container parentContainer,
-            Dependency[] dependenciesDense,
-            int[] sparse,
+            Dictionary<Type, int> contractIds,
+            int[] contractsSparse,
+            Contract[] contractsDense,
+            int[] contractsConcretesIndices,
+            Concrete[] concretes,
             int[] dependencyReferences,
             int maxConstructorLength)
         {
             _parentContainer = parentContainer;
-            _dense = dependenciesDense;
-            _sparse = sparse;
+            _contractIds = contractIds;
+            _contractsSparse = contractsSparse;
+            _contractsDense = contractsDense;
+            _contractsConcretesIndices = contractsConcretesIndices;
+            _concretes = concretes;
             _dependencyReferences = dependencyReferences;
 
             _arrays = ArrayCache.GetConstructorParametersPool(maxConstructorLength);
@@ -36,75 +45,77 @@ namespace SparseInject
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Resolve<T>() where T : class
         {
-            var dependencyId = TypeCompileInfo<T>.GetRuntimeDependencyId();
+            if (_contractIds.TryGetValue(typeof(T), out var id))
+            {
+                return (T) Resolve(id);
+            }
 
-            return Unsafe.As<T>(Resolve(dependencyId));
+            throw new SparseInjectException("Trying to resolve unknown type");
         }
 
         public object Resolve(int dependencyId)
         {
-            dependencyId = _sparse[dependencyId];
-            ref var dependency = ref _dense[dependencyId];
-            var instances = dependency.ImplementationsCount == 1
+            dependencyId = _contractsSparse[dependencyId];
+            ref var contract = ref _contractsDense[dependencyId];
+            var instances = contract.ConcretesCount == 1
                 ? null
-                : Array.CreateInstance(dependency.Type, dependency.ImplementationsCount);
+                : Array.CreateInstance(contract.Type, contract.ConcretesCount);
 
-            dependencyId++;
-
-            for (var i = 0; i < dependency.ImplementationsCount; i++)
+            for (var i = 0; i < contract.ConcretesCount; i++)
             {
-                ref var implementation = ref _dense[dependencyId + i];
-
-                if (implementation.SingletonFlag == SingletonFlag.SingletonWithValue)
+                var concreteIndex = _contractsConcretesIndices[contract.ConcretesIndex + i];
+                ref var concrete = ref _concretes[concreteIndex];
+            
+                if (concrete.SingletonFlag == SingletonFlag.SingletonWithValue)
                 {
-                    return implementation.SingletonValue;
+                    return concrete.SingletonValue;
                 }
-
-                if (implementation.ConstructorDependenciesCount == 0)
+            
+                if (concrete.ConstructorDependenciesCount == 0)
                 {
                     var instanceOne = default(object);
-
-                    if (implementation.GeneratedInstanceFactory != null)
+            
+                    if (concrete.GeneratedInstanceFactory != null)
                     {
-                        instanceOne = implementation.GeneratedInstanceFactory.Create(null);
+                        instanceOne = concrete.GeneratedInstanceFactory.Create(null);
                     }
                     else
                     {
-                        instanceOne = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                        instanceOne = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
                             parameters: _arrays[0], culture: null);
                     }
                     
-                    if (implementation.SingletonFlag == SingletonFlag.Singleton)
+                    if (concrete.SingletonFlag == SingletonFlag.Singleton)
                     {
-                        implementation.SingletonValue = instanceOne;
-                        implementation.SingletonFlag = SingletonFlag.SingletonWithValue;
+                        concrete.SingletonValue = instanceOne;
+                        concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
                     }
-
-                    if (dependency.ImplementationsCount == 1)
+            
+                    if (contract.ConcretesCount == 1)
                     {
                         return instanceOne;
                     }
-
+            
                     instances.SetValue(instanceOne, i);
                     
                     continue;
                 }
-
-                var reserved = ArrayCache.PullReserved(implementation.ConstructorDependenciesCount);
-
-                if (implementation.ScopeConfigurator != null)
+            
+                var reserved = ArrayCache.PullReserved(concrete.ConstructorDependenciesCount);
+            
+                if (concrete.ScopeConfigurator != null)
                 {
                     var containerBuilder = new ContainerBuilder(64);
                     
-                    implementation.ScopeConfigurator.Invoke(containerBuilder, this);
+                    concrete.ScopeConfigurator.Invoke(containerBuilder, this);
                     
                     var container = containerBuilder.BuildInternal(this);
                     
-                    for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
+                    for (var j = 0; j < concrete.ConstructorDependenciesCount; j++)
                     {
-                        var constructorDependencyId = _dependencyReferences[j + implementation.ConstructorDependenciesIndex];
-
-                        if (_sparse[constructorDependencyId] < 0)
+                        var constructorDependencyId = _dependencyReferences[j + concrete.ConstructorDependenciesIndex];
+            
+                        if (_contractsSparse[constructorDependencyId] < 0)
                         {
                             reserved.Array[j + reserved.StartIndex] = container.Resolve(constructorDependencyId);
                         }
@@ -116,11 +127,11 @@ namespace SparseInject
                 }
                 else
                 {
-                    for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
+                    for (var j = 0; j < concrete.ConstructorDependenciesCount; j++)
                     {
-                        var constructorDependencyId = _dependencyReferences[j + implementation.ConstructorDependenciesIndex];
-
-                        if (_sparse[constructorDependencyId] < 0)
+                        var constructorDependencyId = _dependencyReferences[j + concrete.ConstructorDependenciesIndex];
+            
+                        if (_contractsSparse[constructorDependencyId] < 0)
                         {
                             reserved.Array[j + reserved.StartIndex] = _parentContainer.Resolve(constructorDependencyId);
                         }
@@ -130,42 +141,42 @@ namespace SparseInject
                         }
                     }
                 }
-
-                var constructorParameters = _arrays[implementation.ConstructorDependenciesCount];
-
-                for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
+            
+                var constructorParameters = _arrays[concrete.ConstructorDependenciesCount];
+            
+                for (var j = 0; j < concrete.ConstructorDependenciesCount; j++)
                 {
                     constructorParameters[j] = reserved.Array[j + reserved.StartIndex];
                 }
-
+            
                 var instance = default(object);
                 
-                if (implementation.GeneratedInstanceFactory != null)
+                if (concrete.GeneratedInstanceFactory != null)
                 {
-                    instance = implementation.GeneratedInstanceFactory.Create(constructorParameters);
+                    instance = concrete.GeneratedInstanceFactory.Create(constructorParameters);
                 }
                 else
                 {
-                    instance = implementation.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                    instance = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
                         parameters: constructorParameters, culture: null);
                 }
-
-                ArrayCache.PushReserved(implementation.ConstructorDependenciesCount);
-
-                if (implementation.SingletonFlag == SingletonFlag.Singleton)
+            
+                ArrayCache.PushReserved(concrete.ConstructorDependenciesCount);
+            
+                if (concrete.SingletonFlag == SingletonFlag.Singleton)
                 {
-                    implementation.SingletonValue = instance;
-                    implementation.SingletonFlag = SingletonFlag.SingletonWithValue;
+                    concrete.SingletonValue = instance;
+                    concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
                 }
-
-                if (dependency.ImplementationsCount == 1)
+            
+                if (contract.ConcretesCount == 1)
                 {
                     return instance;
                 }
-
+            
                 instances.SetValue(instance, i);
             }
-
+            
             return instances;
         }
     }

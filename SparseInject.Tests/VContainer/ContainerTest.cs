@@ -156,7 +156,7 @@ namespace VContainer.Tests
             Assert.That(e0, Is.TypeOf<MultipleInterfaceServiceA>());
             Assert.That(e1, Is.TypeOf<MultipleInterfaceServiceB>());
 
-            var list = container.Resolve<IReadOnlyList<I1>>();
+            var list = container.Resolve<I1[]>();
             Assert.That(list[0], Is.TypeOf<MultipleInterfaceServiceA>());
             Assert.That(list[1], Is.TypeOf<MultipleInterfaceServiceB>());
 
@@ -169,7 +169,7 @@ namespace VContainer.Tests
         }
 
         [Test]
-        public void ResolveLastOneWhenConflicted()
+        public void ResolveLastOneWhenConflicted() // SHOULD THROW
         {
             var builder = new ContainerBuilder();
             builder.Register<I1, MultipleInterfaceServiceA>(Lifetime.Transient);
@@ -198,7 +198,7 @@ namespace VContainer.Tests
             Assert.That(e0, Is.TypeOf<MultipleInterfaceServiceA>());
             Assert.That(enumerable.Count(), Is.EqualTo(1));
 
-            var list = container.Resolve<IReadOnlyList<I1>>();
+            var list = container.Resolve<I1[]>();
             Assert.That(list[0], Is.TypeOf<MultipleInterfaceServiceA>());
             Assert.That(list.Count, Is.EqualTo(1));
         }
@@ -437,7 +437,6 @@ namespace VContainer.Tests
        //      Assert.Throws<VContainerException>(() => container.Resolve<AllInjectionFeatureService>(),
        //          "Failed to resolve VContainer.Tests.AllInjectionFeatureService : No such registration of type: VContainer.Tests.I6");
        // }
-
         // [Test]
         // public void OnContainerDisposeCallback()
         // {

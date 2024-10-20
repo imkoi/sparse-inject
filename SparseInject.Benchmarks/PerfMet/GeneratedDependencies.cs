@@ -8,6 +8,11 @@ public class Class0
         _class0dep1 = class0dep1;
         _class0dep2 = class0dep2;
     }
+    
+    public override string ToString()
+    {
+        return $"{_class0dep1.ToString()}, {_class0dep2.ToString()}";
+    }
 }
 
 public class Class0Dep1

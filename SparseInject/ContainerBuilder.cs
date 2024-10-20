@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -12,23 +13,30 @@ namespace SparseInject
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class ContainerBuilder : IScopeBuilder
     {
-        private int[] _sparse;
-        private Dependency[] _dense;
+        private readonly Dictionary<Type, int> _contractIds;
+        
+        private int[] _contractsSparse;
+        private Contract[] _contractsDense;
+        private int[] _contractsConcretesIndices;
+        private Concrete[] _concretes;
 
         private int _dependenciesCount;
         private int _implementationsCount;
-
-        private int _denseCount;
+        
         private int _lastSparseIndex;
+        private int _lastContractsConcretesIndex;
         
         public ContainerBuilder(int capacity = 4096)
         {
-            _sparse = new int[capacity];
-            _dense = new Dependency[capacity];
+            _contractIds = new Dictionary<Type, int>(capacity);
+            _contractsSparse = new int[capacity];
+            _contractsDense = new Contract[capacity];
+            _contractsConcretesIndices = new int[capacity];
+            _concretes = new Concrete[capacity];
 
             for (var i = 0; i < capacity; i++)
             {
-                _sparse[i] = -1;
+                _contractsSparse[i] = -1;
             }
         }
         
@@ -47,10 +55,11 @@ namespace SparseInject
             where TKey : class
             where TImplementation : class, TKey
         {
-            RegisterDependency<TKey, TImplementation>(out var implementationIndex);
+            ref var concrete = ref AddConcrete(typeof(TImplementation), out var index);
+            
+            AddContract(typeof(TKey), index);
 
-            ref var implementation = ref _dense[implementationIndex];
-            implementation.SingletonFlag = lifetime == Lifetime.Singleton 
+            concrete.SingletonFlag = lifetime == Lifetime.Singleton 
                 ? SingletonFlag.Singleton
                 : SingletonFlag.NotSingleton;
         }
@@ -85,11 +94,12 @@ namespace SparseInject
             where TKey : class
             where TImplementation : class, TKey
         {
-            RegisterDependency<TKey, TImplementation>(out var implementationIndex);
+            ref var concrete = ref AddConcrete(typeof(TImplementation), out var index);
             
-            ref var implementation = ref _dense[implementationIndex];
-            implementation.SingletonFlag = SingletonFlag.SingletonWithValue;
-            implementation.SingletonValue = value;
+            AddContract(typeof(TKey), index);
+
+            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
+            concrete.SingletonValue = value;
         }
         
         public void RegisterScope<TScope>(Action<IScopeBuilder> install)
@@ -118,11 +128,12 @@ namespace SparseInject
             where TScope : class, IDisposable
             where TScopeImplementation : Scope
         {
-            RegisterDependency<TScope, TScopeImplementation>(out var implementationIndex);
+            ref var concrete = ref AddConcrete(typeof(TScopeImplementation), out var index);
             
-            ref var implementation = ref _dense[implementationIndex];
-            implementation.SingletonFlag = SingletonFlag.NotSingleton;
-            implementation.ScopeConfigurator = install;
+            AddContract(typeof(TScope), index);
+
+            concrete.SingletonFlag = SingletonFlag.NotSingleton;
+            concrete.ScopeConfigurator = install;
         }
         
         public Container Build()
@@ -139,99 +150,106 @@ namespace SparseInject
                 stats.implementationConstructorParameters,
                 stats.maxConstructorLength);
             
-            CircularDependencyValidator.ThrowIfInvalid(_implementationsCount, _dense,
-                _sparse, implementationDependencyIds);
+            /*
+            CircularDependencyValidator.ThrowIfInvalid(_implementationsCount, _contractsDense,
+                _contractsSparse, implementationDependencyIds);*/
             
             return new Container(
                 parentContainer,
-                _dense, 
-                _sparse,
+                _contractIds,
+                _contractsSparse,
+                _contractsDense,
+                _contractsConcretesIndices,
+                _concretes,
                 implementationDependencyIds,
                 stats.maxConstructorLength);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void RegisterDependency<TKey, TImplementation>(out int implementationIndex)
-            where TKey : class
-            where TImplementation : class
+        private ref Concrete AddConcrete(Type concreteType, out int index)
         {
-            var dependencyId = TypeCompileInfo<TKey>.GetId(out var dependencyType);
-            var implementationType = TypeCompileInfo<TImplementation>.Type;
+            index = _implementationsCount;
 
-            if (dependencyId > _lastSparseIndex)
+            if (index >= _concretes.Length)
             {
-                _lastSparseIndex = dependencyId;
+                Array.Resize(ref _concretes, index * 2);
+            }
+            
+            ref var concrete = ref _concretes[index];
+            
+            concrete.Type = concreteType;
+
+            _implementationsCount++;
+            
+            return ref concrete;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void AddContract(Type contractType, int concreteIndex)
+        {
+            if (!_contractIds.TryGetValue(contractType, out var contractId))
+            {
+                contractId = _contractIds.Count;
+                
+                _contractIds.Add(contractType, contractId);
             }
 
-            if (dependencyId >= _sparse.Length)
+            if (contractId >= _contractsSparse.Length)
             {
-                var oldSize = _sparse.Length;
-                var newSize = dependencyId * 2;
+                var oldSize = _contractsSparse.Length;
+                var newSize = contractId * 2;
 
-                Array.Resize(ref _sparse, newSize);
+                Array.Resize(ref _contractsSparse, newSize);
                 
                 for (var i = oldSize; i < newSize; i++)
                 {
-                    _sparse[i] = -1;
+                    _contractsSparse[i] = -1;
                 }
             }
 
-            ref var dependencyIndex = ref _sparse[dependencyId];
-
-            if (dependencyIndex < 0)
+            ref var contractIndex = ref _contractsSparse[contractId];
+            
+            if (contractIndex < 0)
             {
-                var sizeWithImplementation = _denseCount + 2;
-                
-                if (sizeWithImplementation > _dense.Length)
-                {
-                    Array.Resize(ref _dense, sizeWithImplementation * 2);
-                }
-
-                _dependenciesCount++;
-
-                dependencyIndex = _denseCount;
-
-                _denseCount += 2;
-            }
-            else
-            {
-                var requiredIndex = dependencyIndex + 1;
-                
-                if (requiredIndex >= _dense.Length)
-                {
-                    Array.Resize(ref _dense, requiredIndex * 2);
-                }
-                
-                _denseCount += 1;
+                contractIndex = _dependenciesCount++;
             }
             
-            ref var dependency = ref _dense[dependencyIndex];
-            dependency.Type = dependencyType;
-
-            implementationIndex = dependencyIndex + dependency.ImplementationsCount + 1;
-            ref var implementation = ref _dense[implementationIndex];
-
-            if (implementation.Type == null)
+            if (contractIndex > _contractsDense.Length)
             {
-                implementation.Type = implementationType;
+                Array.Resize(ref _contractsDense, contractIndex * 2);
+            }
+            
+            ref var contract = ref _contractsDense[contractIndex];
+            contract.Type = contractType;
+
+            if (contract.ConcretesCount == 0)
+            {
+                var contractsConcretesIndex = _lastContractsConcretesIndex++;
+                
+                contract.ConcretesIndex = contractsConcretesIndex;
+            }
+
+            if (contractId > _lastSparseIndex || _lastSparseIndex == 0)
+            {
+                _lastSparseIndex = contractId;
+                _contractsConcretesIndices[contract.ConcretesIndex + contract.ConcretesCount] = concreteIndex;
             }
             else
             {
-                Array.Copy(_dense, implementationIndex, _dense, implementationIndex + 1, _denseCount - implementationIndex);
-
-                _dense[implementationIndex].Type = implementationType;
-
-                for (var i = 0; i < _lastSparseIndex + 1; i++)
-                {
-                    if (_sparse[i] > dependencyId)
-                    {
-                        _sparse[i] += 1;
-                    }
-                }
+                // Array.Copy(_contractsDense, concreteIndex, _contractsDense, concreteIndex + 1, _denseCount - concreteIndex);
+                //
+                // _contractsDense[concreteIndex].Type = implementationType;
+                //
+                // for (var i = 0; i < _lastSparseIndex + 1; i++)
+                // {
+                //     if (_contractsSparse[i] > dependencyId)
+                //     {
+                //         _contractsSparse[i] += 1;
+                //     }
+                // }
             }
 
-            dependency.ImplementationsCount++;
-            _implementationsCount++;
+            contract.ConcretesCount++;
         }
 
         private (int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters, int maxConstructorLength) BuildPrecomputeDependenciesCount()
@@ -239,134 +257,123 @@ namespace SparseInject
             var implementationConstructorParameterInfos = new ParameterInfo[_implementationsCount][];
             var implementationConstructorParameters = new Type[_implementationsCount][];
             var implementationDependenciesCount = 0;
-            var index = 0;
-            var implementationIndex = 0;
-
             var maxConstructorLength = int.MinValue;
-            
-            while (implementationIndex < _implementationsCount)
+            var concretesCount = _implementationsCount;
+
+            for (var concreteIndex = 0; concreteIndex < concretesCount; concreteIndex++)
             {
-                ref var dependency = ref _dense[index];
-                index++;
-                
-                for (var i = 0; i < dependency.ImplementationsCount; i++)
+                ref var concrete = ref _concretes[concreteIndex];
+                    
+                var constructorParametersCount = 0;
+                    
+                if (ReflectionBakingProviderCache.TryGetInstanceFactory(concrete.Type, out var factory, out var constructorParametersSpan))
                 {
-                    ref var implementation = ref _dense[index + i];
-                    
-                    var constructorParametersCount = 0;
-                    
-                    if (ReflectionBakingProviderCache.TryGetInstanceFactory(implementation.Type, out var factory, out var constructorParametersSpan))
-                    {
-                        constructorParametersCount = factory.ConstructorParametersCount;
+                    constructorParametersCount = factory.ConstructorParametersCount;
 
-                        implementationConstructorParameters[implementationIndex] = constructorParametersSpan;
-                        implementation.GeneratedInstanceFactory = factory;
-                    }
-                    else
-                    {
-                        implementation.ConstructorInfo = implementation.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)[0];
-                        var constructorParameters = implementation.ConstructorInfo.GetParameters();
+                    implementationConstructorParameters[concreteIndex] = constructorParametersSpan;
+                    concrete.GeneratedInstanceFactory = factory;
+                }
+                else
+                {
+                    concrete.ConstructorInfo = concrete.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)[0];
+                    var constructorParameters = concrete.ConstructorInfo.GetParameters();
 
-                        constructorParametersCount = constructorParameters.Length;
+                    constructorParametersCount = constructorParameters.Length;
                         
-                        implementationConstructorParameterInfos[implementationIndex] = constructorParameters;
-                    }
+                    implementationConstructorParameterInfos[concreteIndex] = constructorParameters;
+                }
                     
-                    implementation.ConstructorDependenciesCount = constructorParametersCount;
+                concrete.ConstructorDependenciesCount = constructorParametersCount;
 
-                    if (constructorParametersCount > maxConstructorLength)
-                    {
-                        maxConstructorLength = constructorParametersCount;
-                    }
-
-                    implementationDependenciesCount += constructorParametersCount;
-                    implementationIndex++;
+                if (constructorParametersCount > maxConstructorLength)
+                {
+                    maxConstructorLength = constructorParametersCount;
                 }
 
-                index += dependency.ImplementationsCount;
+                implementationDependenciesCount += constructorParametersCount;
             }
-
+            
             return (implementationDependenciesCount, implementationConstructorParameterInfos, implementationConstructorParameters, maxConstructorLength);
         }
 
-        private int[] BuildBakeImplementationDependencyIds(int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters, int maxConstructorLength)
+        private int[] BuildBakeImplementationDependencyIds(int implementationDependenciesCount,
+            ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters,
+            int maxConstructorLength)
         {
             var generatedInstanceFactoryDependencyIds = new int[maxConstructorLength];
-            
             var dependencyReferences = new int[implementationDependenciesCount];
             var dependencyReferenceIndex = 0;
-            
-            var index = 0;
-            var implementationIndex = 0;
-            
-            while (implementationIndex < _implementationsCount)
+
+            var concretesCount = _implementationsCount;
+            var concreteConstructorParametersCount = -1;
+
+            for (var concreteIndex = 0; concreteIndex < concretesCount; concreteIndex++)
             {
-                ref var dependency = ref _dense[index];
-                index++;
-                
-                for (var i = 0; i < dependency.ImplementationsCount; i++)
+                ref var concrete = ref _concretes[concreteIndex];
+
+                concrete.ConstructorDependenciesIndex = dependencyReferenceIndex;
+
+                concreteConstructorParametersCount = concrete.ConstructorDependenciesCount;
+
+                for (var parameterIndex = 0; parameterIndex < concreteConstructorParametersCount; parameterIndex++)
                 {
-                    ref var implementation = ref _dense[index + i];
-                    
-                    implementation.ConstructorDependenciesIndex = dependencyReferenceIndex;
-                    
-                    for (var j = 0; j < implementation.ConstructorDependenciesCount; j++)
+                    var parameterType = default(Type);
+                    var contractId = -1;
+
+                    // TODO: optimize
+                    if (implementationConstructorParameters[concreteIndex] != null)
                     {
-                        var parameterType = default(Type);
-                        
-                        if (implementationConstructorParameters[implementationIndex] != null)
-                        {
-                            parameterType = implementationConstructorParameters[implementationIndex][implementation.GeneratedInstanceFactory.ConstructorParametersIndex + j];
-                        }
-                        else
-                        {
-                            parameterType = implementationConstructorParameterInfos[implementationIndex][j]
-                                .ParameterType;
-                        }
+                        parameterType = implementationConstructorParameters[concreteIndex][
+                            concrete.GeneratedInstanceFactory.ConstructorParametersIndex + parameterIndex];
+                    }
+                    else
+                    {
+                        parameterType = implementationConstructorParameterInfos[concreteIndex][parameterIndex]
+                            .ParameterType;
+                    }
 
-                        if (parameterType.IsArray)
-                        {
-                            var elementType = parameterType.GetElementType();
+                    if (parameterType.IsArray)
+                    {
+                        var elementType = parameterType.GetElementType();
 
-                            var constructorDependencyId = TypeIdLocator.TryGetDependencyId(elementType);
-                            
-                            if (constructorDependencyId < 0)
-                            {
-                                constructorDependencyId = TypeIdLocator.AddDependencyId(parameterType);
-                            }
-                            
-                            dependencyReferences[j + dependencyReferenceIndex] = constructorDependencyId;
-                            generatedInstanceFactoryDependencyIds[j] = constructorDependencyId;
-                        }
-                        else
+                        if (!_contractIds.TryGetValue(elementType!, out contractId))
                         {
-                            var constructorDependencyId = TypeIdLocator.TryGetDependencyId(parameterType);
+                            contractId = _contractIds.Count;
 
-                            if (constructorDependencyId < 0)
-                            {
-                                constructorDependencyId = TypeIdLocator.AddDependencyId(parameterType);
-                            }
-                            
-                            dependencyReferences[j + dependencyReferenceIndex] = constructorDependencyId;
-                            generatedInstanceFactoryDependencyIds[j] = constructorDependencyId;
+                            _contractIds.Add(parameterType, contractId);
                         }
                     }
-    
-                    dependencyReferenceIndex += implementation.ConstructorDependenciesCount;
-                    implementationIndex++;
+                    else
+                    {
+                        if (!_contractIds.TryGetValue(parameterType, out contractId))
+                        {
+                            contractId = _contractIds.Count;
+
+                            _contractIds.Add(parameterType, contractId);
+                        }
+                    }
+
+                    dependencyReferences[parameterIndex + dependencyReferenceIndex] = contractId;
+                    generatedInstanceFactoryDependencyIds[parameterIndex] = contractId;
                 }
 
-                index += dependency.ImplementationsCount;
+                dependencyReferenceIndex += concreteConstructorParametersCount;
             }
-            
+
             return dependencyReferences;
         }
     }
 
-    public struct Dependency
+    public struct Contract
     {
         public Type Type;
-        public int ImplementationsCount;
+        public int ConcretesCount;
+        public int ConcretesIndex;
+    }
+    
+    public struct Concrete
+    {
+        public Type Type;
         public int ConstructorDependenciesIndex;
         public int ConstructorDependenciesCount;
         public ConstructorInfo ConstructorInfo;
