@@ -304,7 +304,7 @@ namespace SparseInject
                 contractIndex = _dependenciesCount++;
             }
             
-            if (contractIndex > _contractsDense.Length)
+            if (contractIndex >= _contractsDense.Length)
             {
                 Array.Resize(ref _contractsDense, contractIndex * 2);
             }
@@ -317,14 +317,22 @@ namespace SparseInject
                 contract.ConcretesIndex = _lastContractsConcretesIndex;
             }
 
+            var nextContractsConcretesCount = _lastContractsConcretesIndex + 1;
+            
+            if (nextContractsConcretesCount > _contractsConcretesIndices.Length)
+            {
+                Array.Resize(ref _contractsConcretesIndices, nextContractsConcretesCount * 2);
+            }
+
+            var index = contract.ConcretesIndex + contract.ConcretesCount;
+            
             if (contractId >= _lastSparseIndex)
             {
                 _lastSparseIndex = contractId;
-                _contractsConcretesIndices[contract.ConcretesIndex + contract.ConcretesCount] = concreteIndex;
+                _contractsConcretesIndices[index] = concreteIndex;
             }
             else
             {
-                var index = contract.ConcretesIndex + contract.ConcretesCount;
                 Array.Copy(_contractsConcretesIndices, index, _contractsConcretesIndices, index + 1, _lastContractsConcretesIndex - index);
 
                 _contractsConcretesIndices[index] = concreteIndex;
