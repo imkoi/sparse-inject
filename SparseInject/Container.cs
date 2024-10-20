@@ -18,8 +18,9 @@ namespace SparseInject
         private readonly int[] _contractsConcretesIndices;
         private readonly Concrete[] _concretes;
         private readonly int[] _dependencyReferences;
-        
+
         private readonly object[][] _arrays;
+        private readonly object[] _emptyArray;
 
         internal Container(
             Container parentContainer,
@@ -40,15 +41,23 @@ namespace SparseInject
             _dependencyReferences = dependencyReferences;
 
             _arrays = ArrayCache.GetConstructorParametersPool(maxConstructorLength);
+            _emptyArray = _arrays[0];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Resolve<T>() where T : class
         {
+            var type = typeof(T);
+            
             if (_contractIds.TryGetValue(typeof(T), out var id))
             {
                 return (T) Resolve(id);
             }
+
+            // if (type.IsArray)
+            // {
+            //     return (T) (object) Array.CreateInstance(type.GetElementType()!, 0);
+            // }
 
             throw new SparseInjectException("Trying to resolve unknown type");
         }
@@ -60,123 +69,108 @@ namespace SparseInject
             var instances = contract.ConcretesCount == 1
                 ? null
                 : Array.CreateInstance(contract.Type, contract.ConcretesCount);
+            var constructorContractsCount = -1;
+            var reserved = default(ArrayCache.Reserved);
 
             for (var i = 0; i < contract.ConcretesCount; i++)
             {
                 var concreteIndex = _contractsConcretesIndices[contract.ConcretesIndex + i];
                 ref var concrete = ref _concretes[concreteIndex];
-            
-                if (concrete.SingletonFlag == SingletonFlag.SingletonWithValue)
+
+                var instance = default(object);
+                
+                if (concrete.SingletonFlag != SingletonFlag.SingletonWithValue)
                 {
-                    return concrete.SingletonValue;
-                }
-            
-                if (concrete.ConstructorDependenciesCount == 0)
-                {
-                    var instanceOne = default(object);
-            
-                    if (concrete.GeneratedInstanceFactory != null)
+                    constructorContractsCount = concrete.ConstructorContractsCount;
+
+                    if (constructorContractsCount > 0)
                     {
-                        instanceOne = concrete.GeneratedInstanceFactory.Create(null);
+                        reserved = ArrayCache.PullReserved(constructorContractsCount);
+                    }
+
+                    if (concrete.ScopeConfigurator != null)
+                    {
+                        var containerBuilder = new ContainerBuilder(_contractIds, 32);
+
+                        concrete.ScopeConfigurator.Invoke(containerBuilder, this);
+
+                        var container = containerBuilder.BuildInternal(this);
+
+                        for (var j = 0; j < constructorContractsCount; j++)
+                        {
+                            var constructorDependencyId = _dependencyReferences[j + concrete.ConstructorContractsIndex];
+
+                            if (_contractsSparse[constructorDependencyId] < 0)
+                            {
+                                reserved.Array[j + reserved.StartIndex] = container.Resolve(constructorDependencyId);
+                            }
+                            else
+                            {
+                                reserved.Array[j + reserved.StartIndex] = Resolve(constructorDependencyId);
+                            }
+                        }
                     }
                     else
                     {
-                        instanceOne = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
-                            parameters: _arrays[0], culture: null);
+                        for (var j = 0; j < constructorContractsCount; j++)
+                        {
+                            var constructorDependencyId = _dependencyReferences[j + concrete.ConstructorContractsIndex];
+
+                            if (_contractsSparse[constructorDependencyId] < 0)
+                            {
+                                reserved.Array[j + reserved.StartIndex] =
+                                    _parentContainer.Resolve(constructorDependencyId);
+                            }
+                            else
+                            {
+                                reserved.Array[j + reserved.StartIndex] = Resolve(constructorDependencyId);
+                            }
+                        }
                     }
-                    
+
+                    var constructorParameters = _emptyArray;
+
+                    if (constructorContractsCount > 0)
+                    {
+                        constructorParameters = _arrays[constructorContractsCount];
+
+                        for (var j = 0; j < constructorContractsCount; j++)
+                        {
+                            constructorParameters[j] = reserved.Array[j + reserved.StartIndex];
+                        }
+
+                        ArrayCache.PushReserved(constructorContractsCount);
+                    }
+
+                    if (concrete.GeneratedInstanceFactory != null)
+                    {
+                        instance = concrete.GeneratedInstanceFactory.Create(constructorParameters);
+                    }
+                    else
+                    {
+                        instance = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                            parameters: constructorParameters, culture: null);
+                    }
+
                     if (concrete.SingletonFlag == SingletonFlag.Singleton)
                     {
-                        concrete.SingletonValue = instanceOne;
+                        concrete.SingletonValue = instance;
                         concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
                     }
-            
-                    if (contract.ConcretesCount == 1)
-                    {
-                        return instanceOne;
-                    }
-            
-                    instances.SetValue(instanceOne, i);
-                    
-                    continue;
-                }
-            
-                var reserved = ArrayCache.PullReserved(concrete.ConstructorDependenciesCount);
-            
-                if (concrete.ScopeConfigurator != null)
-                {
-                    var containerBuilder = new ContainerBuilder(64);
-                    
-                    concrete.ScopeConfigurator.Invoke(containerBuilder, this);
-                    
-                    var container = containerBuilder.BuildInternal(this);
-                    
-                    for (var j = 0; j < concrete.ConstructorDependenciesCount; j++)
-                    {
-                        var constructorDependencyId = _dependencyReferences[j + concrete.ConstructorDependenciesIndex];
-            
-                        if (_contractsSparse[constructorDependencyId] < 0)
-                        {
-                            reserved.Array[j + reserved.StartIndex] = container.Resolve(constructorDependencyId);
-                        }
-                        else
-                        {
-                            reserved.Array[j + reserved.StartIndex] = Resolve(constructorDependencyId);
-                        }
-                    }
                 }
                 else
                 {
-                    for (var j = 0; j < concrete.ConstructorDependenciesCount; j++)
-                    {
-                        var constructorDependencyId = _dependencyReferences[j + concrete.ConstructorDependenciesIndex];
-            
-                        if (_contractsSparse[constructorDependencyId] < 0)
-                        {
-                            reserved.Array[j + reserved.StartIndex] = _parentContainer.Resolve(constructorDependencyId);
-                        }
-                        else
-                        {
-                            reserved.Array[j + reserved.StartIndex] = Resolve(constructorDependencyId);
-                        }
-                    }
+                    instance = concrete.SingletonValue;
                 }
-            
-                var constructorParameters = _arrays[concrete.ConstructorDependenciesCount];
-            
-                for (var j = 0; j < concrete.ConstructorDependenciesCount; j++)
-                {
-                    constructorParameters[j] = reserved.Array[j + reserved.StartIndex];
-                }
-            
-                var instance = default(object);
-                
-                if (concrete.GeneratedInstanceFactory != null)
-                {
-                    instance = concrete.GeneratedInstanceFactory.Create(constructorParameters);
-                }
-                else
-                {
-                    instance = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
-                        parameters: constructorParameters, culture: null);
-                }
-            
-                ArrayCache.PushReserved(concrete.ConstructorDependenciesCount);
-            
-                if (concrete.SingletonFlag == SingletonFlag.Singleton)
-                {
-                    concrete.SingletonValue = instance;
-                    concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
-                }
-            
+
                 if (contract.ConcretesCount == 1)
                 {
                     return instance;
                 }
-            
+
                 instances.SetValue(instance, i);
             }
-            
+
             return instances;
         }
     }

@@ -224,18 +224,7 @@ namespace VContainer.Tests
             Assert.That(resolve2b, Is.EqualTo(instance2));
             Assert.Throws<SparseInjectException>(() => container.Resolve<I3>());
         }
-        
-        [Test]
-        public void ResolveLazyResolver()
-        {
-            var builder = new ContainerBuilder();
-            builder.Register<I2, NoDependencyServiceA>(Lifetime.Singleton);
-       
-            var container = builder.Build();
-            var resolve = container.Resolve<IScopeResolver>();
-            Assert.That(resolve, Is.EqualTo(container));
-        }
-       
+
         // [Test]
         // public void ResolveOpenGeneric()
         // {

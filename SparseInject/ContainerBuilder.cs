@@ -23,12 +23,17 @@ namespace SparseInject
         private int _dependenciesCount;
         private int _implementationsCount;
         
-        private int _lastSparseIndex;
+        private int _lastSparseIndex = -1;
         private int _lastContractsConcretesIndex;
         
-        public ContainerBuilder(int capacity = 4096)
+        public ContainerBuilder(int capacity = 4096) : this(new Dictionary<Type, int>(capacity), capacity)
         {
-            _contractIds = new Dictionary<Type, int>(capacity);
+            
+        }
+
+        internal ContainerBuilder(Dictionary<Type, int> contractIds, int capacity = 4096)
+        {
+            _contractIds = contractIds;
             _contractsSparse = new int[capacity];
             _contractsDense = new Contract[capacity];
             _contractsConcretesIndices = new int[capacity];
@@ -45,92 +50,166 @@ namespace SparseInject
             registerMethod.Invoke(this);
         }
 
-        public void Register<TKey>(Lifetime lifetime = Lifetime.Transient)
-            where TKey : class
+        public void Register<TConcreteContract>(Lifetime lifetime = Lifetime.Transient)
+            where TConcreteContract : class
         {
-            Register<TKey, TKey>(lifetime);
+            Register<TConcreteContract, TConcreteContract>(lifetime);
         }
 
-        public void Register<TKey, TImplementation>(Lifetime lifetime = Lifetime.Transient)
-            where TKey : class
-            where TImplementation : class, TKey
+        public void Register<TContract, TConcrete>(Lifetime lifetime = Lifetime.Transient)
+            where TContract : class
+            where TConcrete : class, TContract
         {
-            ref var concrete = ref AddConcrete(typeof(TImplementation), out var index);
+            ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
             
-            AddContract(typeof(TKey), index);
+            var contractId = GetOrAddContractId<TContract>(out var contractType);
+            
+            AddContract(contractId, contractType, index);
 
             concrete.SingletonFlag = lifetime == Lifetime.Singleton 
                 ? SingletonFlag.Singleton
                 : SingletonFlag.NotSingleton;
         }
         
-        public void Register<TKey0, TKey1, TImplementation>(Lifetime lifetime = Lifetime.Transient)
-            where TKey0 : class
-            where TKey1 : class
-            where TImplementation : class, TKey0, TKey1
+        public void Register<TContract0, TContract1, TConcrete>(Lifetime lifetime = Lifetime.Transient)
+            where TContract0 : class
+            where TContract1 : class
+            where TConcrete : class, TContract0, TContract1
         {
-            Register<TKey0, TImplementation>(lifetime);
-            Register<TKey1, TImplementation>(lifetime);
+            ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
+            
+            var contractId = GetOrAddContractId<TContract0>(out var contractType);
+            
+            AddContract(contractId, contractType, index);
+            
+            contractId = GetOrAddContractId<TContract1>(out contractType);
+            
+            AddContract(contractId, contractType, index);
+
+            concrete.SingletonFlag = lifetime == Lifetime.Singleton 
+                ? SingletonFlag.Singleton
+                : SingletonFlag.NotSingleton;
         }
         
-        public void Register<TKey0, TKey1, TKey2, TImplementation>(Lifetime lifetime = Lifetime.Transient)
-            where TKey0 : class
-            where TKey1 : class
-            where TKey2 : class
-            where TImplementation : class, TKey0, TKey1, TKey2
+        public void Register<TContract0, TContract1, TContract2, TConcrete>(Lifetime lifetime = Lifetime.Transient)
+            where TContract0 : class
+            where TContract1 : class
+            where TContract2 : class
+            where TConcrete : class, TContract0, TContract1, TContract2
         {
-            Register<TKey0, TImplementation>(lifetime);
-            Register<TKey1, TImplementation>(lifetime);
-            Register<TKey2, TImplementation>(lifetime);
-        }
-
-        public void Register<TKey>(TKey value)
-            where TKey : class
-        {
-            Register<TKey, TKey>(value);
-        }
-
-        public void Register<TKey, TImplementation>(TImplementation value)
-            where TKey : class
-            where TImplementation : class, TKey
-        {
-            ref var concrete = ref AddConcrete(typeof(TImplementation), out var index);
+            ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
             
-            AddContract(typeof(TKey), index);
+            var contractId = GetOrAddContractId<TContract0>(out var contractType);
+            
+            AddContract(contractId, contractType, index);
+            
+            contractId = GetOrAddContractId<TContract1>(out contractType);
+            
+            AddContract(contractId, contractType, index);
+            
+            contractId = GetOrAddContractId<TContract2>(out contractType);
+            
+            AddContract(contractId, contractType, index);
+
+            concrete.SingletonFlag = lifetime == Lifetime.Singleton 
+                ? SingletonFlag.Singleton
+                : SingletonFlag.NotSingleton;
+        }
+
+        public void Register<TConcreteContract>(TConcreteContract value)
+            where TConcreteContract : class
+        {
+            Register<TConcreteContract, TConcreteContract>(value);
+        }
+
+        public void Register<TContract, TConcrete>(TConcrete value)
+            where TContract : class
+            where TConcrete : class, TContract
+        {
+            ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
+            
+            var contractId = GetOrAddContractId<TContract>(out var contractType);
+            
+            AddContract(contractId, contractType, index);
 
             concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
             concrete.SingletonValue = value;
         }
         
-        public void RegisterScope<TScope>(Action<IScopeBuilder> install)
-            where TScope : Scope
+        public void Register<TContract0, TContract1, TConcrete>(TConcrete value)
+            where TContract0 : class
+            where TContract1 : class
+            where TConcrete : class, TContract0, TContract1
         {
-            RegisterScope<TScope, TScope>(install);
+            ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
+            
+            var contractId = GetOrAddContractId<TContract0>(out var contractType);
+            
+            AddContract(contractId, contractType, index);
+            
+            contractId = GetOrAddContractId<TContract1>(out contractType);
+            
+            AddContract(contractId, contractType, index);
+
+            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
+            concrete.SingletonValue = value;
+        }
+        
+        public void Register<TContract0, TContract1, TContract2, TConcrete>(TConcrete value)
+            where TContract0 : class
+            where TContract1 : class
+            where TContract2 : class
+            where TConcrete : class, TContract0, TContract1, TContract2
+        {
+            ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
+            
+            var contractId = GetOrAddContractId<TContract0>(out var contractType);
+            
+            AddContract(contractId, contractType, index);
+            
+            contractId = GetOrAddContractId<TContract1>(out contractType);
+            
+            AddContract(contractId, contractType, index);
+            
+            contractId = GetOrAddContractId<TContract2>(out contractType);
+            
+            AddContract(contractId, contractType, index);
+
+            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
+            concrete.SingletonValue = value;
+        }
+        
+        public void RegisterScope<TScopeConcreteContract>(Action<IScopeBuilder> install)
+            where TScopeConcreteContract : Scope
+        {
+            RegisterScope<TScopeConcreteContract, TScopeConcreteContract>(install);
         }
 
-        public void RegisterScope<TScope, TScopeImplementation>(Action<IScopeBuilder> install)
-            where TScope : class, IDisposable
-            where TScopeImplementation : Scope
+        public void RegisterScope<TScopeContract, TScopeConcrete>(Action<IScopeBuilder> install)
+            where TScopeContract : class, IDisposable
+            where TScopeConcrete : Scope
         {
-            RegisterScope<TScope, TScopeImplementation>((builder, parentScope) =>
+            RegisterScope<TScopeContract, TScopeConcrete>((builder, parentScope) =>
             {
                 install(builder);
             });
         }
 
-        public void RegisterScope<TScope>(Action<IScopeBuilder, IScopeResolver> install)
-            where TScope : Scope
+        public void RegisterScope<TScopeConcreteContract>(Action<IScopeBuilder, IScopeResolver> install)
+            where TScopeConcreteContract : Scope
         {
-            RegisterScope<TScope, TScope>(install);
+            RegisterScope<TScopeConcreteContract, TScopeConcreteContract>(install);
         }
 
-        public void RegisterScope<TScope, TScopeImplementation>(Action<IScopeBuilder, IScopeResolver> install)
-            where TScope : class, IDisposable
-            where TScopeImplementation : Scope
+        public void RegisterScope<TScopeContract, TScopeConcrete>(Action<IScopeBuilder, IScopeResolver> install)
+            where TScopeContract : class, IDisposable
+            where TScopeConcrete : Scope
         {
-            ref var concrete = ref AddConcrete(typeof(TScopeImplementation), out var index);
+            ref var concrete = ref AddConcrete(typeof(TScopeConcrete), out var index);
             
-            AddContract(typeof(TScope), index);
+            var contractId = GetOrAddContractId<TScopeContract>(out var contractType);
+            
+            AddContract(contractId, contractType, index);
 
             concrete.SingletonFlag = SingletonFlag.NotSingleton;
             concrete.ScopeConfigurator = install;
@@ -144,15 +223,14 @@ namespace SparseInject
         internal Container BuildInternal(Container parentContainer)
         {
             var stats = BuildPrecomputeDependenciesCount();
-            var implementationDependencyIds = BuildBakeImplementationDependencyIds(
+            var concreteConstructorContractIds = BuildBakeImplementationDependencyIds(
                 stats.implementationDependenciesCount,
                 stats.implementationConstructorParameterInfos,
                 stats.implementationConstructorParameters,
                 stats.maxConstructorLength);
             
-            /*
-            CircularDependencyValidator.ThrowIfInvalid(_implementationsCount, _contractsDense,
-                _contractsSparse, implementationDependencyIds);*/
+            CircularDependencyValidator.ThrowIfInvalid(_implementationsCount, _concretes, _contractsDense,
+                _contractsSparse, _contractsConcretesIndices, concreteConstructorContractIds);
             
             return new Container(
                 parentContainer,
@@ -161,8 +239,27 @@ namespace SparseInject
                 _contractsDense,
                 _contractsConcretesIndices,
                 _concretes,
-                implementationDependencyIds,
+                concreteConstructorContractIds,
                 stats.maxConstructorLength);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetOrAddContractId<TContract>(out Type contractType)
+        {
+            contractType = typeof(TContract);
+            
+            if (!_contractIds.TryGetValue(contractType, out var contractId))
+            {
+                contractId = _contractIds.Count;
+                
+                _contractIds.Add(contractType, contractId);
+
+                return contractId;
+            }
+
+            _contractIds.TryAdd(typeof(TContract[]), contractId);
+
+            return contractId;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -185,15 +282,8 @@ namespace SparseInject
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void AddContract(Type contractType, int concreteIndex)
+        private void AddContract(int contractId, Type contractType, int concreteIndex)
         {
-            if (!_contractIds.TryGetValue(contractType, out var contractId))
-            {
-                contractId = _contractIds.Count;
-                
-                _contractIds.Add(contractType, contractId);
-            }
-
             if (contractId >= _contractsSparse.Length)
             {
                 var oldSize = _contractsSparse.Length;
@@ -224,31 +314,32 @@ namespace SparseInject
 
             if (contract.ConcretesCount == 0)
             {
-                var contractsConcretesIndex = _lastContractsConcretesIndex++;
-                
-                contract.ConcretesIndex = contractsConcretesIndex;
+                contract.ConcretesIndex = _lastContractsConcretesIndex;
             }
 
-            if (contractId > _lastSparseIndex || _lastSparseIndex == 0)
+            if (contractId >= _lastSparseIndex)
             {
                 _lastSparseIndex = contractId;
                 _contractsConcretesIndices[contract.ConcretesIndex + contract.ConcretesCount] = concreteIndex;
             }
             else
             {
-                // Array.Copy(_contractsDense, concreteIndex, _contractsDense, concreteIndex + 1, _denseCount - concreteIndex);
-                //
-                // _contractsDense[concreteIndex].Type = implementationType;
-                //
-                // for (var i = 0; i < _lastSparseIndex + 1; i++)
-                // {
-                //     if (_contractsSparse[i] > dependencyId)
-                //     {
-                //         _contractsSparse[i] += 1;
-                //     }
-                // }
-            }
+                var index = contract.ConcretesIndex + contract.ConcretesCount;
+                Array.Copy(_contractsConcretesIndices, index, _contractsConcretesIndices, index + 1, _lastContractsConcretesIndex - index);
 
+                _contractsConcretesIndices[index] = concreteIndex;
+
+                for (var i = 0; i < _dependenciesCount; i++)
+                {
+                    ref var contractToProcess = ref _contractsDense[i];
+                    if (contractToProcess.ConcretesIndex >= index)
+                    {
+                        contractToProcess.ConcretesIndex += 1;
+                    }
+                }
+            }
+            
+            _lastContractsConcretesIndex++;
             contract.ConcretesCount++;
         }
 
@@ -263,27 +354,29 @@ namespace SparseInject
             for (var concreteIndex = 0; concreteIndex < concretesCount; concreteIndex++)
             {
                 ref var concrete = ref _concretes[concreteIndex];
-                    
                 var constructorParametersCount = 0;
                     
-                if (ReflectionBakingProviderCache.TryGetInstanceFactory(concrete.Type, out var factory, out var constructorParametersSpan))
+                if (concrete.SingletonFlag != SingletonFlag.SingletonWithValue)
                 {
-                    constructorParametersCount = factory.ConstructorParametersCount;
+                    if (ReflectionBakingProviderCache.TryGetInstanceFactory(concrete.Type, out var factory, out var constructorParametersSpan))
+                    {
+                        constructorParametersCount = factory.ConstructorParametersCount;
 
-                    implementationConstructorParameters[concreteIndex] = constructorParametersSpan;
-                    concrete.GeneratedInstanceFactory = factory;
-                }
-                else
-                {
-                    concrete.ConstructorInfo = concrete.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)[0];
-                    var constructorParameters = concrete.ConstructorInfo.GetParameters();
+                        implementationConstructorParameters[concreteIndex] = constructorParametersSpan;
+                        concrete.GeneratedInstanceFactory = factory;
+                    }
+                    else
+                    {
+                        concrete.ConstructorInfo = concrete.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)[0];
+                        var constructorParameters = concrete.ConstructorInfo.GetParameters();
 
-                    constructorParametersCount = constructorParameters.Length;
+                        constructorParametersCount = constructorParameters.Length;
                         
-                    implementationConstructorParameterInfos[concreteIndex] = constructorParameters;
+                        implementationConstructorParameterInfos[concreteIndex] = constructorParameters;
+                    }
                 }
-                    
-                concrete.ConstructorDependenciesCount = constructorParametersCount;
+                
+                concrete.ConstructorContractsCount = constructorParametersCount;
 
                 if (constructorParametersCount > maxConstructorLength)
                 {
@@ -311,9 +404,9 @@ namespace SparseInject
             {
                 ref var concrete = ref _concretes[concreteIndex];
 
-                concrete.ConstructorDependenciesIndex = dependencyReferenceIndex;
+                concrete.ConstructorContractsIndex = dependencyReferenceIndex;
 
-                concreteConstructorParametersCount = concrete.ConstructorDependenciesCount;
+                concreteConstructorParametersCount = concrete.ConstructorContractsCount;
 
                 for (var parameterIndex = 0; parameterIndex < concreteConstructorParametersCount; parameterIndex++)
                 {
@@ -374,8 +467,8 @@ namespace SparseInject
     public struct Concrete
     {
         public Type Type;
-        public int ConstructorDependenciesIndex;
-        public int ConstructorDependenciesCount;
+        public int ConstructorContractsIndex;
+        public int ConstructorContractsCount;
         public ConstructorInfo ConstructorInfo;
         public InstanceFactoryBase GeneratedInstanceFactory;
         public int SingletonFlag;
