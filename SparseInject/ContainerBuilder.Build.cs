@@ -91,7 +91,7 @@ namespace SparseInject
                     {
                         var elementType = parameterType.GetElementType();
 
-                        if (!_contractIds.TryGetValue(elementType!, out contractId))
+                        if (!_contractIds.TryGetValue(parameterType, out contractId))
                         {
                             contractId = _contractIds.Count;
 

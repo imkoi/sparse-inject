@@ -54,10 +54,22 @@ namespace SparseInject
                 return (T) Resolve(id);
             }
 
-            // if (type.IsArray)
-            // {
-            //     return (T) (object) Array.CreateInstance(type.GetElementType()!, 0);
-            // }
+            if (type.IsArray)
+            {
+                var elementType = type.GetElementType()!;
+
+                if (_contractIds.TryGetValue(elementType, out id))
+                {
+                    var instance = Resolve(id);
+                    var array = Array.CreateInstance(elementType, 1);
+                    
+                    array.SetValue(instance, 0);
+                    
+                    return (T) (object) array;
+                }
+                
+                return (T) (object) Array.CreateInstance(elementType, 0);
+            }
 
             throw new SparseInjectException("Trying to resolve unknown type");
         }

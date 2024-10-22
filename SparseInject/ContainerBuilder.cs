@@ -77,35 +77,65 @@ namespace SparseInject
         private int GetOrAddContractId<TContract>(out Type contractType)
         {
             contractType = typeof(TContract);
-
-            var hasContract = _contractIds.TryGetValue(contractType, out var contractId);
-            var maxSparseIndex = 0;
             
+            var hasContract = _contractIds.TryGetValue(contractType, out var contractId);
+
             if (hasContract)
             {
-                maxSparseIndex = _contractIds.Count;
+                if (_contractsSparse.Length <= contractId || _contractsSparse[contractId] < 0)
+                {
+                    return contractId;
+                }
                 
-                _contractIds.TryAdd(typeof(TContract[]), maxSparseIndex);
+                var contractArrayType = typeof(TContract[]);
+                
+                if (!_contractIds.TryGetValue(contractArrayType, out var contractArrayId))
+                {
+                    contractArrayId = _contractIds.Count;
+                    
+                    if (contractArrayId >= _contractsSparse.Length)
+                    {
+                        var oldSize = _contractsSparse.Length;
+                        var newSize = contractArrayId * 2;
+
+                        Array.Resize(ref _contractsSparse, newSize);
+                
+                        for (var i = oldSize; i < newSize; i++)
+                        {
+                            _contractsSparse[i] = -1;
+                        }
+                    }
+                    
+                    ref var contractSingle = ref GetContract(contractId);
+                    ref var contractMultiple = ref GetContract(contractArrayId);
+
+                    contractMultiple.Type = contractType;
+                    contractMultiple.ConcretesIndex = contractSingle.ConcretesIndex;
+                    contractMultiple.ConcretesCount = contractSingle.ConcretesCount;
+                    
+                    _contractIds.Add(contractArrayType, contractArrayId);
+                }
+                
+                contractId = contractArrayId;
             }
             else
             {
                 contractId = _contractIds.Count;
-                maxSparseIndex = contractId;
                 
-                _contractIds.Add(contractType, contractId);
-            }
-            
-            if (maxSparseIndex >= _contractsSparse.Length)
-            {
-                var oldSize = _contractsSparse.Length;
-                var newSize = maxSparseIndex * 2;
-
-                Array.Resize(ref _contractsSparse, newSize);
-                
-                for (var i = oldSize; i < newSize; i++)
+                if (contractId >= _contractsSparse.Length)
                 {
-                    _contractsSparse[i] = -1;
+                    var oldSize = _contractsSparse.Length;
+                    var newSize = contractId * 2;
+
+                    Array.Resize(ref _contractsSparse, newSize);
+                
+                    for (var i = oldSize; i < newSize; i++)
+                    {
+                        _contractsSparse[i] = -1;
+                    }
                 }
+
+                _contractIds.Add(contractType, contractId);
             }
 
             return contractId;
@@ -140,10 +170,6 @@ namespace SparseInject
                 contract.Type = contractType;
                 contract.ConcretesIndex = _lastContractsConcretesIndex;
             }
-            else
-            {
-                
-            }
 
             var nextContractsConcretesCount = _lastContractsConcretesIndex + 1;
             
@@ -154,7 +180,7 @@ namespace SparseInject
 
             var index = contract.ConcretesIndex + contract.ConcretesCount;
             
-            if (contractId >= _lastSparseIndex)
+            if (index > _lastSparseIndex)
             {
                 _lastSparseIndex = contractId;
                 _contractsConcretesIndices[index] = concreteIndex;
@@ -168,6 +194,8 @@ namespace SparseInject
                 for (var i = 0; i < _dependenciesCount; i++)
                 {
                     ref var contractToProcess = ref _contractsDense[i];
+                    
+                    // >= because previous swapped contract not update index yet
                     if (contractToProcess.ConcretesIndex >= index)
                     {
                         contractToProcess.ConcretesIndex += 1;
