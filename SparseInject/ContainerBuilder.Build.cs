@@ -5,6 +5,23 @@ namespace SparseInject
 {
     public partial class ContainerBuilder
     {
+        private void ReorderSingleInstances()
+        {
+            var contractsCount = _dependenciesCount;
+
+            for (var contractIndex = 0; contractIndex < contractsCount; contractIndex++)
+            {
+                ref var contract = ref _contractsDense[contractIndex];
+
+                if (contract.ConcretesCount > 1 && _contractIds.TryGetValue(contract.Type, out var id))
+                {
+                    ref var singleContract = ref _contractsDense[_contractsSparse[id]];
+
+                    singleContract.ConcretesIndex = contract.ConcretesIndex + contract.ConcretesCount - 1;
+                }
+            }
+        }
+        
         private (int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters, int maxConstructorLength) BuildPrecomputeDependenciesCount()
         {
             var implementationConstructorParameterInfos = new ParameterInfo[_implementationsCount][];
@@ -87,25 +104,11 @@ namespace SparseInject
                             .ParameterType;
                     }
 
-                    if (parameterType.IsArray)
+                    if (!_contractIds.TryGetValue(parameterType, out contractId))
                     {
-                        var elementType = parameterType.GetElementType();
+                        contractId = _contractIds.Count;
 
-                        if (!_contractIds.TryGetValue(parameterType, out contractId))
-                        {
-                            contractId = _contractIds.Count;
-
-                            _contractIds.Add(parameterType, contractId);
-                        }
-                    }
-                    else
-                    {
-                        if (!_contractIds.TryGetValue(parameterType, out contractId))
-                        {
-                            contractId = _contractIds.Count;
-
-                            _contractIds.Add(parameterType, contractId);
-                        }
+                        _contractIds.Add(parameterType, contractId);
                     }
 
                     dependencyReferences[parameterIndex + dependencyReferenceIndex] = contractId;

@@ -130,8 +130,21 @@ namespace SparseInject
 
                             if (_contractsSparse[constructorDependencyId] < 0)
                             {
-                                reserved.Array[j + reserved.StartIndex] =
-                                    _parentContainer.Resolve(constructorDependencyId);
+                                if (_parentContainer != null)
+                                {
+                                    reserved.Array[j + reserved.StartIndex] =
+                                        _parentContainer.Resolve(constructorDependencyId);
+                                }
+                                else
+                                {
+                                    var unknownParameter = concrete.ConstructorInfo.GetParameters()[j].ParameterType;
+
+                                    if (unknownParameter.IsArray)
+                                    {
+                                        reserved.Array[j + reserved.StartIndex] =
+                                            Array.CreateInstance(unknownParameter.GetElementType(), 0);
+                                    }
+                                }
                             }
                             else
                             {

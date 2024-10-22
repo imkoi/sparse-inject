@@ -1,4 +1,5 @@
-﻿using SparseInject.Tests.Collection;
+﻿using System;
+using SparseInject.Tests.Collection;
 using FluentAssertions;
 using NUnit.Framework;
 using SparseInject;
@@ -41,5 +42,24 @@ public class CollectionTests
         var processors = container.Resolve<IPlayerControllerProcessor[]>();
 
         processors.Length.Should().Be(3);
+    }
+    
+    [Test]
+    public void EmptyArrayInjectionTest()
+    {
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.Register<Dep0>();
+        
+        var container = containerBuilder.Build();
+        var processors = container.Resolve<Dep0>();
+    }
+
+    public class Dep0
+    {
+        public Dep0(IDisposable[] disposables)
+        {
+            Console.WriteLine(disposables.GetType());
+        }
     }
 }

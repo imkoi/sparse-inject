@@ -52,6 +52,7 @@ namespace SparseInject
 
         internal Container BuildInternal(Container parentContainer)
         {
+            ReorderSingleInstances();
             var stats = BuildPrecomputeDependenciesCount();
             var concreteConstructorContractIds = BuildBakeImplementationDependencyIds(
                 stats.implementationDependenciesCount,
