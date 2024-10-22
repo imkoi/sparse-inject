@@ -18,6 +18,7 @@ public class CollectionTests
         containerBuilder.Register<IPlayerControllerProcessor, PlayerAnimationProcessor>();
 
         var container = containerBuilder.Build();
+        var processor = container.Resolve<IPlayerControllerProcessor>();
         var processors = container.Resolve<IPlayerControllerProcessor[]>();
         var controller = container.Resolve<PlayerController>();
 
