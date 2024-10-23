@@ -51,7 +51,7 @@ namespace SparseInject
             
             if (_contractIds.TryGetValue(typeof(T), out var id))
             {
-                return (T) Resolve(id);
+                return Unsafe.As<T>(Resolve(id));
             }
 
             if (type.IsArray)
@@ -185,7 +185,20 @@ namespace SparseInject
                 }
                 else
                 {
-                    instance = concrete.SingletonValue;
+                    if (concrete.IsFactory)
+                    {
+                        var originalFactory = Unsafe.As<Func<IScopeResolver, object>>(concrete.SingletonValue) ;
+                        Func<object> factory = () =>
+                        {
+                            return originalFactory.Invoke(this);
+                        };
+
+                        instance = factory;
+                    }
+                    else
+                    {
+                        instance = concrete.SingletonValue;
+                    }
                 }
 
                 if (contract.ConcretesCount == 1)

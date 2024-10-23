@@ -86,12 +86,13 @@ namespace SparseInject
             where TConcrete : class, TContract
         {
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
-            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
-            concrete.SingletonValue = value;
             
             var contractId = GetOrAddContractId<TContract>(out var contractType);
             
             AddContract(contractId, contractType, index);
+            
+            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
+            concrete.SingletonValue = value;
         }
         
         public void Register<TContract0, TContract1, TConcrete>(TConcrete value)
@@ -135,6 +136,38 @@ namespace SparseInject
 
             concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
             concrete.SingletonValue = value;
+        }
+        
+        public void RegisterFactory<T>(Func<T> factory)
+            where T : class
+        {
+            RegisterFactory<T, T>(factory);
+        }
+        
+        public void RegisterFactory<T>(Func<IScopeResolver, T> factory)
+            where T : class
+        {
+            RegisterFactory<T, T>(factory);
+        }
+        
+        public void RegisterFactory<TContract, TConcrete>(Func<TContract> factory)
+            where TConcrete : class, TContract
+        {
+            RegisterFactory<TContract, TConcrete>(container => factory.Invoke());
+        }
+        
+        public void RegisterFactory<TContract, TConcrete>(Func<IScopeResolver, TContract> factory)
+            where TConcrete : class, TContract
+        {
+            ref var concrete = ref AddConcrete(typeof(Func<TConcrete>), out var index);
+            
+            var contractId = GetOrAddContractId<Func<TContract>>(out var contractType);
+            
+            AddContract(contractId, contractType, index);
+
+            concrete.IsFactory = true;
+            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
+            concrete.SingletonValue = factory;
         }
         
         public void RegisterScope<TScopeConcreteContract>(Action<IScopeBuilder> install)
