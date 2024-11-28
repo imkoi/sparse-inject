@@ -5,23 +5,6 @@ namespace SparseInject
 {
     public partial class ContainerBuilder
     {
-        private void ReorderSingleInstances()
-        {
-            var contractsCount = _dependenciesCount;
-
-            for (var contractIndex = 0; contractIndex < contractsCount; contractIndex++)
-            {
-                ref var contract = ref _contractsDense[contractIndex];
-
-                if (contract.ConcretesCount > 1 && _contractIds.TryGetValue(contract.Type, out var id))
-                {
-                    ref var singleContract = ref _contractsDense[_contractsSparse[id]];
-
-                    singleContract.ConcretesIndex = contract.ConcretesIndex + contract.ConcretesCount - 1;
-                }
-            }
-        }
-        
         private (int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters, int maxConstructorLength) BuildPrecomputeDependenciesCount()
         {
             var implementationConstructorParameterInfos = new ParameterInfo[_implementationsCount][];
@@ -46,7 +29,18 @@ namespace SparseInject
                     }
                     else
                     {
+#if DEBUG
+                        var constructors = concrete.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+
+                        if (constructors.Length == 0)
+                        {
+                            throw new SparseInjectException($"Could not find constructor for type {concrete.Type}");
+                        }
+                        
+                        concrete.ConstructorInfo = constructors[0];
+#else
                         concrete.ConstructorInfo = concrete.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)[0];
+#endif
                         var constructorParameters = concrete.ConstructorInfo.GetParameters();
 
                         constructorParametersCount = constructorParameters.Length;
@@ -64,11 +58,16 @@ namespace SparseInject
 
                 implementationDependenciesCount += constructorParametersCount;
             }
+
+            if (maxConstructorLength < 0)
+            {
+                maxConstructorLength = 0;
+            }
             
             return (implementationDependenciesCount, implementationConstructorParameterInfos, implementationConstructorParameters, maxConstructorLength);
         }
 
-        private int[] BuildBakeImplementationDependencyIds(int implementationDependenciesCount,
+        private int[] BuildBakeImplementationDependencyIds(Type containerType, int implementationDependenciesCount,
             ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters,
             int maxConstructorLength)
         {
@@ -106,9 +105,28 @@ namespace SparseInject
 
                     if (!_contractIds.TryGetValue(parameterType, out contractId))
                     {
-                        contractId = _contractIds.Count;
+                        if (parameterType.IsArray)
+                        {
+                            var elementType = parameterType.GetElementType()!;
 
-                        _contractIds.Add(parameterType, contractId);
+                            if (!_contractIds.TryGetValue(elementType, out contractId))
+                            {
+                                contractId = _contractIds.Count;
+
+                                _contractIds.Add(elementType, contractId);
+                            }
+                        }
+                        else if (concrete.ScopeConfigurator != null)
+                        {
+                            contractId = _contractIds.Count;
+
+                            _contractIds.Add(parameterType, contractId);
+                        }
+                        else
+                        {
+                            throw new SparseInjectException(
+                                $"Dependency '{parameterType}' of '{concrete.Type}' not registered inside container");
+                        }
                     }
 
                     dependencyReferences[parameterIndex + dependencyReferenceIndex] = contractId;
@@ -116,6 +134,37 @@ namespace SparseInject
                 }
 
                 dependencyReferenceIndex += concreteConstructorParametersCount;
+            }
+
+            if (containerType != null)
+            {
+                if (_parentContainer.TryGetConcrete(containerType, out var concreteContainer))
+                {
+                    for (var i = 0; i < concreteContainer.ConstructorContractsCount; i++)
+                    {
+                        var contractId = _parentContainer.GetDependencyContractId(concreteContainer.ConstructorContractsIndex + i);
+                        
+                        if (_contractsSparse[contractId] < 0)
+                        {
+                            if (!_parentContainer.ContactExist(contractId))
+                            {
+                                foreach (var pair in _contractIds)
+                                {
+                                    if (pair.Value != contractId)
+                                    {
+                                        continue;
+                                    }
+                                    
+                                    throw new SparseInjectException($"Dependency '{pair.Key}' of '{containerType}' not registered");
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    throw new SparseInjectException($"Container {containerType} not registered");
+                }
             }
 
             return dependencyReferences;

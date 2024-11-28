@@ -13,57 +13,69 @@ namespace SparseInject
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public partial class ContainerBuilder : IScopeBuilder
     {
+        private readonly Container _parentContainer;
         private readonly Dictionary<Type, int> _contractIds;
         
         private int[] _contractsSparse;
         private Contract[] _contractsDense;
         private int[] _contractsConcretesIndices;
         private Concrete[] _concretes;
+        private readonly int _leftSparseIndex;
 
         private int _dependenciesCount;
         private int _implementationsCount;
         
-        private int _lastSparseIndex = -1;
         private int _lastContractsConcretesIndex;
         
-        public ContainerBuilder(int capacity = 4096) : this(new Dictionary<Type, int>(capacity), capacity)
+        public ContainerBuilder(int capacity = 4096) : this(null, new Dictionary<Type, int>(capacity), capacity)
         {
             
         }
 
-        internal ContainerBuilder(Dictionary<Type, int> contractIds, int capacity = 4096)
+        internal ContainerBuilder(
+            Container parentContainer,
+            Dictionary<Type, int> contractIds,
+            int capacity = 4096)
         {
+            _parentContainer = parentContainer;
             _contractIds = contractIds;
             _contractsSparse = new int[capacity];
             _contractsDense = new Contract[capacity];
             _contractsConcretesIndices = new int[capacity];
             _concretes = new Concrete[capacity];
 
+            _leftSparseIndex = contractIds.Count;
+            
             for (var i = 0; i < capacity; i++)
             {
                 _contractsSparse[i] = -1;
+            }
+
+            for (var i = 0; i < capacity; i++)
+            {
+                _contractsConcretesIndices[i] = -1;
             }
         }
         
         public Container Build()
         {
-            return BuildInternal(null);
+            return BuildInternal(null, null);
         }
 
-        internal Container BuildInternal(Container parentContainer)
+        internal Container BuildInternal(Type containerType, Container parentContainer)
         {
-            ReorderSingleInstances();
             var stats = BuildPrecomputeDependenciesCount();
             var concreteConstructorContractIds = BuildBakeImplementationDependencyIds(
+                containerType,
                 stats.implementationDependenciesCount,
                 stats.implementationConstructorParameterInfos,
                 stats.implementationConstructorParameters,
                 stats.maxConstructorLength);
             
-            CircularDependencyValidator.ThrowIfInvalid(_implementationsCount, _concretes, _contractsDense,
-                _contractsSparse, _contractsConcretesIndices, concreteConstructorContractIds);
+            ThrowIfInvalid(parentContainer, concreteConstructorContractIds);
             
             return new Container(
+                containerType,
                 parentContainer,
                 _contractIds,
                 _contractsSparse,
@@ -78,48 +90,14 @@ namespace SparseInject
         private int GetOrAddContractId<TContract>(out Type contractType)
         {
             contractType = typeof(TContract);
-            
-            var hasContract = _contractIds.TryGetValue(contractType, out var contractId);
 
-            if (hasContract)
-            {
-                if (_contractsSparse.Length <= contractId || _contractsSparse[contractId] < 0)
-                {
-                    return contractId;
-                }
-                
-                var contractArrayType = typeof(TContract[]);
-                
-                if (!_contractIds.TryGetValue(contractArrayType, out var contractArrayId))
-                {
-                    contractArrayId = _contractIds.Count;
-                    
-                    if (contractArrayId >= _contractsSparse.Length)
-                    {
-                        var oldSize = _contractsSparse.Length;
-                        var newSize = contractArrayId * 2;
+            return GetOrAddContractId(contractType);
+        }
 
-                        Array.Resize(ref _contractsSparse, newSize);
-                
-                        for (var i = oldSize; i < newSize; i++)
-                        {
-                            _contractsSparse[i] = -1;
-                        }
-                    }
-                    
-                    ref var contractSingle = ref GetContract(contractId);
-                    ref var contractMultiple = ref GetContract(contractArrayId);
-
-                    contractMultiple.Type = contractType;
-                    contractMultiple.ConcretesIndex = contractSingle.ConcretesIndex;
-                    contractMultiple.ConcretesCount = contractSingle.ConcretesCount;
-                    
-                    _contractIds.Add(contractArrayType, contractArrayId);
-                }
-                
-                contractId = contractArrayId;
-            }
-            else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetOrAddContractId(Type contractType)
+        {
+            if (!_contractIds.TryGetValue(contractType, out var contractId))
             {
                 contractId = _contractIds.Count;
                 
@@ -141,7 +119,7 @@ namespace SparseInject
 
             return contractId;
         }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ref Concrete AddConcrete(Type concreteType, out int index)
         {
@@ -176,14 +154,23 @@ namespace SparseInject
             
             if (nextContractsConcretesCount > _contractsConcretesIndices.Length)
             {
-                Array.Resize(ref _contractsConcretesIndices, nextContractsConcretesCount * 2);
+                var oldSize = _contractsConcretesIndices.Length;
+                var newSize = nextContractsConcretesCount * 2;
+                
+                Array.Resize(ref _contractsConcretesIndices, newSize);
+
+                for (var i = oldSize; i < newSize; i++)
+                {
+                    _contractsConcretesIndices[i] = -1;
+                }
             }
 
             var index = contract.ConcretesIndex + contract.ConcretesCount;
             
-            if (index > _lastSparseIndex)
+            //contract.Type.ToString().Contains("IDisposable") || contract.Type.ToString().Contains("IServerMatchProcessor")
+            
+            if (index == _lastContractsConcretesIndex)
             {
-                _lastSparseIndex = contractId;
                 _contractsConcretesIndices[index] = concreteIndex;
             }
             else

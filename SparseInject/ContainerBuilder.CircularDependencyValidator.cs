@@ -1,30 +1,31 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace SparseInject
 {
-    public static class CircularDependencyValidator
+    public partial class ContainerBuilder
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ThrowIfInvalid(int concretesCount, Concrete[] concretes, Contract[] contractsDense,
-            int[] contractsSparse, int[] contractsConcretesIndices, int[] concreteConstructorContractIds)
+        public void ThrowIfInvalid(Container parentContainer, int[] concreteConstructorContractIds)
         {
+            var concretesCount = _implementationsCount;
+            
             var circularDependencyChecker = new List<Concrete>(concretesCount);
 
             for (var i = 0; i < concretesCount; i++)
             {
                 circularDependencyChecker.Clear();
                     
-                ThrowIfInvalidRecursive(i, concretes, contractsDense, contractsSparse, contractsConcretesIndices,
-                    concreteConstructorContractIds, circularDependencyChecker);
+                ThrowIfInvalidRecursive(i, parentContainer, concreteConstructorContractIds, circularDependencyChecker);
             }
         }
         
-        private static void ThrowIfInvalidRecursive(int concreteIndex, Concrete[] concretes, 
-            Contract[] contractsDense, int[] contractsSparse, int[] contractsConcretesIndices, int[] concreteConstructorContractIds, List<Concrete> stack)
+        private void ThrowIfInvalidRecursive(int concreteIndex, Container parentContainer, int[] concreteConstructorContractIds,
+            List<Concrete> stack)
         {
-            ref var concrete = ref concretes[concreteIndex];
+            ref var concrete = ref _concretes[concreteIndex];
             var stackCount = stack.Count;
 
             for (var i = 0; i < stackCount; i++)
@@ -53,18 +54,22 @@ namespace SparseInject
                     continue;
                 }
 
-                var constructorContractIndex = contractsSparse[constructorContractId];
+                if (constructorContractId < 0)
+                {
+                    throw new SparseInjectException($"Circular dependency validator failed because of unknown dependency in {concrete.Type}!");
+                }
+                
+                var constructorContractIndex = _contractsSparse[constructorContractId];
 
                 if (constructorContractIndex >= 0)
                 {
-                    ref var constructorContract = ref contractsDense[constructorContractIndex];
+                    ref var constructorContract = ref _contractsDense[constructorContractIndex];
 
                     for (var j = 0; j < constructorContract.ConcretesCount; j++)
                     {
-                        var concreteId = contractsConcretesIndices[j + constructorContract.ConcretesIndex];
+                        var concreteId = _contractsConcretesIndices[j + constructorContract.ConcretesIndex];
                         
-                        ThrowIfInvalidRecursive(concreteId, concretes, contractsDense, contractsSparse,
-                            contractsConcretesIndices, concreteConstructorContractIds, stack);
+                        ThrowIfInvalidRecursive(concreteId, parentContainer, concreteConstructorContractIds, stack);
                     }
                 }
             }

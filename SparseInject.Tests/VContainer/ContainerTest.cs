@@ -209,8 +209,8 @@ namespace VContainer.Tests
             var builder = new ContainerBuilder();
             var instance1 = new NoDependencyServiceB();
             var instance2 = new MultipleInterfaceServiceA();
-            builder.Register(instance1);
-            builder.Register<I2>(instance2);
+            builder.RegisterValue(instance1);
+            builder.RegisterValue<I2>(instance2);
        
             var container = builder.Build();
        

@@ -11,6 +11,7 @@ namespace SparseInject
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class Container : IScopeResolver
     {
+        private readonly Type _containerType;
         private readonly Container _parentContainer;
         private readonly Dictionary<Type, int> _contractIds;
         private readonly int[] _contractsSparse;
@@ -23,6 +24,7 @@ namespace SparseInject
         private readonly object[] _emptyArray;
 
         internal Container(
+            Type containerType,
             Container parentContainer,
             Dictionary<Type, int> contractIds,
             int[] contractsSparse,
@@ -32,6 +34,7 @@ namespace SparseInject
             int[] dependencyReferences,
             int maxConstructorLength)
         {
+            _containerType = containerType;
             _parentContainer = parentContainer;
             _contractIds = contractIds;
             _contractsSparse = contractsSparse;
@@ -51,7 +54,17 @@ namespace SparseInject
             
             if (_contractIds.TryGetValue(typeof(T), out var id))
             {
-                return Unsafe.As<T>(Resolve(id));
+                if (_contractsSparse[id] < 0)
+                {
+                    if (_parentContainer != null)
+                    {
+                        return _parentContainer.Resolve<T>();
+                    }
+                    
+                    throw new SparseInjectException($"Trying to resolve unknown type '{type}'");
+                }
+                
+                return (T) Resolve(id);
             }
 
             if (type.IsArray)
@@ -71,13 +84,37 @@ namespace SparseInject
                 return (T) (object) Array.CreateInstance(elementType, 0);
             }
 
-            throw new SparseInjectException("Trying to resolve unknown type");
+            throw new SparseInjectException($"Trying to resolve unknown type '{type}'");
         }
 
         public object Resolve(int dependencyId)
         {
-            dependencyId = _contractsSparse[dependencyId];
-            ref var contract = ref _contractsDense[dependencyId];
+            var denseIndex = _contractsSparse[dependencyId];
+            
+            // if (denseIndex < 0)
+            // {
+            //     if (_parentContainer != null)
+            //     {
+            //         reserved.Array[j + reserved.StartIndex] =
+            //             _parentContainer.Resolve(constructorDependencyId);
+            //     }
+            //     else
+            //     {
+            //         var unknownParameter = concrete.ConstructorInfo.GetParameters()[j].ParameterType;
+            //
+            //         if (unknownParameter.IsArray)
+            //         {
+            //             reserved.Array[j + reserved.StartIndex] =
+            //                 Array.CreateInstance(unknownParameter.GetElementType(), 0);
+            //         }
+            //         else
+            //         {
+            //             throw new SparseInjectException($"Trying to resolve unknown type '{unknownParameter}'");
+            //         }
+            //     }
+            // }
+
+            ref var contract = ref _contractsDense[denseIndex];
             var instances = contract.ConcretesCount == 1
                 ? null
                 : Array.CreateInstance(contract.Type, contract.ConcretesCount);
@@ -102,11 +139,11 @@ namespace SparseInject
 
                     if (concrete.ScopeConfigurator != null)
                     {
-                        var containerBuilder = new ContainerBuilder(_contractIds, 32);
+                        var containerBuilder = new ContainerBuilder(this, _contractIds, 32);
 
                         concrete.ScopeConfigurator.Invoke(containerBuilder, this);
 
-                        var container = containerBuilder.BuildInternal(this);
+                        var container = containerBuilder.BuildInternal(concrete.Type, this);
 
                         for (var j = 0; j < constructorContractsCount; j++)
                         {
@@ -144,6 +181,10 @@ namespace SparseInject
                                         reserved.Array[j + reserved.StartIndex] =
                                             Array.CreateInstance(unknownParameter.GetElementType(), 0);
                                     }
+                                    else
+                                    {
+                                        throw new SparseInjectException($"Trying to resolve unknown type '{unknownParameter}'");
+                                    }
                                 }
                             }
                             else
@@ -153,7 +194,7 @@ namespace SparseInject
                         }
                     }
 
-                    var constructorParameters = _emptyArray;
+                    var constructorParameters = default(object[]);
 
                     if (constructorContractsCount > 0)
                     {
@@ -166,6 +207,10 @@ namespace SparseInject
 
                         ArrayCache.PushReserved(constructorContractsCount);
                     }
+                    else
+                    {
+                        constructorParameters = _emptyArray;
+                    }
 
                     if (concrete.GeneratedInstanceFactory != null)
                     {
@@ -173,8 +218,20 @@ namespace SparseInject
                     }
                     else
                     {
+#if DEBUG
+                        try
+                        {
+                            instance = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                                parameters: constructorParameters, culture: null);
+                        }
+                        catch(Exception exception)
+                        {
+                            throw new SparseInjectException($"Failed to create instance of '{concrete.Type}'\n{exception}");
+                        }
+#else
                         instance = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
                             parameters: constructorParameters, culture: null);
+#endif
                     }
 
                     if (concrete.SingletonFlag == SingletonFlag.Singleton)
@@ -185,15 +242,15 @@ namespace SparseInject
                 }
                 else
                 {
-                    if (concrete.IsFactory)
+                    if (concrete.FactoryFlag == FactoryFlag.Factory || concrete.FactoryFlag == FactoryFlag.FactoryWithParameter)
                     {
-                        var originalFactory = Unsafe.As<Func<IScopeResolver, object>>(concrete.SingletonValue) ;
-                        Func<object> factory = () =>
-                        {
-                            return originalFactory.Invoke(this);
-                        };
-
+                        var factoryWithResolver = (Func<IScopeResolver, object>) concrete.SingletonValue;
+                        var factory = factoryWithResolver.Invoke(this);
+                        
                         instance = factory;
+                        
+                        concrete.SingletonValue = instance;
+                        concrete.FactoryFlag = FactoryFlag.NotFactory;
                     }
                     else
                     {
@@ -206,10 +263,64 @@ namespace SparseInject
                     return instance;
                 }
 
+#if DEBUG
+                try
+                {
+                    instances.SetValue(instance, i);
+                }
+                catch (Exception exception)
+                {
+                    throw new SparseInjectException($"Failed resolve array of '{instances.GetType().GetElementType()}' because it has instance of type '{instance.GetType()}'\n{exception}");
+                }
+#else
                 instances.SetValue(instance, i);
+#endif
             }
 
             return instances;
+        }
+
+        internal bool TryGetConcrete(Type type, out Concrete concrete)
+        {
+            if (_contractIds.TryGetValue(type, out var contractId))
+            {
+                var denseIndex = _contractsSparse[contractId];
+
+                if (denseIndex < 0 && _parentContainer != null)
+                {
+                    return _parentContainer.TryGetConcrete(type, out concrete);
+                }
+
+                var contract = _contractsDense[denseIndex];
+                var concreteIndex = _contractsConcretesIndices[contract.ConcretesIndex + contract.ConcretesCount - 1];
+
+                concrete = _concretes[concreteIndex];
+                
+                return true;
+            }
+
+            concrete = default(Concrete);
+            return false;
+        }
+
+        public bool ContactExist(int contractId)
+        {
+            if (_contractsSparse[contractId] >= 0)
+            {
+                return true;
+            }
+
+            if (_parentContainer != null)
+            {
+                return _parentContainer.ContactExist(contractId);
+            }
+
+            return false;
+        }
+
+        public int GetDependencyContractId(int contractIndex)
+        {
+            return _dependencyReferences[contractIndex];
         }
     }
 }

@@ -8,5 +8,10 @@ namespace SparseInject
         {
             
         }
+
+        public SparseInjectException()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

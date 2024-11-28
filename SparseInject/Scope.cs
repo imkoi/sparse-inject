@@ -6,7 +6,7 @@ namespace SparseInject
     {
         internal Container _container;
         
-        public void Dispose()
+        public virtual void Dispose()
         {
             
         }

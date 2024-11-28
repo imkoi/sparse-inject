@@ -75,13 +75,13 @@ namespace SparseInject
                 : SingletonFlag.NotSingleton;
         }
 
-        public void Register<TConcreteContract>(TConcreteContract value)
+        public void RegisterValue<TConcreteContract>(TConcreteContract value)
             where TConcreteContract : class
         {
-            Register<TConcreteContract, TConcreteContract>(value);
+            RegisterValue<TConcreteContract, TConcreteContract>(value);
         }
 
-        public void Register<TContract, TConcrete>(TConcrete value)
+        public void RegisterValue<TContract, TConcrete>(TConcrete value)
             where TContract : class
             where TConcrete : class, TContract
         {
@@ -95,7 +95,7 @@ namespace SparseInject
             concrete.SingletonValue = value;
         }
         
-        public void Register<TContract0, TContract1, TConcrete>(TConcrete value)
+        public void RegisterValue<TContract0, TContract1, TConcrete>(TConcrete value)
             where TContract0 : class
             where TContract1 : class
             where TConcrete : class, TContract0, TContract1
@@ -114,7 +114,7 @@ namespace SparseInject
             concrete.SingletonValue = value;
         }
         
-        public void Register<TContract0, TContract1, TContract2, TConcrete>(TConcrete value)
+        public void RegisterValue<TContract0, TContract1, TContract2, TConcrete>(TConcrete value)
             where TContract0 : class
             where TContract1 : class
             where TContract2 : class
@@ -144,19 +144,31 @@ namespace SparseInject
             RegisterFactory<T, T>(factory);
         }
         
-        public void RegisterFactory<T>(Func<IScopeResolver, T> factory)
-            where T : class
-        {
-            RegisterFactory<T, T>(factory);
-        }
-        
         public void RegisterFactory<TContract, TConcrete>(Func<TContract> factory)
             where TConcrete : class, TContract
         {
-            RegisterFactory<TContract, TConcrete>(container => factory.Invoke());
+            RegisterFactory<TContract, TConcrete>(container => factory);
         }
         
-        public void RegisterFactory<TContract, TConcrete>(Func<IScopeResolver, TContract> factory)
+        public void RegisterFactory<T>(Func<IScopeResolver, T> factory)
+            where T : class
+        {
+            RegisterFactory<T, T>(container =>
+            {
+                return () => factory.Invoke(container);
+            });
+        }
+        
+        public void RegisterFactory<TContract, TConcrete>(Func<IScopeResolver, TConcrete> factory)
+            where TConcrete : class, TContract
+        {
+            RegisterFactory<TContract, TConcrete>(container =>
+            {
+                return () => factory.Invoke(container);
+            });
+        }
+        
+        public void RegisterFactory<TContract, TConcrete>(Func<IScopeResolver, Func<TContract>> factory)
             where TConcrete : class, TContract
         {
             ref var concrete = ref AddConcrete(typeof(Func<TConcrete>), out var index);
@@ -165,11 +177,39 @@ namespace SparseInject
             
             AddContract(contractId, contractType, index);
 
-            concrete.IsFactory = true;
+            concrete.FactoryFlag = FactoryFlag.Factory;
             concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
             concrete.SingletonValue = factory;
         }
         
+        public void RegisterFactory<TParameter, T>(Func<TParameter, T> factory) where T : class
+        {
+            RegisterFactory<TParameter, T, T>(resolver => factory);
+        }
+        
+        public void RegisterFactory<TParameter, T>(Func<IScopeResolver, Func<TParameter, T>> factory) where T : class
+        {
+            RegisterFactory<TParameter, T, T>(factory);
+        }
+        
+        public void RegisterFactory<TParameter, TContract, TConcrete>(Func<TParameter, TContract> factory) where TConcrete : class, TContract
+        {
+            RegisterFactory<TParameter, TContract, TConcrete>(resolver => factory);
+        }
+        
+        public void RegisterFactory<TParameter, TContract, TConcrete>(Func<IScopeResolver, Func<TParameter, TContract>> factory) where TConcrete : class, TContract
+        {
+            ref var concrete = ref AddConcrete(typeof(Func<TParameter, TConcrete>), out var index);
+            
+            var contractId = GetOrAddContractId<Func<TParameter, TContract>>(out var contractType);
+            
+            AddContract(contractId, contractType, index);
+
+            concrete.FactoryFlag = FactoryFlag.FactoryWithParameter;
+            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
+            concrete.SingletonValue = factory;
+        }
+
         public void RegisterScope<TScopeConcreteContract>(Action<IScopeBuilder> install)
             where TScopeConcreteContract : Scope
         {
