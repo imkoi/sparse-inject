@@ -78,13 +78,28 @@ namespace SparseInject
         public void RegisterValue<TConcreteContract>(TConcreteContract value)
             where TConcreteContract : class
         {
-            RegisterValue<TConcreteContract, TConcreteContract>(value);
+            ref var concrete = ref AddConcrete(typeof(TConcreteContract), out var index);
+            
+            var contractId = GetOrAddContractId<TConcreteContract>(out var contractType);
+            
+            AddContract(contractId, contractType, index);
+            
+            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
+            concrete.SingletonValue = value;
         }
 
         public void RegisterValue<TContract, TConcrete>(TConcrete value)
             where TContract : class
             where TConcrete : class, TContract
         {
+#if DEBUG
+            if (typeof(TConcrete) != value.GetType())
+            {
+                throw new SparseInjectException($"To register value of type '{value.GetType().Name}' " +
+                                                $"use 'RegisterValue<{typeof(TContract).Name}, {typeof(TConcrete).Name}, {value.GetType().Name}>(value)' method signature");
+            }
+#endif
+            
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
             
             var contractId = GetOrAddContractId<TContract>(out var contractType);
@@ -100,6 +115,14 @@ namespace SparseInject
             where TContract1 : class
             where TConcrete : class, TContract0, TContract1
         {
+#if DEBUG
+            if (typeof(TConcrete) != value.GetType())
+            {
+                throw new SparseInjectException($"To register value of type '{value.GetType().Name}' " +
+                                                $"use 'RegisterValue<{typeof(TContract0).Name}, {typeof(TContract1).Name}, {typeof(TConcrete).Name}, {value.GetType().Name}>(value)' method signature");
+            }
+#endif
+            
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
             
             var contractId = GetOrAddContractId<TContract0>(out var contractType);
@@ -120,6 +143,14 @@ namespace SparseInject
             where TContract2 : class
             where TConcrete : class, TContract0, TContract1, TContract2
         {
+#if DEBUG
+            if (typeof(TConcrete) != value.GetType())
+            {
+                throw new SparseInjectException($"To register value of type '{value.GetType().Name}' " +
+                                                $"use 'RegisterValue<{typeof(TContract0).Name}, {typeof(TContract1).Name}, {typeof(TContract2).Name}, {typeof(TConcrete).Name}, {value.GetType().Name}>(value)' method signature");
+            }
+#endif
+            
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
             
             var contractId = GetOrAddContractId<TContract0>(out var contractType);

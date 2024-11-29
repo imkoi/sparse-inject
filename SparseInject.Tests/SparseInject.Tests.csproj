@@ -27,6 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="CircularDependencyTests\" />
       <Folder Include="VContainer\" />
     </ItemGroup>
 

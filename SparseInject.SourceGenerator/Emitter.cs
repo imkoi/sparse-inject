@@ -75,7 +75,7 @@ static class Emitter
                 
                     for (var i = 0; i < parameters.Length; i++)
                     {
-                        args[i] = $"Unsafe.As<{parameters[i].paramType}>(arguments[{i}])";
+                        args[i] = $"({parameters[i].paramType})(arguments[{i}])";
                     }
 
                     codeWriter.AppendLine($"return new {typeMeta.TypeName}({string.Join(", ", args)});");

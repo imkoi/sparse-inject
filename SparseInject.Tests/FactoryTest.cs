@@ -2,27 +2,26 @@ using System;
 using FluentAssertions;
 using NSubstitute;
 using NUnit.Framework;
-using SparseInject;
 
-namespace VContainer.Tests
+namespace SparseInject.Tests
 {
-    public class Player : IPlayer
-    {
-        public int MaxHealth { get; set; }
-        public IAudioService AudioService { get; set; }
-    }
-    
-    public interface IPlayer
-    {
-        int MaxHealth { get; }
-        IAudioService AudioService { get; }
-    }
-    
-    public interface IAudioService { }
-
     [TestFixture]
     public class FactoryTest
     {
+        private class Player : IPlayer
+        {
+            public int MaxHealth { get; set; }
+            public IAudioService AudioService { get; set; }
+        }
+    
+        private interface IPlayer
+        {
+            int MaxHealth { get; }
+            IAudioService AudioService { get; }
+        }
+    
+        public interface IAudioService { }
+        
         [Test]
         public void RegisteredFactory_WhenResolvedAndInvoked_ReturnCorrectValues()
         {
