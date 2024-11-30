@@ -1,6 +1,8 @@
-﻿using NUnit.Framework;
+﻿using FluentAssertions;
+using NUnit.Framework;
 using SparseInject;
 using SparseInject.Tests.Scopes;
+using SparseInject.Tests.Simple;
 
 [TestFixture]
 public class ScopeTests
@@ -42,5 +44,47 @@ public class ScopeTests
         var gameController = container.Resolve<GameController>();
             
         Assert.DoesNotThrow(gameController.Execute);
+    }
+    
+    [Test]
+    public void UnorderedWithSparseRewireBindings()
+    {
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.Register<IPlayerControllerProcessor, PlayerMovementProcessor>();
+        containerBuilder.Register<IPlayerControllerProcessor, PlayerAnimationProcessor>();
+
+        containerBuilder.Register<PlayerController>();
+
+        containerBuilder.Register<IPlayerControllerProcessor, PlayerShootingProcessor>();
+   
+        containerBuilder.Register<PlayerService>();
+
+        var container = containerBuilder.Build();
+        var processors = container.Resolve<PlayerService>();
+        
+        processors.Should().NotBeNull();
+    }
+    
+    [Test]
+    public void UnorderedWithSparseRewireBindings_2()
+    {
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.Register<IAudioManager, AudioManager>();
+        containerBuilder.Register<IPlayerControllerProcessor, PlayerMovementProcessor>();
+        containerBuilder.Register<IPlayerControllerProcessor, PlayerAnimationProcessor>();
+
+        containerBuilder.Register<PlayerController>();
+
+        containerBuilder.Register<IPlayerControllerProcessor, PlayerShootingProcessor>();
+        containerBuilder.Register<IAudioManager, PlayerAudioManager>();
+   
+        containerBuilder.Register<PlayerService>();
+
+        var container = containerBuilder.Build();
+        var processors = container.Resolve<PlayerService>();
+
+        processors.Should().NotBeNull();
     }
 }

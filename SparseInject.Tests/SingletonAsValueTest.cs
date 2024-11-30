@@ -271,6 +271,25 @@ public class SingletonAsValueTest
     }
     
     [Test]
+    public void RegisteredToInterfaceWithConcrete_WhenResolvedMultipleTimes_ReturnSameValues()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+
+        var value = new PlayerWithDependencies(
+            Substitute.For<IPlayerSingletonDependency>(),
+            Substitute.For<IPlayerTransientDependency>());
+
+        builder.RegisterValue<IPlayerWithDependencies, PlayerWithDependencies>(value);
+
+        var container = builder.Build();
+
+        // Asserts
+        container.Resolve<IPlayerWithDependencies>().Should().Be(value);
+        container.Resolve<IPlayerWithDependencies>().Should().Be(value);
+    }
+    
+    [Test]
     public void RegisteredToTwoInterfaces_WhenResolvedMultipleTimes_ReturnSameValues()
     {
         // Setup

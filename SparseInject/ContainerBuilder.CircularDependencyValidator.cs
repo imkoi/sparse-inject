@@ -44,12 +44,15 @@ namespace SparseInject
             }
 
             stack.Add(concrete);
+            
+            var constructorContractsCount = concrete.GetConstructorContractsCount();
+            var constructorContractsIndex = concrete.GetConstructorContractsIndex();
 
-            for (var i = 0; i < concrete.ConstructorContractsCount; i++)
+            for (var i = 0; i < constructorContractsCount; i++)
             {
-                var constructorContractId = concreteConstructorContractIds[i + concrete.ConstructorContractsIndex];
+                var constructorContractId = concreteConstructorContractIds[i + constructorContractsIndex];
 
-                if (concrete.ScopeConfigurator != null)
+                if (concrete.IsScope())
                 {
                     continue;
                 }

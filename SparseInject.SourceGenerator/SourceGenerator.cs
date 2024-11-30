@@ -59,7 +59,7 @@ public class SourceGenerator : ISourceGenerator
         codeWriter.AppendLine("using System.Runtime.CompilerServices;");
         codeWriter.AppendLine("using SparseInject;");
         
-        codeWriter.AppendLine("#if UNITY_EDITOR");
+        codeWriter.AppendLine("#if UNITY_2018_1_OR_NEWER");
         codeWriter.AppendLine("using Unity.IL2CPP.CompilerServices;");
         codeWriter.AppendLine("using UnityEngine.Scripting;");
         codeWriter.AppendLine("#endif");
@@ -131,7 +131,7 @@ public class SourceGenerator : ISourceGenerator
             }
         }
         
-        codeWriter.AppendLine("#if UNITY_EDITOR");
+        codeWriter.AppendLine("#if UNITY_2018_1_OR_NEWER");
         codeWriter.AppendLine("[Il2CppSetOption(Option.NullChecks, false)]");
         codeWriter.AppendLine("[Il2CppSetOption(Option.DivideByZeroChecks, false)]");
         codeWriter.AppendLine("[Il2CppSetOption(Option.ArrayBoundsChecks, false)]");

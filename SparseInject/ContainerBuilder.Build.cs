@@ -18,7 +18,7 @@ namespace SparseInject
                 ref var concrete = ref _concretes[concreteIndex];
                 var constructorParametersCount = 0;
                     
-                if (concrete.SingletonFlag != SingletonFlag.SingletonWithValue)
+                if (!(concrete.IsSingleton() && concrete.HasValue()))
                 {
                     if (ReflectionBakingProviderCache.TryGetInstanceFactory(concrete.Type, out var factory, out var constructorParametersSpan))
                     {
@@ -29,19 +29,34 @@ namespace SparseInject
                     }
                     else
                     {
-#if DEBUG
-                        var constructors = concrete.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+                        var constructors = concrete.Type.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
+                        var constructorParameters = default(ParameterInfo[]);
+                        var maxParametersCount = -1;
 
-                        if (constructors.Length == 0)
+                        for (var i = 0; i < constructors.Length; i++)
                         {
-                            throw new SparseInjectException($"Could not find constructor for type {concrete.Type}");
+                            var suspectConstructor = constructors[i];
+                                
+                            if (suspectConstructor.IsPublic || suspectConstructor.IsAssembly)
+                            {
+                                var suspectConstructorParameters = suspectConstructor.GetParameters();
+
+                                if (suspectConstructorParameters.Length > maxParametersCount)
+                                {
+                                    constructorParameters = suspectConstructorParameters;
+                                    maxParametersCount = suspectConstructorParameters.Length;
+                                    
+                                    constructors[0] = suspectConstructor;
+                                }
+                            }
+                        }
+                        
+                        if (maxParametersCount < 0)
+                        {
+                            throw new SparseInjectException($"Could not find public or internal constructor for type {concrete.Type}");
                         }
                         
                         concrete.ConstructorInfo = constructors[0];
-#else
-                        concrete.ConstructorInfo = concrete.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)[0];
-#endif
-                        var constructorParameters = concrete.ConstructorInfo.GetParameters();
 
                         constructorParametersCount = constructorParameters.Length;
                         
@@ -49,7 +64,7 @@ namespace SparseInject
                     }
                 }
                 
-                concrete.ConstructorContractsCount = constructorParametersCount;
+                concrete.SetConstructorContractsCount(constructorParametersCount);
 
                 if (constructorParametersCount > maxConstructorLength)
                 {
@@ -77,19 +92,20 @@ namespace SparseInject
 
             var concretesCount = _implementationsCount;
             var concreteConstructorParametersCount = -1;
+            var contractId = -1;
 
             for (var concreteIndex = 0; concreteIndex < concretesCount; concreteIndex++)
             {
                 ref var concrete = ref _concretes[concreteIndex];
 
-                concrete.ConstructorContractsIndex = dependencyReferenceIndex;
+                concrete.SetConstructorContractsIndex(dependencyReferenceIndex);
 
-                concreteConstructorParametersCount = concrete.ConstructorContractsCount;
+                concreteConstructorParametersCount = concrete.GetConstructorContractsCount();
 
                 for (var parameterIndex = 0; parameterIndex < concreteConstructorParametersCount; parameterIndex++)
                 {
                     var parameterType = default(Type);
-                    var contractId = -1;
+                    contractId = -1; // contractId
 
                     // TODO: optimize
                     if (implementationConstructorParameters[concreteIndex] != null)
@@ -116,7 +132,7 @@ namespace SparseInject
                                 _contractIds.Add(elementType, contractId);
                             }
                         }
-                        else if (concrete.ScopeConfigurator != null)
+                        else if (concrete.IsScope())
                         {
                             contractId = _contractIds.Count;
 
@@ -140,9 +156,12 @@ namespace SparseInject
             {
                 if (_parentContainer.TryGetConcrete(containerType, out var concreteContainer))
                 {
-                    for (var i = 0; i < concreteContainer.ConstructorContractsCount; i++)
+                    concreteConstructorParametersCount = concreteContainer.GetConstructorContractsCount();
+                    var constructorContractsIndex = concreteContainer.GetConstructorContractsIndex();
+                    
+                    for (var i = 0; i < concreteConstructorParametersCount; i++)
                     {
-                        var contractId = _parentContainer.GetDependencyContractId(concreteContainer.ConstructorContractsIndex + i);
+                        contractId = _parentContainer.GetDependencyContractId(constructorContractsIndex + i);
                         
                         if (_contractsSparse[contractId] < 0)
                         {

@@ -51,7 +51,7 @@ static class Emitter
 
         var generateTypeName = $"{typeName}_SparseInject_GeneratedInstanceFactory";
 
-        codeWriter.AppendLine("#if UNITY_EDITOR");
+        codeWriter.AppendLine("#if UNITY_2018_1_OR_NEWER");
         codeWriter.AppendLine("[Il2CppSetOption(Option.NullChecks, false)]");
         codeWriter.AppendLine("[Il2CppSetOption(Option.DivideByZeroChecks, false)]");
         codeWriter.AppendLine("[Il2CppSetOption(Option.ArrayBoundsChecks, false)]");

@@ -25,9 +25,7 @@ namespace SparseInject
             
             AddContract(contractId, contractType, index);
 
-            concrete.SingletonFlag = lifetime == Lifetime.Singleton 
-                ? SingletonFlag.Singleton
-                : SingletonFlag.NotSingleton;
+            concrete.MarkSingleton(lifetime == Lifetime.Singleton);
         }
         
         public void Register<TContract0, TContract1, TConcrete>(Lifetime lifetime = Lifetime.Transient)
@@ -45,9 +43,7 @@ namespace SparseInject
             
             AddContract(contractId, contractType, index);
 
-            concrete.SingletonFlag = lifetime == Lifetime.Singleton 
-                ? SingletonFlag.Singleton
-                : SingletonFlag.NotSingleton;
+            concrete.MarkSingleton(lifetime == Lifetime.Singleton);
         }
         
         public void Register<TContract0, TContract1, TContract2, TConcrete>(Lifetime lifetime = Lifetime.Transient)
@@ -70,9 +66,7 @@ namespace SparseInject
             
             AddContract(contractId, contractType, index);
 
-            concrete.SingletonFlag = lifetime == Lifetime.Singleton 
-                ? SingletonFlag.Singleton
-                : SingletonFlag.NotSingleton;
+            concrete.MarkSingleton(lifetime == Lifetime.Singleton);
         }
 
         public void RegisterValue<TConcreteContract>(TConcreteContract value)
@@ -84,8 +78,9 @@ namespace SparseInject
             
             AddContract(contractId, contractType, index);
             
-            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
-            concrete.SingletonValue = value;
+            concrete.MarkSingleton(true);
+            concrete.MarkValue(true);
+            concrete.Value = value;
         }
 
         public void RegisterValue<TContract, TConcrete>(TConcrete value)
@@ -106,8 +101,9 @@ namespace SparseInject
             
             AddContract(contractId, contractType, index);
             
-            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
-            concrete.SingletonValue = value;
+            concrete.MarkSingleton(true);
+            concrete.MarkValue(true);
+            concrete.Value = value;
         }
         
         public void RegisterValue<TContract0, TContract1, TConcrete>(TConcrete value)
@@ -115,14 +111,6 @@ namespace SparseInject
             where TContract1 : class
             where TConcrete : class, TContract0, TContract1
         {
-#if DEBUG
-            if (typeof(TConcrete) != value.GetType())
-            {
-                throw new SparseInjectException($"To register value of type '{value.GetType().Name}' " +
-                                                $"use 'RegisterValue<{typeof(TContract0).Name}, {typeof(TContract1).Name}, {typeof(TConcrete).Name}, {value.GetType().Name}>(value)' method signature");
-            }
-#endif
-            
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
             
             var contractId = GetOrAddContractId<TContract0>(out var contractType);
@@ -133,8 +121,9 @@ namespace SparseInject
             
             AddContract(contractId, contractType, index);
 
-            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
-            concrete.SingletonValue = value;
+            concrete.MarkSingleton(true);
+            concrete.MarkValue(true);
+            concrete.Value = value;
         }
         
         public void RegisterValue<TContract0, TContract1, TContract2, TConcrete>(TConcrete value)
@@ -143,14 +132,6 @@ namespace SparseInject
             where TContract2 : class
             where TConcrete : class, TContract0, TContract1, TContract2
         {
-#if DEBUG
-            if (typeof(TConcrete) != value.GetType())
-            {
-                throw new SparseInjectException($"To register value of type '{value.GetType().Name}' " +
-                                                $"use 'RegisterValue<{typeof(TContract0).Name}, {typeof(TContract1).Name}, {typeof(TContract2).Name}, {typeof(TConcrete).Name}, {value.GetType().Name}>(value)' method signature");
-            }
-#endif
-            
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
             
             var contractId = GetOrAddContractId<TContract0>(out var contractType);
@@ -165,8 +146,9 @@ namespace SparseInject
             
             AddContract(contractId, contractType, index);
 
-            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
-            concrete.SingletonValue = value;
+            concrete.MarkSingleton(true);
+            concrete.MarkValue(true);
+            concrete.Value = value;
         }
         
         public void RegisterFactory<T>(Func<T> factory)
@@ -208,9 +190,10 @@ namespace SparseInject
             
             AddContract(contractId, contractType, index);
 
-            concrete.FactoryFlag = FactoryFlag.Factory;
-            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
-            concrete.SingletonValue = factory;
+            concrete.MarkFactory(true);
+            concrete.MarkSingleton(true);
+            concrete.MarkValue(true);
+            concrete.Value = factory;
         }
         
         public void RegisterFactory<TParameter, T>(Func<TParameter, T> factory) where T : class
@@ -236,9 +219,10 @@ namespace SparseInject
             
             AddContract(contractId, contractType, index);
 
-            concrete.FactoryFlag = FactoryFlag.FactoryWithParameter;
-            concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
-            concrete.SingletonValue = factory;
+            concrete.MarkFactory(true);
+            concrete.MarkSingleton(true);
+            concrete.MarkValue(true);
+            concrete.Value = factory;
         }
 
         public void RegisterScope<TScopeConcreteContract>(Action<IScopeBuilder> install)
@@ -273,8 +257,9 @@ namespace SparseInject
             
             AddContract(contractId, contractType, index);
 
-            concrete.SingletonFlag = SingletonFlag.NotSingleton;
-            concrete.ScopeConfigurator = install;
+            concrete.MarkScope(true);
+            concrete.MarkSingleton(false);
+            concrete.Value = install;
         }
     }
 }

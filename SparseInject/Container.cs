@@ -52,7 +52,7 @@ namespace SparseInject
         {
             var type = typeof(T);
             
-            if (_contractIds.TryGetValue(typeof(T), out var id))
+            if (_contractIds.TryGetValue(type, out var id))
             {
                 if (_contractsSparse[id] < 0)
                 {
@@ -119,6 +119,7 @@ namespace SparseInject
                 ? null
                 : Array.CreateInstance(contract.Type, contract.ConcretesCount);
             var constructorContractsCount = -1;
+            var constructorContractsIndex = -1;
             var reserved = default(ArrayCache.Reserved);
 
             for (var i = 0; i < contract.ConcretesCount; i++)
@@ -128,26 +129,27 @@ namespace SparseInject
 
                 var instance = default(object);
                 
-                if (concrete.SingletonFlag != SingletonFlag.SingletonWithValue)
+                if (!(concrete.IsSingleton() && concrete.HasValue()))
                 {
-                    constructorContractsCount = concrete.ConstructorContractsCount;
+                    constructorContractsCount = concrete.GetConstructorContractsCount();
+                    constructorContractsIndex = concrete.GetConstructorContractsIndex();
 
                     if (constructorContractsCount > 0)
                     {
                         reserved = ArrayCache.PullReserved(constructorContractsCount);
                     }
 
-                    if (concrete.ScopeConfigurator != null)
+                    if (concrete.IsScope())
                     {
                         var containerBuilder = new ContainerBuilder(this, _contractIds, 32);
 
-                        concrete.ScopeConfigurator.Invoke(containerBuilder, this);
+                        ((Action<IScopeBuilder, IScopeResolver>)concrete.Value).Invoke(containerBuilder, this);
 
                         var container = containerBuilder.BuildInternal(concrete.Type, this);
 
                         for (var j = 0; j < constructorContractsCount; j++)
                         {
-                            var constructorDependencyId = _dependencyReferences[j + concrete.ConstructorContractsIndex];
+                            var constructorDependencyId = _dependencyReferences[j + constructorContractsIndex];
 
                             if (_contractsSparse[constructorDependencyId] < 0)
                             {
@@ -163,7 +165,7 @@ namespace SparseInject
                     {
                         for (var j = 0; j < constructorContractsCount; j++)
                         {
-                            var constructorDependencyId = _dependencyReferences[j + concrete.ConstructorContractsIndex];
+                            var constructorDependencyId = _dependencyReferences[j + constructorContractsIndex];
 
                             if (_contractsSparse[constructorDependencyId] < 0)
                             {
@@ -234,27 +236,27 @@ namespace SparseInject
 #endif
                     }
 
-                    if (concrete.SingletonFlag == SingletonFlag.Singleton)
+                    if (concrete.IsSingleton())
                     {
-                        concrete.SingletonValue = instance;
-                        concrete.SingletonFlag = SingletonFlag.SingletonWithValue;
+                        concrete.Value = instance;
+                        concrete.MarkValue(true);
                     }
                 }
                 else
                 {
-                    if (concrete.FactoryFlag == FactoryFlag.Factory || concrete.FactoryFlag == FactoryFlag.FactoryWithParameter)
+                    if (concrete.IsFactory())
                     {
-                        var factoryWithResolver = (Func<IScopeResolver, object>) concrete.SingletonValue;
+                        var factoryWithResolver = (Func<IScopeResolver, object>) concrete.Value;
                         var factory = factoryWithResolver.Invoke(this);
                         
                         instance = factory;
                         
-                        concrete.SingletonValue = instance;
-                        concrete.FactoryFlag = FactoryFlag.NotFactory;
+                        concrete.Value = instance;
+                        concrete.MarkFactory(false);
                     }
                     else
                     {
-                        instance = concrete.SingletonValue;
+                        instance = concrete.Value;
                     }
                 }
 

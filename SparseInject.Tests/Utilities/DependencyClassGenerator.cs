@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using NUnit.Framework;
 
-namespace SparseInject.Tests.Utilities
+namespace Utilities
 {
     public class DependencyClassGenerator
     {
