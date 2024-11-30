@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Reflection;
+using Unity.IL2CPP.CompilerServices;
 
 namespace SparseInject
 {
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public partial class ContainerBuilder
     {
         private (int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters, int maxConstructorLength) BuildPrecomputeDependenciesCount()

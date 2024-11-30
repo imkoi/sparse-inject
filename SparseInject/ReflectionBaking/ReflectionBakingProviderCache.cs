@@ -2,9 +2,13 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
+using Unity.IL2CPP.CompilerServices;
 
 namespace SparseInject
 {
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public static class ReflectionBakingProviderCache
     {
         private static Dictionary<Assembly, IReflectionBakingProvider> _cache = new Dictionary<Assembly, IReflectionBakingProvider>(32);
