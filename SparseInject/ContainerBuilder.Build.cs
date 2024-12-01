@@ -11,11 +11,11 @@ namespace SparseInject
     {
         private (int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters, int maxConstructorLength) BuildPrecomputeDependenciesCount()
         {
-            var implementationConstructorParameterInfos = new ParameterInfo[_implementationsCount][];
-            var implementationConstructorParameters = new Type[_implementationsCount][];
+            var implementationConstructorParameterInfos = new ParameterInfo[_concretesCount][];
+            var implementationConstructorParameters = new Type[_concretesCount][];
             var implementationDependenciesCount = 0;
             var maxConstructorLength = int.MinValue;
-            var concretesCount = _implementationsCount;
+            var concretesCount = _concretesCount;
 
             for (var concreteIndex = 0; concreteIndex < concretesCount; concreteIndex++)
             {
@@ -94,7 +94,7 @@ namespace SparseInject
             var dependencyReferences = new int[implementationDependenciesCount];
             var dependencyReferenceIndex = 0;
 
-            var concretesCount = _implementationsCount;
+            var concretesCount = _concretesCount;
             var concreteConstructorParametersCount = -1;
             var contractId = -1;
 
@@ -169,7 +169,7 @@ namespace SparseInject
                         
                         if (_contractsSparse[contractId] < 0)
                         {
-                            if (!_parentContainer.ContactExist(contractId))
+                            if (!_parentContainer.ContractExist(contractId))
                             {
                                 foreach (var pair in _contractIds)
                                 {

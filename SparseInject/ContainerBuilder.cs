@@ -20,10 +20,9 @@ namespace SparseInject
         private Contract[] _contractsDense;
         private int[] _contractsConcretesIndices;
         private Concrete[] _concretes;
-        private readonly int _leftSparseIndex;
 
         private int _dependenciesCount;
-        private int _implementationsCount;
+        private int _concretesCount;
         
         private int _lastContractsConcretesIndex;
         
@@ -44,8 +43,6 @@ namespace SparseInject
             _contractsConcretesIndices = new int[capacity];
             _concretes = new Concrete[capacity];
 
-            _leftSparseIndex = contractIds.Count;
-            
             for (var i = 0; i < capacity; i++)
             {
                 _contractsSparse[i] = -1;
@@ -72,8 +69,15 @@ namespace SparseInject
                 stats.implementationConstructorParameters,
                 stats.maxConstructorLength);
             
-            ThrowIfInvalid(parentContainer, concreteConstructorContractIds);
-            
+            CircularDependencyValidator.ThrowIfInvalid(new ContainerInfo(
+                parentContainer,
+                _contractsSparse,
+                _contractsDense,
+                _contractsConcretesIndices,
+                _concretes,
+                concreteConstructorContractIds,
+                _concretesCount));
+
             return new Container(
                 containerType,
                 parentContainer,
@@ -83,7 +87,8 @@ namespace SparseInject
                 _contractsConcretesIndices,
                 _concretes,
                 concreteConstructorContractIds,
-                stats.maxConstructorLength);
+                stats.maxConstructorLength,
+                _concretesCount);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -123,7 +128,7 @@ namespace SparseInject
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ref Concrete AddConcrete(Type concreteType, out int index)
         {
-            index = _implementationsCount;
+            index = _concretesCount;
 
             if (index >= _concretes.Length)
             {
@@ -134,7 +139,7 @@ namespace SparseInject
             
             concrete.Type = concreteType;
 
-            _implementationsCount++;
+            _concretesCount++;
             
             return ref concrete;
         }

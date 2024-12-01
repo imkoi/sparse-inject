@@ -19,6 +19,7 @@ namespace SparseInject
         private readonly int[] _contractsConcretesIndices;
         private readonly Concrete[] _concretes;
         private readonly int[] _dependencyReferences;
+        private readonly int _concretesCount;
 
         private readonly object[][] _arrays;
         private readonly object[] _emptyArray;
@@ -32,7 +33,8 @@ namespace SparseInject
             int[] contractsConcretesIndices,
             Concrete[] concretes,
             int[] dependencyReferences,
-            int maxConstructorLength)
+            int maxConstructorLength,
+            int concretesCount)
         {
             _containerType = containerType;
             _parentContainer = parentContainer;
@@ -42,6 +44,7 @@ namespace SparseInject
             _contractsConcretesIndices = contractsConcretesIndices;
             _concretes = concretes;
             _dependencyReferences = dependencyReferences;
+            _concretesCount = concretesCount;
 
             _arrays = ArrayCache.GetConstructorParametersPool(maxConstructorLength);
             _emptyArray = _arrays[0];
@@ -305,7 +308,7 @@ namespace SparseInject
             return false;
         }
 
-        public bool ContactExist(int contractId)
+        public bool ContractExist(int contractId)
         {
             if (_contractsSparse[contractId] >= 0)
             {
@@ -314,15 +317,40 @@ namespace SparseInject
 
             if (_parentContainer != null)
             {
-                return _parentContainer.ContactExist(contractId);
+                return _parentContainer.ContractExist(contractId);
             }
 
+            return false;
+        }
+
+        public bool TryFindContainerWithContract(int contractId, out Container container)
+        {
+            if (_contractsSparse[contractId] >= 0)
+            {
+                container = this;
+                return true;
+            }
+            
+            if (_parentContainer != null)
+            {
+                return TryFindContainerWithContract(contractId, out container);
+            }
+
+            container = null;
+            
             return false;
         }
 
         public int GetDependencyContractId(int contractIndex)
         {
             return _dependencyReferences[contractIndex];
+        }
+
+        internal ContainerInfo GetContainerInfo()
+        {
+            return new ContainerInfo(_parentContainer, _contractsSparse,
+                _contractsDense, _contractsConcretesIndices, 
+                _concretes, _dependencyReferences, _concretesCount);
         }
     }
 }

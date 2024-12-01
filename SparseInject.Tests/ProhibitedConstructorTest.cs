@@ -92,4 +92,51 @@ public class ProhibitedConstructorTest
             .Should()
             .NotThrow<SparseInjectException>();
     }
+    
+    [Test]
+    public void RegisteredWithInternal_WhenResolve_CouldBeResolved()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+
+        builder.RegisterValue(Substitute.For<IDependency>());
+        builder.Register<ClassWithInternalConstructor>();
+        var container = builder.Build();
+
+        // Asserts
+        container.Invoking(subject => subject.Resolve<ClassWithInternalConstructor>())
+            .Should()
+            .NotThrow<SparseInjectException>();
+    }
+    
+    [Test]
+    public void RegisteredWithInternalAndPrivate_WhenBuildContainer_ContainerAreBuilt()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+
+        builder.RegisterValue(Substitute.For<IDependency>());
+        builder.Register<ClassWithPrivateAndInternalConstructor>();
+
+        // Asserts
+        builder.Invoking(subject => subject.Build())
+            .Should()
+            .NotThrow<SparseInjectException>();
+    }
+    
+    [Test]
+    public void RegisteredWithInternalAndPrivate_WhenResolve_CouldBeResolved()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+
+        builder.RegisterValue(Substitute.For<IDependency>());
+        builder.Register<ClassWithPrivateAndInternalConstructor>();
+        var container = builder.Build();
+
+        // Asserts
+        container.Invoking(subject => subject.Resolve<ClassWithPrivateAndInternalConstructor>())
+            .Should()
+            .NotThrow<SparseInjectException>();
+    }
 }

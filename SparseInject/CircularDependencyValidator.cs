@@ -8,26 +8,31 @@ namespace SparseInject
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.DivideByZeroChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public partial class ContainerBuilder
+    public static class CircularDependencyValidator
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ThrowIfInvalid(Container parentContainer, int[] concreteConstructorContractIds)
+        internal static void ThrowIfInvalid(ContainerInfo containerInfo)
         {
-            var concretesCount = _implementationsCount;
+            var concretesCount = containerInfo.ConcretesCount;
             
             var circularDependencyChecker = new List<Concrete>(concretesCount);
 
-            for (var i = 0; i < concretesCount; i++)
+            for (var i = 0; i < containerInfo.ConcretesCount; i++)
             {
                 circularDependencyChecker.Clear();
                     
-                ThrowIfInvalidRecursive(i, parentContainer, concreteConstructorContractIds, circularDependencyChecker);
+                ThrowIfInvalidRecursive(i, containerInfo, circularDependencyChecker);
             }
         }
         
-        private void ThrowIfInvalidRecursive(int concreteIndex, Container parentContainer, int[] concreteConstructorContractIds,
+        private static void ThrowIfInvalidRecursive(int concreteIndex, ContainerInfo containerInfo,
             List<Concrete> stack)
         {
+            var _concretes = containerInfo.Concretes;
+            var _contractsSparse = containerInfo.ContractsSparse; 
+            var _contractsDense = containerInfo.ContractsDense;
+            var _contractsConcretesIndices = containerInfo.ContractsConcretesIndices;
+            
             ref var concrete = ref _concretes[concreteIndex];
             var stackCount = stack.Count;
 
@@ -53,18 +58,7 @@ namespace SparseInject
 
             for (var i = 0; i < constructorContractsCount; i++)
             {
-                var constructorContractId = concreteConstructorContractIds[i + constructorContractsIndex];
-
-                if (concrete.IsScope())
-                {
-                    continue;
-                }
-
-                if (constructorContractId < 0)
-                {
-                    throw new SparseInjectException($"Circular dependency validator failed because of unknown dependency in {concrete.Type}!");
-                }
-                
+                var constructorContractId = containerInfo.ConcreteConstructorContractIds[i + constructorContractsIndex];
                 var constructorContractIndex = _contractsSparse[constructorContractId];
 
                 if (constructorContractIndex >= 0)
@@ -75,8 +69,26 @@ namespace SparseInject
                     {
                         var concreteId = _contractsConcretesIndices[j + constructorContract.ConcretesIndex];
                         
-                        ThrowIfInvalidRecursive(concreteId, parentContainer, concreteConstructorContractIds, stack);
+                        ThrowIfInvalidRecursive(concreteId, containerInfo, stack);
                     }
+                }
+                else if(containerInfo.ParentContainer != null && containerInfo.ParentContainer
+                            .TryFindContainerWithContract(constructorContractId, out var targetContainer))
+                {
+                    var requestedInfo = targetContainer.GetContainerInfo();
+                    var denseIndex = requestedInfo.ContractsSparse[constructorContractId];
+                    ref var constructorContract = ref requestedInfo.ContractsDense[denseIndex];
+
+                    for (var j = 0; j < constructorContract.ConcretesCount; j++)
+                    {
+                        var concreteId = requestedInfo.ContractsConcretesIndices[j + constructorContract.ConcretesIndex];
+                        
+                        ThrowIfInvalidRecursive(concreteId, requestedInfo, stack);
+                    }
+                }
+                else if(!concrete.IsScope())
+                {
+                    throw new SparseInjectException($"Circular dependency validator failed because of unknown dependency in {concrete.Type}!");
                 }
             }
 
