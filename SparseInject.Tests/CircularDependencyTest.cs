@@ -101,7 +101,7 @@ public class CircularDependencyTest
         });
 
         var container = containerBuilder.Build();
-        
+
         container.Invoking(subject => subject.Resolve<D0>()).Should().Throw<SparseInjectException>();
     }
 }

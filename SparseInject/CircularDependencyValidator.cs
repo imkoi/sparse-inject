@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Unity.IL2CPP.CompilerServices;
 
 namespace SparseInject
@@ -15,83 +18,113 @@ namespace SparseInject
         {
             var concretesCount = containerInfo.ConcretesCount;
             
-            var circularDependencyChecker = new List<Concrete>(concretesCount);
-
-            for (var i = 0; i < containerInfo.ConcretesCount; i++)
+            for (var i = 0; i < concretesCount; i++)
             {
-                circularDependencyChecker.Clear();
-                    
-                ThrowIfInvalidRecursive(i, containerInfo, circularDependencyChecker);
+                ThrowIfInvalidRecursive(i, i, containerInfo, 0);
             }
         }
-        
-        private static void ThrowIfInvalidRecursive(int concreteIndex, ContainerInfo containerInfo,
-            List<Concrete> stack)
+
+        private static void ThrowIfInvalidRecursive(int originConcreteIndex, int concreteIndex,
+            ContainerInfo containerInfo, int depth)
         {
-            var _concretes = containerInfo.Concretes;
-            var _contractsSparse = containerInfo.ContractsSparse; 
-            var _contractsDense = containerInfo.ContractsDense;
-            var _contractsConcretesIndices = containerInfo.ContractsConcretesIndices;
+            var concretes = containerInfo.Concretes;
             
-            ref var concrete = ref _concretes[concreteIndex];
-            var stackCount = stack.Count;
+            ref var concrete = ref concretes[concreteIndex];
 
-            for (var i = 0; i < stackCount; i++)
+            if (depth > 0 && originConcreteIndex == concreteIndex)
             {
-                if (concrete.Type == stack[i].Type)
-                {
-                    stack.Add(concrete);
-
-                    var path = string.Join("\n",
-                        stack.Take(i + 1)
-                            .Reverse()
-                            .Select((item, itemIndex) => $"    [{itemIndex + 1}] {item} --> {item.Type.FullName}"));
-                    
-                    throw new SparseInjectException($"{concrete.Type}: Circular dependency detected!\n{path}");
-                }
+                ThrowIfInvalidRecursiveByReflection(concrete.Type, new List<Type>(depth));
+                
+                throw new SparseInjectException($"{concrete.Type}: Circular dependency detected!\n"); 
             }
-
-            stack.Add(concrete);
             
             var constructorContractsCount = concrete.GetConstructorContractsCount();
             var constructorContractsIndex = concrete.GetConstructorContractsIndex();
-
+            
+            var parentContainer = containerInfo.ParentContainer;
+            var contractsSparse = containerInfo.ContractsSparse;
+            var contractsDense = containerInfo.ContractsDense;
+            var contractsConcretesIndices = containerInfo.ContractsConcretesIndices;
+            var concreteConstructorContractIds = containerInfo.ConcreteConstructorContractIds;
+            
             for (var i = 0; i < constructorContractsCount; i++)
             {
-                var constructorContractId = containerInfo.ConcreteConstructorContractIds[i + constructorContractsIndex];
-                var constructorContractIndex = _contractsSparse[constructorContractId];
+                var constructorContractId = concreteConstructorContractIds[i + constructorContractsIndex];
+                var constructorContractIndex = contractsSparse[constructorContractId];
+                
+                if (constructorContractIndex < 0 &&
+                    parentContainer != null &&
+                    parentContainer.TryFindContainerWithContract(constructorContractId, out var targetContainer))
+                {
+                    var targetContainerInfo = targetContainer.GetContainerInfo();
+                    
+                    parentContainer = targetContainerInfo.ParentContainer;
+                    contractsSparse = targetContainerInfo.ContractsSparse;
+                    contractsDense = targetContainerInfo.ContractsDense;
+                    contractsConcretesIndices = targetContainerInfo.ContractsConcretesIndices;
+                    concreteConstructorContractIds = targetContainerInfo.ConcreteConstructorContractIds;
+                    
+                    constructorContractIndex = contractsSparse[constructorContractId]; // don't need to check that exist because was found through TryFindContainerWithContract
+                }
 
                 if (constructorContractIndex >= 0)
                 {
-                    ref var constructorContract = ref _contractsDense[constructorContractIndex];
-
+                    ref var constructorContract = ref contractsDense[constructorContractIndex];
+                
                     for (var j = 0; j < constructorContract.ConcretesCount; j++)
                     {
-                        var concreteId = _contractsConcretesIndices[j + constructorContract.ConcretesIndex];
+                        var concreteId = contractsConcretesIndices[j + constructorContract.ConcretesIndex];
                         
-                        ThrowIfInvalidRecursive(concreteId, containerInfo, stack);
+                        ThrowIfInvalidRecursive(originConcreteIndex, concreteId, containerInfo, depth + 1);
                     }
                 }
-                else if(containerInfo.ParentContainer != null && containerInfo.ParentContainer
-                            .TryFindContainerWithContract(constructorContractId, out var targetContainer))
-                {
-                    var requestedInfo = targetContainer.GetContainerInfo();
-                    var denseIndex = requestedInfo.ContractsSparse[constructorContractId];
-                    ref var constructorContract = ref requestedInfo.ContractsDense[denseIndex];
-
-                    for (var j = 0; j < constructorContract.ConcretesCount; j++)
-                    {
-                        var concreteId = requestedInfo.ContractsConcretesIndices[j + constructorContract.ConcretesIndex];
-                        
-                        ThrowIfInvalidRecursive(concreteId, requestedInfo, stack);
-                    }
-                }
-                else if(!concrete.IsScope())
+                else if (!concrete.IsScope())
                 {
                     throw new SparseInjectException($"Circular dependency validator failed because of unknown dependency in {concrete.Type}!");
                 }
             }
+        }
+        
+        private static void ThrowIfInvalidRecursiveByReflection(Type type, List<Type> stack)
+        {
+            for (var i = 0; i < stack.Count; i++)
+            {
+                var dependency = stack[i];
+                
+                if (type == dependency)
+                {
+                    stack.Add(type);
 
+                    var sb = new StringBuilder();
+                    var ident = 0;
+                    
+                    sb.AppendLine($"'{type}' contains circular dependency:");
+                    
+                    foreach (var element in stack)
+                    {
+                        var identSymbols = new char[ident];
+                        Array.Fill(identSymbols, ' ');
+                        
+                        var identText = new string(identSymbols);
+                        
+                        sb.Append(identText).Append("-> ").AppendLine(element.ToString());
+                        
+                        ident++;
+                    }
+
+                    throw new SparseInjectException(sb.ToString());
+                }
+            }
+        
+            stack.Add(type);
+
+            var constructor = ReflectionUtility.GetInjectableConstructor(type);
+            
+            foreach (var x in constructor.parameters)
+            {
+                ThrowIfInvalidRecursiveByReflection(x.ParameterType, stack);
+            }
+        
             stack.RemoveAt(stack.Count - 1);
         }
     }

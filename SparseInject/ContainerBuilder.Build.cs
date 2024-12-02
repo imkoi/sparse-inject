@@ -33,38 +33,13 @@ namespace SparseInject
                     }
                     else
                     {
-                        var constructors = concrete.Type.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
-                        var constructorParameters = default(ParameterInfo[]);
-                        var maxParametersCount = -1;
-
-                        for (var i = 0; i < constructors.Length; i++)
-                        {
-                            var suspectConstructor = constructors[i];
-                                
-                            if (suspectConstructor.IsPublic || suspectConstructor.IsAssembly)
-                            {
-                                var suspectConstructorParameters = suspectConstructor.GetParameters();
-
-                                if (suspectConstructorParameters.Length > maxParametersCount)
-                                {
-                                    constructorParameters = suspectConstructorParameters;
-                                    maxParametersCount = suspectConstructorParameters.Length;
-                                    
-                                    constructors[0] = suspectConstructor;
-                                }
-                            }
-                        }
+                        var constructor = ReflectionUtility.GetInjectableConstructor(concrete.Type);
                         
-                        if (maxParametersCount < 0)
-                        {
-                            throw new SparseInjectException($"Could not find public or internal constructor for type {concrete.Type}");
-                        }
-                        
-                        concrete.ConstructorInfo = constructors[0];
+                        concrete.ConstructorInfo = constructor.info;
 
-                        constructorParametersCount = constructorParameters.Length;
+                        constructorParametersCount = constructor.parameters.Length;
                         
-                        implementationConstructorParameterInfos[concreteIndex] = constructorParameters;
+                        implementationConstructorParameterInfos[concreteIndex] = constructor.parameters;
                     }
                 }
                 
