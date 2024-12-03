@@ -65,7 +65,6 @@ namespace SparseInject
             var concreteConstructorContractIds = BuildBakeImplementationDependencyIds(
                 containerType,
                 stats.implementationDependenciesCount,
-                stats.implementationConstructorParameterInfos,
                 stats.implementationConstructorParameters,
                 stats.maxConstructorLength);
             

@@ -9,10 +9,9 @@ namespace SparseInject
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public partial class ContainerBuilder
     {
-        private (int implementationDependenciesCount, ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters, int maxConstructorLength) BuildPrecomputeDependenciesCount()
+        private (int implementationDependenciesCount, object[][] implementationConstructorParameters, int maxConstructorLength) BuildPrecomputeDependenciesCount()
         {
-            var implementationConstructorParameterInfos = new ParameterInfo[_concretesCount][];
-            var implementationConstructorParameters = new Type[_concretesCount][];
+            var implementationConstructorParameters = new object[_concretesCount][];
             var implementationDependenciesCount = 0;
             var maxConstructorLength = int.MinValue;
             var concretesCount = _concretesCount;
@@ -30,6 +29,7 @@ namespace SparseInject
 
                         implementationConstructorParameters[concreteIndex] = constructorParametersSpan;
                         concrete.GeneratedInstanceFactory = factory;
+                        concrete.MarkInstanceFactory(true);
                     }
                     else
                     {
@@ -39,7 +39,7 @@ namespace SparseInject
 
                         constructorParametersCount = constructor.parameters.Length;
                         
-                        implementationConstructorParameterInfos[concreteIndex] = constructor.parameters;
+                        implementationConstructorParameters[concreteIndex] = constructor.parameters;
                     }
                 }
                 
@@ -58,11 +58,13 @@ namespace SparseInject
                 maxConstructorLength = 0;
             }
             
-            return (implementationDependenciesCount, implementationConstructorParameterInfos, implementationConstructorParameters, maxConstructorLength);
+            return (implementationDependenciesCount, implementationConstructorParameters, maxConstructorLength);
         }
 
-        private int[] BuildBakeImplementationDependencyIds(Type containerType, int implementationDependenciesCount,
-            ParameterInfo[][] implementationConstructorParameterInfos, Type[][] implementationConstructorParameters,
+        private int[] BuildBakeImplementationDependencyIds(
+            Type containerType,
+            int implementationDependenciesCount,
+            object[][] implementationConstructorParameters,
             int maxConstructorLength)
         {
             var generatedInstanceFactoryDependencyIds = new int[maxConstructorLength];
@@ -86,15 +88,14 @@ namespace SparseInject
                     var parameterType = default(Type);
                     contractId = -1; // contractId
 
-                    // TODO: optimize
-                    if (implementationConstructorParameters[concreteIndex] != null)
+                    if (concrete.HasInstanceFactory())
                     {
-                        parameterType = implementationConstructorParameters[concreteIndex][
+                        parameterType = (Type) implementationConstructorParameters[concreteIndex][
                             concrete.GeneratedInstanceFactory.ConstructorParametersIndex + parameterIndex];
                     }
                     else
                     {
-                        parameterType = implementationConstructorParameterInfos[concreteIndex][parameterIndex]
+                        parameterType = ((ParameterInfo[])implementationConstructorParameters[concreteIndex])[parameterIndex]
                             .ParameterType;
                     }
 
