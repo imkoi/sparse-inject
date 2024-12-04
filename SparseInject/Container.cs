@@ -24,6 +24,8 @@ namespace SparseInject
         private readonly object[][] _arrays;
         private readonly object[] _emptyArray;
 
+        private Dictionary<Type, Type> _fallbackElements = new Dictionary<Type, Type>(4);
+
         internal Container(
             Type containerType,
             Container parentContainer,
@@ -70,26 +72,44 @@ namespace SparseInject
                 return (T) Resolve(id);
             }
 
-            if (type.IsArray)
-            {
-                var elementType = type.GetElementType()!;
+            return (T) ResolveFallback(type);
+        }
 
-                if (_contractIds.TryGetValue(elementType, out id))
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private object ResolveFallback(Type type)
+        {
+            if (!_fallbackElements.TryGetValue(type, out var elementType))
+            {
+                elementType = type.IsArray ? type.GetElementType() : null;
+                
+                _fallbackElements.Add(type, elementType);
+            }
+
+            if (elementType != null)
+            {
+                if (_contractIds.TryGetValue(elementType, out var id))
                 {
                     var instance = Resolve(id);
+
+                    if (instance is Array)
+                    {
+                        return instance;
+                    }
+                    
                     var array = Array.CreateInstance(elementType, 1);
                     
                     array.SetValue(instance, 0);
                     
-                    return (T) (object) array;
+                    return array;
                 }
                 
-                return (T) (object) Array.CreateInstance(elementType, 0);
+                return Array.CreateInstance(elementType, 0);
             }
-
+            
             throw new SparseInjectException($"Trying to resolve unknown type '{type}'");
         }
 
+        // TODO: make request should it resolve single instance or array
         public object Resolve(int dependencyId)
         {
             var denseIndex = _contractsSparse[dependencyId];
@@ -118,6 +138,15 @@ namespace SparseInject
             // }
 
             ref var contract = ref _contractsDense[denseIndex];
+            
+            // var resolveCount = dependencyId >= 0 ? contract.ConcretesCount;
+            // if ()
+            // {
+            //     
+            // }
+            
+            
+            
             var instances = contract.ConcretesCount == 1
                 ? null
                 : Array.CreateInstance(contract.Type, contract.ConcretesCount);

@@ -170,9 +170,7 @@ namespace SparseInject
             }
 
             var index = contract.ConcretesIndex + contract.ConcretesCount;
-            
-            //contract.Type.ToString().Contains("IDisposable") || contract.Type.ToString().Contains("IServerMatchProcessor")
-            
+
             if (index == _lastContractsConcretesIndex)
             {
                 _contractsConcretesIndices[index] = concreteIndex;

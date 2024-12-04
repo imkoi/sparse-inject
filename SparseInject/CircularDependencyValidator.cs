@@ -78,10 +78,6 @@ namespace SparseInject
                         ThrowIfInvalidRecursive(originConcreteIndex, concreteId, containerInfo, depth + 1);
                     }
                 }
-                else if (!concrete.IsScope())
-                {
-                    throw new SparseInjectException($"Circular dependency validator failed because of unknown dependency in {concrete.Type}!");
-                }
             }
         }
         
