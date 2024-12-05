@@ -93,22 +93,6 @@ namespace SparseInject
 
             if (elementType != null)
             {
-                if (_contractIds.TryGetValue(elementType, out var id))
-                {
-                    var instance = ResolveInternal(id);
-
-                    if (instance is Array)
-                    {
-                        return instance;
-                    }
-                    
-                    var array = Array.CreateInstance(elementType, 1);
-                    
-                    array.SetValue(instance, 0);
-                    
-                    return array;
-                }
-                
                 return Array.CreateInstance(elementType, 0);
             }
             
@@ -119,40 +103,8 @@ namespace SparseInject
         private object ResolveInternal(int dependencyId)
         {
             var denseIndex = _contractsSparse[dependencyId];
-            
-            // if (denseIndex < 0)
-            // {
-            //     if (_parentContainer != null)
-            //     {
-            //         reserved.Array[j + reserved.StartIndex] =
-            //             _parentContainer.Resolve(constructorDependencyId);
-            //     }
-            //     else
-            //     {
-            //         var unknownParameter = concrete.ConstructorInfo.GetParameters()[j].ParameterType;
-            //
-            //         if (unknownParameter.IsArray)
-            //         {
-            //             reserved.Array[j + reserved.StartIndex] =
-            //                 Array.CreateInstance(unknownParameter.GetElementType(), 0);
-            //         }
-            //         else
-            //         {
-            //             throw new SparseInjectException($"Trying to resolve unknown type '{unknownParameter}'");
-            //         }
-            //     }
-            // }
 
             ref var contract = ref _contractsDense[denseIndex];
-            
-            // var resolveCount = dependencyId >= 0 ? contract.ConcretesCount;
-            // if ()
-            // {
-            //     
-            // }
-            
-            
-            
             var instances = contract.IsCollection()
                 ? Array.CreateInstance(contract.Type, contract.GetConcretesCount())
                 : null;
