@@ -60,12 +60,6 @@ namespace SparseInject
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsArray()
-        {
-            return (Data & IsArrayMask) != 0;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool HasValue()
         {
             return (Data & HasValueMask) != 0;
@@ -102,15 +96,6 @@ namespace SparseInject
                 Data |= IsScopeMask;
             else
                 Data &= ~IsScopeMask;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void MarkArray(bool value)
-        {
-            if (value)
-                Data |= IsArrayMask;
-            else
-                Data &= ~IsArrayMask;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
