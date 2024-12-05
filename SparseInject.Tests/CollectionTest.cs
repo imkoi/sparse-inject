@@ -1,5 +1,6 @@
 ﻿using System;
 using FluentAssertions;
+using NSubstitute;
 using NUnit.Framework;
 using SparseInject;
 
@@ -19,13 +20,21 @@ public class CollectionTest
         disposableCollection.Should().BeEmpty();
     }
 
-    private class TypeWithNotRegisteredCollectionDependency
+    private class TypeWithCollectionDependency
     {
         public IDisposable[] Collection { get; }
 
-        public TypeWithNotRegisteredCollectionDependency(IDisposable[] collection)
+        public TypeWithCollectionDependency(IDisposable[] collection)
         {
             Collection = collection;
+        }
+    }
+
+    private class Dependency : IDisposable
+    {
+        public void Dispose()
+        {
+            
         }
     }
     
@@ -35,13 +44,30 @@ public class CollectionTest
         // Setup
         var containerBuilder = new ContainerBuilder();
         
-        containerBuilder.Register<TypeWithNotRegisteredCollectionDependency>();
+        containerBuilder.Register<TypeWithCollectionDependency>();
         
         var container = containerBuilder.Build();
 
         // Asserts
-        var instance = container.Resolve<TypeWithNotRegisteredCollectionDependency>();
+        var instance = container.Resolve<TypeWithCollectionDependency>();
 
         instance.Collection.Should().BeEmpty();
+    }
+    
+    [Test]
+    public void TypeWithOneRegisteredCollectionDependency_WhenResolved_HasCollectionWithOneItem()
+    {
+        // Setup
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.Register<TypeWithCollectionDependency>();
+        containerBuilder.Register<IDisposable, Dependency>();
+        
+        var container = containerBuilder.Build();
+
+        // Asserts
+        var instance = container.Resolve<TypeWithCollectionDependency>();
+
+        instance.Collection.Length.Should().Be(1);
     }
 }

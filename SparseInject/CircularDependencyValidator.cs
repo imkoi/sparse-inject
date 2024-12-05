@@ -71,9 +71,9 @@ namespace SparseInject
                 {
                     ref var constructorContract = ref contractsDense[constructorContractIndex];
                 
-                    for (var j = 0; j < constructorContract.ConcretesCount; j++)
+                    for (var j = 0; j < constructorContract.GetConcretesCount(); j++)
                     {
-                        var concreteId = contractsConcretesIndices[j + constructorContract.ConcretesIndex];
+                        var concreteId = contractsConcretesIndices[j + constructorContract.GetConcretesIndex()];
                         
                         ThrowIfInvalidRecursive(originConcreteIndex, concreteId, containerInfo, depth + 1);
                     }

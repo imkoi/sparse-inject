@@ -141,49 +141,49 @@ public class AllContainerTest
         Assert.That(obj4, Is.EqualTo(obj3));
     }
 
-    // [Test]
-    // public void ResolveCollection()
-    // {
-    //     var builder = new ContainerBuilder();
-    //     builder.Register<I1, MultipleInterfaceServiceA>(Lifetime.Singleton);
-    //     builder.Register<I1, MultipleInterfaceServiceB>(Lifetime.Transient);
-    //
-    //     var container = builder.Build();
-    //     var enumerable = container.Resolve<I1[]>();
-    //     var e0 = enumerable.ElementAt(0);
-    //     var e1 = enumerable.ElementAt(1);
-    //     Assert.That(e0, Is.TypeOf<MultipleInterfaceServiceA>());
-    //     Assert.That(e1, Is.TypeOf<MultipleInterfaceServiceB>());
-    //
-    //     var list = container.Resolve<I1[]>();
-    //     Assert.That(list[0], Is.TypeOf<MultipleInterfaceServiceA>());
-    //     Assert.That(list[1], Is.TypeOf<MultipleInterfaceServiceB>());
-    //
-    //     // Singleton
-    //     Assert.That(list[0], Is.EqualTo(e0));
-    //
-    //     // Empty
-    //     var empty = container.Resolve<I7[]>();
-    //     Assert.That(empty, Is.Empty);
-    // }
+    [Test]
+    public void ResolveCollection()
+    {
+        var builder = new ContainerBuilder();
+        builder.Register<I1, MultipleInterfaceServiceA>(Lifetime.Singleton);
+        builder.Register<I1, MultipleInterfaceServiceB>(Lifetime.Transient);
+    
+        var container = builder.Build();
+        var enumerable = container.Resolve<I1[]>();
+        var e0 = enumerable.ElementAt(0);
+        var e1 = enumerable.ElementAt(1);
+        Assert.That(e0, Is.TypeOf<MultipleInterfaceServiceA>());
+        Assert.That(e1, Is.TypeOf<MultipleInterfaceServiceB>());
+    
+        var list = container.Resolve<I1[]>();
+        Assert.That(list[0], Is.TypeOf<MultipleInterfaceServiceA>());
+        Assert.That(list[1], Is.TypeOf<MultipleInterfaceServiceB>());
+    
+        // Singleton
+        Assert.That(list[0], Is.EqualTo(e0));
+    
+        // Empty
+        var empty = container.Resolve<I7[]>();
+        Assert.That(empty, Is.Empty);
+    }
 
-    // [Test]
-    // public void ResolveLastOneWhenConflicted() // SHOULD THROW
-    // {
-    //     var builder = new ContainerBuilder();
-    //     builder.Register<I1, MultipleInterfaceServiceA>(Lifetime.Transient);
-    //     builder.Register<I1, MultipleInterfaceServiceB>(Lifetime.Transient);
-    //
-    //     builder.Register<I3, MultipleInterfaceServiceB>(Lifetime.Transient);
-    //     builder.Register<I3, MultipleInterfaceServiceA>(Lifetime.Transient);
-    //     builder.Register<I3, MultipleInterfaceServiceB>(Lifetime.Transient);
-    //
-    //     var container = builder.Build();
-    //     var i1 = container.Resolve<I1>();
-    //     var i3 = container.Resolve<I3>();
-    //     Assert.That(i1, Is.InstanceOf<MultipleInterfaceServiceB>());
-    //     Assert.That(i3, Is.InstanceOf<MultipleInterfaceServiceB>());
-    // }
+    [Test]
+    public void ResolveLastOneWhenConflicted() // SHOULD THROW
+    {
+        var builder = new ContainerBuilder();
+        builder.Register<I1, MultipleInterfaceServiceA>(Lifetime.Transient);
+        builder.Register<I1, MultipleInterfaceServiceB>(Lifetime.Transient);
+    
+        builder.Register<I3, MultipleInterfaceServiceB>(Lifetime.Transient);
+        builder.Register<I3, MultipleInterfaceServiceA>(Lifetime.Transient);
+        builder.Register<I3, MultipleInterfaceServiceB>(Lifetime.Transient);
+    
+        var container = builder.Build();
+        var i1 = container.Resolve<I1>();
+        var i3 = container.Resolve<I3>();
+        Assert.That(i1, Is.InstanceOf<MultipleInterfaceServiceB>());
+        Assert.That(i3, Is.InstanceOf<MultipleInterfaceServiceB>());
+    }
 
     [Test]
     public void ResolveOnceAsCollection()

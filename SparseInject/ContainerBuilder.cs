@@ -144,14 +144,36 @@ namespace SparseInject
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void AddContract(int contractId, Type contractType, int concreteIndex)
+        private void AddContract<T>(int concreteIndex)
         {
+            var contractId = GetOrAddContractId<T>(out var contractType);
+            
             ref var contract = ref GetContract(contractId);
 
-            if (contract.ConcretesCount == 0)
+            var concretesIndex = _lastContractsConcretesIndex;
+            var concretesCount = contract.GetConcretesCount();
+            
+            contract.SetConcretesIndex(concretesIndex);
+            
+            if (concretesCount == 0)
             {
                 contract.Type = contractType;
-                contract.ConcretesIndex = _lastContractsConcretesIndex;
+                contract.SetConcretesCount(1);
+                
+                var collectionContractId = GetOrAddContractId<T[]>(out _);
+
+                contract = ref GetContract(collectionContractId);
+                contract.Type = contractType;
+                contract.SetConcretesIndex(concretesIndex);
+                contract.MarkCollection(true);
+            }
+            else
+            {
+                var collectionContractId = GetOrAddContractId<T[]>(out _);
+
+                contract = ref GetContract(collectionContractId);
+                concretesIndex = contract.GetConcretesIndex();
+                concretesCount = contract.GetConcretesCount();
             }
 
             var nextContractsConcretesCount = _lastContractsConcretesIndex + 1;
@@ -169,7 +191,7 @@ namespace SparseInject
                 }
             }
 
-            var index = contract.ConcretesIndex + contract.ConcretesCount;
+            var index = concretesIndex + concretesCount;
 
             if (index == _lastContractsConcretesIndex)
             {
@@ -184,17 +206,23 @@ namespace SparseInject
                 for (var i = 0; i < _dependenciesCount; i++)
                 {
                     ref var contractToProcess = ref _contractsDense[i];
+
+                    concretesIndex = contractToProcess.GetConcretesIndex();
                     
                     // >= because previous swapped contract not update index yet
-                    if (contractToProcess.ConcretesIndex >= index)
+                    if (concretesIndex >= index)
                     {
-                        contractToProcess.ConcretesIndex += 1;
+                        concretesIndex++;
+                        
+                        contractToProcess.SetConcretesIndex(concretesIndex);
                     }
                 }
             }
             
             _lastContractsConcretesIndex++;
-            contract.ConcretesCount++;
+
+            concretesCount++;
+            contract.SetConcretesCount(concretesCount);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

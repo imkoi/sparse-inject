@@ -1,9 +1,7 @@
-﻿using System;
-using SparseInject.Tests.Collection;
+﻿using SparseInject.Tests.Collection;
 using FluentAssertions;
 using NUnit.Framework;
 using SparseInject;
-
 
 [TestFixture]
 public class CollectionTests

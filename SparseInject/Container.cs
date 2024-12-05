@@ -56,23 +56,29 @@ namespace SparseInject
         public T Resolve<T>() where T : class
         {
             var type = typeof(T);
-            
+
+            return (T) Resolve(type);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private object Resolve(Type type)
+        {
             if (_contractIds.TryGetValue(type, out var id))
             {
                 if (_contractsSparse[id] < 0)
                 {
                     if (_parentContainer != null)
                     {
-                        return _parentContainer.Resolve<T>();
+                        return _parentContainer.Resolve(type);
                     }
                     
                     throw new SparseInjectException($"Trying to resolve unknown type '{type}'");
                 }
                 
-                return (T) Resolve(id);
+                return ResolveInternal(id);
             }
 
-            return (T) ResolveFallback(type);
+            return ResolveFallback(type);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -89,7 +95,7 @@ namespace SparseInject
             {
                 if (_contractIds.TryGetValue(elementType, out var id))
                 {
-                    var instance = Resolve(id);
+                    var instance = ResolveInternal(id);
 
                     if (instance is Array)
                     {
@@ -110,7 +116,7 @@ namespace SparseInject
         }
 
         // TODO: make request should it resolve single instance or array
-        public object Resolve(int dependencyId)
+        private object ResolveInternal(int dependencyId)
         {
             var denseIndex = _contractsSparse[dependencyId];
             
@@ -147,16 +153,16 @@ namespace SparseInject
             
             
             
-            var instances = contract.ConcretesCount == 1
-                ? null
-                : Array.CreateInstance(contract.Type, contract.ConcretesCount);
+            var instances = contract.IsCollection()
+                ? Array.CreateInstance(contract.Type, contract.GetConcretesCount())
+                : null;
             var constructorContractsCount = -1;
             var constructorContractsIndex = -1;
             var reserved = default(ArrayCache.Reserved);
 
-            for (var i = 0; i < contract.ConcretesCount; i++)
+            for (var i = 0; i < contract.GetConcretesCount(); i++)
             {
-                var concreteIndex = _contractsConcretesIndices[contract.ConcretesIndex + i];
+                var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + i];
                 ref var concrete = ref _concretes[concreteIndex];
 
                 var instance = default(object);
@@ -185,11 +191,11 @@ namespace SparseInject
 
                             if (_contractsSparse[constructorDependencyId] < 0)
                             {
-                                reserved.Array[j + reserved.StartIndex] = container.Resolve(constructorDependencyId);
+                                reserved.Array[j + reserved.StartIndex] = container.ResolveInternal(constructorDependencyId);
                             }
                             else
                             {
-                                reserved.Array[j + reserved.StartIndex] = Resolve(constructorDependencyId);
+                                reserved.Array[j + reserved.StartIndex] = ResolveInternal(constructorDependencyId);
                             }
                         }
                     }
@@ -204,7 +210,7 @@ namespace SparseInject
                                 if (_parentContainer != null)
                                 {
                                     reserved.Array[j + reserved.StartIndex] =
-                                        _parentContainer.Resolve(constructorDependencyId);
+                                        _parentContainer.ResolveInternal(constructorDependencyId);
                                 }
                                 else
                                 {
@@ -223,7 +229,7 @@ namespace SparseInject
                             }
                             else
                             {
-                                reserved.Array[j + reserved.StartIndex] = Resolve(constructorDependencyId);
+                                reserved.Array[j + reserved.StartIndex] = ResolveInternal(constructorDependencyId);
                             }
                         }
                     }
@@ -292,7 +298,7 @@ namespace SparseInject
                     }
                 }
 
-                if (contract.ConcretesCount == 1)
+                if (!contract.IsCollection())
                 {
                     return instance;
                 }
@@ -326,7 +332,7 @@ namespace SparseInject
                 }
 
                 var contract = _contractsDense[denseIndex];
-                var concreteIndex = _contractsConcretesIndices[contract.ConcretesIndex + contract.ConcretesCount - 1];
+                var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + contract.GetConcretesCount() - 1];
 
                 concrete = _concretes[concreteIndex];
                 

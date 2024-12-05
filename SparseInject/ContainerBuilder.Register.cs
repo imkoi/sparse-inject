@@ -24,10 +24,8 @@ namespace SparseInject
             where TConcrete : class, TContract
         {
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
-            
-            var contractId = GetOrAddContractId<TContract>(out var contractType);
-            
-            AddContract(contractId, contractType, index);
+
+            AddContract<TContract>(index);
 
             concrete.MarkSingleton(lifetime == Lifetime.Singleton);
         }
@@ -38,14 +36,9 @@ namespace SparseInject
             where TConcrete : class, TContract0, TContract1
         {
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
-            
-            var contractId = GetOrAddContractId<TContract0>(out var contractType);
-            
-            AddContract(contractId, contractType, index);
-            
-            contractId = GetOrAddContractId<TContract1>(out contractType);
-            
-            AddContract(contractId, contractType, index);
+
+            AddContract<TContract0>(index);
+            AddContract<TContract1>(index);
 
             concrete.MarkSingleton(lifetime == Lifetime.Singleton);
         }
@@ -58,17 +51,9 @@ namespace SparseInject
         {
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
             
-            var contractId = GetOrAddContractId<TContract0>(out var contractType);
-            
-            AddContract(contractId, contractType, index);
-            
-            contractId = GetOrAddContractId<TContract1>(out contractType);
-            
-            AddContract(contractId, contractType, index);
-            
-            contractId = GetOrAddContractId<TContract2>(out contractType);
-            
-            AddContract(contractId, contractType, index);
+            AddContract<TContract0>(index);
+            AddContract<TContract1>(index);
+            AddContract<TContract2>(index);
 
             concrete.MarkSingleton(lifetime == Lifetime.Singleton);
         }
@@ -77,10 +62,8 @@ namespace SparseInject
             where TConcreteContract : class
         {
             ref var concrete = ref AddConcrete(typeof(TConcreteContract), out var index);
-            
-            var contractId = GetOrAddContractId<TConcreteContract>(out var contractType);
-            
-            AddContract(contractId, contractType, index);
+  
+            AddContract<TConcreteContract>(index);
             
             concrete.MarkSingleton(true);
             concrete.MarkValue(true);
@@ -100,10 +83,8 @@ namespace SparseInject
 #endif
             
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
-            
-            var contractId = GetOrAddContractId<TContract>(out var contractType);
-            
-            AddContract(contractId, contractType, index);
+
+            AddContract<TContract>(index);
             
             concrete.MarkSingleton(true);
             concrete.MarkValue(true);
@@ -116,14 +97,9 @@ namespace SparseInject
             where TConcrete : class, TContract0, TContract1
         {
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
-            
-            var contractId = GetOrAddContractId<TContract0>(out var contractType);
-            
-            AddContract(contractId, contractType, index);
-            
-            contractId = GetOrAddContractId<TContract1>(out contractType);
-            
-            AddContract(contractId, contractType, index);
+
+            AddContract<TContract0>(index);
+            AddContract<TContract1>(index);
 
             concrete.MarkSingleton(true);
             concrete.MarkValue(true);
@@ -137,18 +113,10 @@ namespace SparseInject
             where TConcrete : class, TContract0, TContract1, TContract2
         {
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
-            
-            var contractId = GetOrAddContractId<TContract0>(out var contractType);
-            
-            AddContract(contractId, contractType, index);
-            
-            contractId = GetOrAddContractId<TContract1>(out contractType);
-            
-            AddContract(contractId, contractType, index);
-            
-            contractId = GetOrAddContractId<TContract2>(out contractType);
-            
-            AddContract(contractId, contractType, index);
+
+            AddContract<TContract0>(index);
+            AddContract<TContract1>(index);
+            AddContract<TContract2>(index);
 
             concrete.MarkSingleton(true);
             concrete.MarkValue(true);
@@ -189,10 +157,8 @@ namespace SparseInject
             where TConcrete : class, TContract
         {
             ref var concrete = ref AddConcrete(typeof(Func<TConcrete>), out var index);
-            
-            var contractId = GetOrAddContractId<Func<TContract>>(out var contractType);
-            
-            AddContract(contractId, contractType, index);
+
+            AddContract<Func<TContract>>(index);
 
             concrete.MarkFactory(true);
             concrete.MarkSingleton(true);
@@ -218,10 +184,8 @@ namespace SparseInject
         public void RegisterFactory<TParameter, TContract, TConcrete>(Func<IScopeResolver, Func<TParameter, TContract>> factory) where TConcrete : class, TContract
         {
             ref var concrete = ref AddConcrete(typeof(Func<TParameter, TConcrete>), out var index);
-            
-            var contractId = GetOrAddContractId<Func<TParameter, TContract>>(out var contractType);
-            
-            AddContract(contractId, contractType, index);
+
+            AddContract<Func<TParameter, TContract>>(index);
 
             concrete.MarkFactory(true);
             concrete.MarkSingleton(true);
@@ -256,10 +220,8 @@ namespace SparseInject
             where TScopeConcrete : Scope
         {
             ref var concrete = ref AddConcrete(typeof(TScopeConcrete), out var index);
-            
-            var contractId = GetOrAddContractId<TScopeContract>(out var contractType);
-            
-            AddContract(contractId, contractType, index);
+
+            AddContract<TScopeContract>(index);
 
             concrete.MarkScope(true);
             concrete.MarkSingleton(false);
