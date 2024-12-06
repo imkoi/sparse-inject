@@ -23,6 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\SparseInject.ReflectionBaking.Tests\SparseInject.ReflectionBaking.Tests.csproj" />
       <ProjectReference Include="..\SparseInject\SparseInject.csproj" />
     </ItemGroup>
 

@@ -32,9 +32,6 @@ namespace SparseInject
         private const int IsScopeShift = 50;
         private const ulong IsScopeMask = 1UL << IsScopeShift;
 
-        private const int IsArrayShift = 51;
-        private const ulong IsArrayMask = 1UL << IsArrayShift;
-
         private const int HasValueShift = 52;
         private const ulong HasValueMask = 1UL << HasValueShift;
 
@@ -72,12 +69,9 @@ namespace SparseInject
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void MarkSingleton(bool value)
+        public void MarkSingleton()
         {
-            if (value)
-                Data |= IsSingletonMask;
-            else
-                Data &= ~IsSingletonMask;
+            Data |= IsSingletonMask;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -90,30 +84,21 @@ namespace SparseInject
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void MarkScope(bool value)
+        public void MarkScope()
         {
-            if (value)
-                Data |= IsScopeMask;
-            else
-                Data &= ~IsScopeMask;
+            Data |= IsScopeMask;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void MarkValue(bool value)
+        public void MarkValue()
         {
-            if (value)
-                Data |= HasValueMask;
-            else
-                Data &= ~HasValueMask;
+            Data |= HasValueMask;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void MarkInstanceFactory(bool value)
+        public void MarkInstanceFactory()
         {
-            if (value)
-                Data |= HasInstanceFactoryMask;
-            else
-                Data &= ~HasInstanceFactoryMask;
+            Data |= HasInstanceFactoryMask;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

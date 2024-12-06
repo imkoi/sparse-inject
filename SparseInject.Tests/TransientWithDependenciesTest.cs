@@ -20,9 +20,7 @@ public class TransientWithDependenciesTest
         }
     }
 
-    private class PlayerTransientDependency : IPlayerTransientDependency
-    {
-    }
+    private class PlayerTransientDependency : IPlayerTransientDependency { }
 
     private interface IPlayerWithDependencies
     {
@@ -42,13 +40,8 @@ public class TransientWithDependenciesTest
         IPlayerTransientDependency TransientDependency { get; }
     }
 
-    public interface IPlayerTransientDependency
-    {
-    }
-
-    public interface IPlayerSingletonDependency
-    {
-    }
+    public interface IPlayerTransientDependency { }
+    public interface IPlayerSingletonDependency { }
 
     [Test]
     public void Registered_WhenResolved_ReturnCorrectValueWithDependencies()
@@ -220,5 +213,41 @@ public class TransientWithDependenciesTest
 
         firstValue.TransientDependency.Should().NotBe(secondValue.TransientDependency);
         firstValue.TransientDependency.Should().NotBe(thirdValue.TransientDependency);
+    }
+    
+    [Test]
+    public void RegisteredByMethodToThreeInterfaces_WhenResolvedMultipleTimes_ReturnDifferentValues()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+
+        builder.Register(RegisterMethod);
+
+        var container = builder.Build();
+
+        // Asserts
+        var firstValue = container.Resolve<IPlayerWithDependencies>();
+        var secondValue = container.Resolve<IPlayerTwo>();
+        var thirdValue = container.Resolve<IPlayerThree>();
+
+        firstValue.Should().NotBe(secondValue);
+        firstValue.Should().NotBe(thirdValue);
+
+        firstValue.Should().BeOfType<PlayerWithDependencies>();
+        secondValue.Should().BeOfType<PlayerWithDependencies>();
+        thirdValue.Should().BeOfType<PlayerWithDependencies>();
+
+        firstValue.SingletonDependency.Should().Be(secondValue.SingletonDependency);
+        firstValue.SingletonDependency.Should().Be(thirdValue.SingletonDependency);
+
+        firstValue.TransientDependency.Should().NotBe(secondValue.TransientDependency);
+        firstValue.TransientDependency.Should().NotBe(thirdValue.TransientDependency);
+
+        void RegisterMethod(IScopeBuilder scopeBuilder)
+        {
+            builder.RegisterValue(Substitute.For<IPlayerSingletonDependency>());
+            builder.Register<IPlayerTransientDependency, PlayerTransientDependency>();
+            builder.Register<IPlayerWithDependencies, IPlayerTwo, IPlayerThree, PlayerWithDependencies>();
+        }
     }
 }

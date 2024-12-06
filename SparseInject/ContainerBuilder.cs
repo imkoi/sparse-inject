@@ -165,7 +165,7 @@ namespace SparseInject
                 contract = ref GetContract(collectionContractId);
                 contract.Type = contractType;
                 contract.SetConcretesIndex(concretesIndex);
-                contract.MarkCollection(true);
+                contract.MarkCollection();
             }
             else
             {

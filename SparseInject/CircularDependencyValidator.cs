@@ -33,9 +33,7 @@ namespace SparseInject
 
             if (depth > 0 && originConcreteIndex == concreteIndex)
             {
-                ThrowIfInvalidRecursiveByReflection(concrete.Type, new List<Type>(depth));
-                
-                throw new SparseInjectException($"{concrete.Type}: Circular dependency detected!\n"); 
+                ThrowRecursiveByReflection(concrete.Type, new List<Type>(depth));
             }
             
             var constructorContractsCount = concrete.GetConstructorContractsCount();
@@ -81,7 +79,7 @@ namespace SparseInject
             }
         }
         
-        private static void ThrowIfInvalidRecursiveByReflection(Type type, List<Type> stack)
+        private static void ThrowRecursiveByReflection(Type type, List<Type> stack)
         {
             for (var i = 0; i < stack.Count; i++)
             {
@@ -118,7 +116,7 @@ namespace SparseInject
             
             foreach (var x in constructor.parameters)
             {
-                ThrowIfInvalidRecursiveByReflection(x.ParameterType, stack);
+                ThrowRecursiveByReflection(x.ParameterType, stack);
             }
         
             stack.RemoveAt(stack.Count - 1);

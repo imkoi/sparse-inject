@@ -229,7 +229,7 @@ namespace SparseInject
                     if (concrete.IsSingleton())
                     {
                         concrete.Value = instance;
-                        concrete.MarkValue(true);
+                        concrete.MarkValue();
                     }
                 }
                 else

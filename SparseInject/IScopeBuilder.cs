@@ -53,11 +53,11 @@ namespace SparseInject
             where TScope : Scope;
         public void RegisterScope<TScope, TScopeImplementation>(Action<IScopeBuilder> install)
             where TScope : class, IDisposable
-            where TScopeImplementation : Scope;
+            where TScopeImplementation : Scope, TScope;
         void RegisterScope<TScope>(Action<IScopeBuilder, IScopeResolver> install)
             where TScope : Scope;
         public void RegisterScope<TScope, TScopeImplementation>(Action<IScopeBuilder, IScopeResolver> install)
             where TScope : class, IDisposable
-            where TScopeImplementation : Scope;
+            where TScopeImplementation : Scope, TScope;
     }
 }

@@ -45,11 +45,6 @@ public class SourceGenerator : ISourceGenerator
         
         var compilation = context.Compilation;
 
-        var progress = 0f;
-        var index = 0;
-        var sw = Stopwatch.StartNew();
-        var sw1 = Stopwatch.StartNew();
-        sw1.Stop();
         var codeWriter = new CodeWriter();
         
         var generatedClasses = new List<GeneratedInstanceFactory>();
@@ -68,9 +63,7 @@ public class SourceGenerator : ISourceGenerator
         
         foreach (var syntaxTree in compilation.SyntaxTrees)
         {
-            sw1.Start();
             var semanticModel = compilation.GetSemanticModel(syntaxTree);
-            sw1.Stop();
 
             var typeDeclarations = syntaxTree.GetRoot()
                 .DescendantNodes()
@@ -78,9 +71,7 @@ public class SourceGenerator : ISourceGenerator
 
             foreach (var typeDeclaration in typeDeclarations)
             {
-                sw1.Start();
                 var typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration);
-                sw1.Stop();
                 
                 if (typeSymbol.TypeKind is TypeKind.Interface or TypeKind.Struct or TypeKind.Enum)
                 {
@@ -94,19 +85,8 @@ public class SourceGenerator : ISourceGenerator
                 
                 //TODO: check not inherit from unity object
                 
-                if (typeSymbol != null && receiver.TypesInContainer.Contains(typeSymbol.Name))
+                if (typeSymbol != null && receiver.TypesWithGenerator.Contains(typeSymbol.Name))
                 {
-                    index++;
-                    progress = (index * 1.0f / receiver.TypesInContainer.Count * 1.0f) * 100f;
-                        
-                    if (sw.Elapsed.TotalSeconds >= 5f)
-                    {
-                        Console.WriteLine($"Compiled: {index} of {receiver.RegisterCalls.Count} == {progress} %");
-                        Console.WriteLine($"GetSemanticModel time: {sw1.Elapsed.TotalSeconds} seconds");
-                
-                        sw.Restart();
-                    }
-                    
                     var typeDeclarationSyntax =
                         typeSymbol.DeclaringSyntaxReferences.First().GetSyntax() as TypeDeclarationSyntax;
                     var typeMeta = Analyzer.AnalyzeTypeSymbol(typeSymbol, typeDeclarationSyntax);
@@ -120,7 +100,7 @@ public class SourceGenerator : ISourceGenerator
                         
                         var generateTypeName = $"{typeName}_SparseInject_GeneratedInstanceFactory";
                         
-                        generatedClasses.Add(new GeneratedInstanceFactory()
+                        generatedClasses.Add(new GeneratedInstanceFactory
                         {
                             ClassName = typeName,
                             GeneratedFactoryName = generateTypeName,
@@ -187,60 +167,4 @@ class GeneratedInstanceFactory
     public string ClassName;
     public string GeneratedFactoryName;
     public (string paramType, string paramName)[] ConstructorParameterTypes;
-}
-
-class RegisterSyntaxReceiver : ISyntaxReceiver
-{
-    public DateTime StartTime { get; private set; } = DateTime.Now;
-    public List<InvocationExpressionSyntax> RegisterCalls { get; } = new List<InvocationExpressionSyntax>();
-    public HashSet<string> TypesInContainer { get; } = new HashSet<string>();
-
-    public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
-    {
-        if (syntaxNode is not IdentifierNameSyntax)
-        {
-            return;
-        }
-
-        var genericArgumentName = (syntaxNode as IdentifierNameSyntax).Identifier.Text;
-        syntaxNode = syntaxNode.Parent;
-        
-        if (syntaxNode is not TypeArgumentListSyntax)
-        {
-            return;
-        }
-        
-        syntaxNode = syntaxNode.Parent;
-        
-        if (syntaxNode is GenericNameSyntax genericNameSyntax && genericNameSyntax.Identifier.Text.StartsWith("Register"))
-        {
-            syntaxNode = syntaxNode.Parent;
-            
-            if (syntaxNode is not MemberAccessExpressionSyntax)
-            {
-                return;
-            }
-            
-            syntaxNode = syntaxNode.Parent;
-            
-            if (syntaxNode is not InvocationExpressionSyntax)
-            {
-                return;
-            }
-
-            while (syntaxNode is not CompilationUnitSyntax)
-            {
-                syntaxNode = syntaxNode.Parent;
-            }
-
-            foreach (var usingDirective in (syntaxNode as CompilationUnitSyntax).Usings)
-            {
-                if (usingDirective.Name is IdentifierNameSyntax identifierNameSyntax && identifierNameSyntax.Identifier.Text == "SparseInject")
-                {
-                    TypesInContainer.Add(genericArgumentName);
-                    RegisterCalls.Add(syntaxNode as InvocationExpressionSyntax);
-                }
-            }
-        }
-    }
 }

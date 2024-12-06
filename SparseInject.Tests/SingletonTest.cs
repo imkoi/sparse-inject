@@ -219,4 +219,38 @@ public class SingletonTest
         newSecondValue.Should().Be(secondValue);
         newThirdValue.Should().Be(thirdValue);
     }
+    
+    [Test]
+    public void RegisteredByMethodToThreeInterfaces_WhenResolvedThroughSameInterfaceMultipleTimes_ReturnSameValues()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+
+        builder.Register(scopeBuilder =>
+        {
+            scopeBuilder.Register<IPlayer, IPlayerTwo, IPlayerThree, Player>(Lifetime.Singleton);
+        });
+
+        var container = builder.Build();
+
+        // Asserts
+        var firstValue = container.Resolve<IPlayer>();
+        var secondValue = container.Resolve<IPlayerTwo>();
+        var thirdValue = container.Resolve<IPlayerThree>();
+
+        firstValue.Should().BeOfType<Player>();
+        secondValue.Should().BeOfType<Player>();
+        thirdValue.Should().BeOfType<Player>();
+
+        firstValue.Should().Be(secondValue);
+        firstValue.Should().Be(thirdValue);
+        
+        var newFirstValue = container.Resolve<IPlayer>();
+        var newSecondValue = container.Resolve<IPlayerTwo>();
+        var newThirdValue = container.Resolve<IPlayerThree>();
+        
+        newFirstValue.Should().Be(firstValue);
+        newSecondValue.Should().Be(secondValue);
+        newThirdValue.Should().Be(thirdValue);
+    }
 }

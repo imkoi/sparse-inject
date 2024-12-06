@@ -46,6 +46,53 @@ public class ScopeTests
         Assert.DoesNotThrow(gameController.Execute);
     }
     
+    private class RequestedDependency { }
+
+    private class ScopeA : Scope
+    {
+        public RequestedDependency Dependency { get; }
+        
+        public ScopeA(RequestedDependency dependency)
+        {
+            Dependency = dependency;
+        }
+    }
+    
+    [Test]
+    public void RequestedDependency_WhenNotExistInCurrentScope_ShouldTakeFromParentScope()
+    {
+        // Setup
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.Register<RequestedDependency>();
+        containerBuilder.RegisterScope<ScopeA>(configurator => { });
+
+        var container = containerBuilder.Build();
+
+        // Asserts
+        var scope = container.Resolve<ScopeA>();
+
+        scope.Dependency.Should().BeOfType<RequestedDependency>();
+    }
+    
+    [Test]
+    public void RequestedDependency_WhenNotExist_ThrowProperException()
+    {
+        // Setup
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.RegisterScope<ScopeA>(configurator => { });
+
+        // We don't throw exception on building because scoped container will be built on resolve
+        var container = containerBuilder.Build();
+
+        // Asserts
+        container
+            .Invoking(subject => subject.Resolve<ScopeA>())
+            .Should()
+            .Throw<SparseInjectException>();
+    }
+    
     [Test]
     public void UnorderedWithSparseRewireBindings()
     {
@@ -87,4 +134,6 @@ public class ScopeTests
 
         processors.Should().NotBeNull();
     }
+    
+    // TODO: Add inherited scopes tests
 }

@@ -201,4 +201,30 @@ public class TransientTest
         firstValue.Should().NotBe(secondValue);
         firstValue.Should().NotBe(thirdValue);
     }
+    
+    [Test]
+    public void RegisteredByMethodToThreeInterfaces_WhenResolvedMultipleTimes_ReturnDifferentValues()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+        
+        builder.Register(scopeBuilder =>
+        {
+            scopeBuilder.Register<IPlayer, IPlayerTwo, IPlayerThree, Player>();
+        });
+
+        var container = builder.Build();
+
+        // Asserts
+        var firstValue = container.Resolve<IPlayer>();
+        var secondValue = container.Resolve<IPlayerTwo>();
+        var thirdValue = container.Resolve<IPlayerThree>();
+
+        firstValue.Should().BeOfType<Player>();
+        secondValue.Should().BeOfType<Player>();
+        thirdValue.Should().BeOfType<Player>();
+
+        firstValue.Should().NotBe(secondValue);
+        firstValue.Should().NotBe(thirdValue);
+    }
 }

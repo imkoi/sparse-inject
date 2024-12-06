@@ -27,7 +27,10 @@ namespace SparseInject
 
             AddContract<TContract>(index);
 
-            concrete.MarkSingleton(lifetime == Lifetime.Singleton);
+            if (lifetime == Lifetime.Singleton)
+            {
+                concrete.MarkSingleton();
+            }
         }
         
         public void Register<TContract0, TContract1, TConcrete>(Lifetime lifetime = Lifetime.Transient)
@@ -40,7 +43,10 @@ namespace SparseInject
             AddContract<TContract0>(index);
             AddContract<TContract1>(index);
 
-            concrete.MarkSingleton(lifetime == Lifetime.Singleton);
+            if (lifetime == Lifetime.Singleton)
+            {
+                concrete.MarkSingleton();
+            }
         }
         
         public void Register<TContract0, TContract1, TContract2, TConcrete>(Lifetime lifetime = Lifetime.Transient)
@@ -54,8 +60,11 @@ namespace SparseInject
             AddContract<TContract0>(index);
             AddContract<TContract1>(index);
             AddContract<TContract2>(index);
-
-            concrete.MarkSingleton(lifetime == Lifetime.Singleton);
+            
+            if (lifetime == Lifetime.Singleton)
+            {
+                concrete.MarkSingleton();
+            }
         }
 
         public void RegisterValue<TConcreteContract>(TConcreteContract value)
@@ -65,8 +74,8 @@ namespace SparseInject
   
             AddContract<TConcreteContract>(index);
             
-            concrete.MarkSingleton(true);
-            concrete.MarkValue(true);
+            concrete.MarkSingleton();
+            concrete.MarkValue();
             concrete.Value = value;
         }
 
@@ -86,8 +95,8 @@ namespace SparseInject
 
             AddContract<TContract>(index);
             
-            concrete.MarkSingleton(true);
-            concrete.MarkValue(true);
+            concrete.MarkSingleton();
+            concrete.MarkValue();
             concrete.Value = value;
         }
         
@@ -101,8 +110,8 @@ namespace SparseInject
             AddContract<TContract0>(index);
             AddContract<TContract1>(index);
 
-            concrete.MarkSingleton(true);
-            concrete.MarkValue(true);
+            concrete.MarkSingleton();
+            concrete.MarkValue();
             concrete.Value = value;
         }
         
@@ -118,8 +127,8 @@ namespace SparseInject
             AddContract<TContract1>(index);
             AddContract<TContract2>(index);
 
-            concrete.MarkSingleton(true);
-            concrete.MarkValue(true);
+            concrete.MarkSingleton();
+            concrete.MarkValue();
             concrete.Value = value;
         }
         
@@ -161,8 +170,8 @@ namespace SparseInject
             AddContract<Func<TContract>>(index);
 
             concrete.MarkFactory(true);
-            concrete.MarkSingleton(true);
-            concrete.MarkValue(true);
+            concrete.MarkSingleton();
+            concrete.MarkValue();
             concrete.Value = factory;
         }
         
@@ -188,8 +197,8 @@ namespace SparseInject
             AddContract<Func<TParameter, TContract>>(index);
 
             concrete.MarkFactory(true);
-            concrete.MarkSingleton(true);
-            concrete.MarkValue(true);
+            concrete.MarkSingleton();
+            concrete.MarkValue();
             concrete.Value = factory;
         }
 
@@ -201,7 +210,7 @@ namespace SparseInject
 
         public void RegisterScope<TScopeContract, TScopeConcrete>(Action<IScopeBuilder> install)
             where TScopeContract : class, IDisposable
-            where TScopeConcrete : Scope
+            where TScopeConcrete : Scope, TScopeContract
         {
             RegisterScope<TScopeContract, TScopeConcrete>((builder, parentScope) =>
             {
@@ -217,14 +226,13 @@ namespace SparseInject
 
         public void RegisterScope<TScopeContract, TScopeConcrete>(Action<IScopeBuilder, IScopeResolver> install)
             where TScopeContract : class, IDisposable
-            where TScopeConcrete : Scope
+            where TScopeConcrete : Scope, TScopeContract
         {
             ref var concrete = ref AddConcrete(typeof(TScopeConcrete), out var index);
 
             AddContract<TScopeContract>(index);
 
-            concrete.MarkScope(true);
-            concrete.MarkSingleton(false);
+            concrete.MarkScope();
             concrete.Value = install;
         }
     }

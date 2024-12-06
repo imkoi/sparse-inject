@@ -3,7 +3,7 @@
   "profiles": {
     "DebugRoslynSourceGenerator": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "../SparseInject.Benchmarks/SparseInject.Benchmarks.csproj"
+      "targetProject": "../SparseInject.ReflectionBaking.Tests/SparseInject.ReflectionBaking.Tests.csproj"
     }
   }
 }

@@ -28,12 +28,9 @@ namespace SparseInject
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void MarkCollection(bool value)
+        public void MarkCollection()
         {
-            if (value)
-                Data |= IsArrayMask;
-            else
-                Data &= ~IsArrayMask;
+            Data |= IsArrayMask;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

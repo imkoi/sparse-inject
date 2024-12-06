@@ -335,6 +335,34 @@ public class SingletonAsValueTest
         container.Resolve<IPlayerThree>().Should().Be(value);
         container.Resolve<IPlayerThree>().Should().Be(value);
     }
+    
+    [Test]
+    public void RegisteredByMethodToThreeInterfaces_WhenResolvedMultipleTimes_ReturnSameValues()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+
+        var value = new PlayerWithDependencies(
+            Substitute.For<IPlayerSingletonDependency>(),
+            Substitute.For<IPlayerTransientDependency>());
+
+        builder.Register(scopeBuilder =>
+        {
+            scopeBuilder.RegisterValue<IPlayerWithDependencies, IPlayerTwo, IPlayerThree, PlayerWithDependencies>(value);
+        });
+        
+        var container = builder.Build();
+
+        // Asserts
+        container.Resolve<IPlayerWithDependencies>().Should().Be(value);
+        container.Resolve<IPlayerWithDependencies>().Should().Be(value);
+        
+        container.Resolve<IPlayerTwo>().Should().Be(value);
+        container.Resolve<IPlayerTwo>().Should().Be(value);
+        
+        container.Resolve<IPlayerThree>().Should().Be(value);
+        container.Resolve<IPlayerThree>().Should().Be(value);
+    }
 
     [Test]
     public void RegisteredToTwoInterfaces_WhenUsingWrongSignature_ThrowProperException()

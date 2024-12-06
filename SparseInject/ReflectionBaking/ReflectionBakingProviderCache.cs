@@ -20,7 +20,7 @@ namespace SparseInject
                 instanceFactory = provider.GetInstanceFactory(type);
                 constructorParameterTypes = provider.ConstructorParametersSpan;
                 
-                return true;
+                return instanceFactory != null;
             }
 
             instanceFactory = null;

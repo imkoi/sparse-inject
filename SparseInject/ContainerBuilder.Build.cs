@@ -29,7 +29,7 @@ namespace SparseInject
 
                         implementationConstructorParameters[concreteIndex] = constructorParametersSpan;
                         concrete.GeneratedInstanceFactory = factory;
-                        concrete.MarkInstanceFactory(true);
+                        concrete.MarkInstanceFactory();
                     }
                     else
                     {
