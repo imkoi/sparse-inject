@@ -26,7 +26,7 @@ namespace SparseInject
         
         private int _lastContractsConcretesIndex;
         
-        public ContainerBuilder(int capacity = 4096) : this(null, new Dictionary<Type, int>(capacity), capacity)
+        public ContainerBuilder(int capacity = 2048) : this(null, new Dictionary<Type, int>(capacity), capacity)
         {
             
         }
@@ -34,7 +34,7 @@ namespace SparseInject
         internal ContainerBuilder(
             Container parentContainer,
             Dictionary<Type, int> contractIds,
-            int capacity = 4096)
+            int capacity)
         {
             _parentContainer = parentContainer;
             _contractIds = contractIds;

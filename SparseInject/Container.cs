@@ -135,7 +135,7 @@ namespace SparseInject
 
                         ((Action<IScopeBuilder, IScopeResolver>)concrete.Value).Invoke(containerBuilder, this);
 
-                        var container = containerBuilder.BuildInternal(concrete.Type, this);
+                        var container = containerBuilder.BuildInternal(contract.Type, this);
 
                         for (var j = 0; j < constructorContractsCount; j++)
                         {

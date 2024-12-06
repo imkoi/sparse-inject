@@ -39,10 +39,25 @@ public static class ScopeTestInstaller
 public interface IScopeB : IDisposable { }
 public interface IScopeD : IDisposable { }
 
-public class ScopeA : SparseInject.Scope { }
-public class ScopeB : SparseInject.Scope, IScopeB { }
-public class ScopeC : SparseInject.Scope { }
-public class ScopeD : SparseInject.Scope, IScopeD { }
+public class ScopeA : SparseInject.Scope
+{
+    public ScopeA(Dependency[] dependencies, DependencyA[] dependenciesA) { }
+}
+
+public class ScopeB : SparseInject.Scope, IScopeB
+{
+    public ScopeB(Dependency[] dependencies, DependencyB[] dependenciesB) { }
+}
+
+public class ScopeC : SparseInject.Scope
+{
+    public ScopeC(Dependency[] dependencies, DependencyC[] dependenciesC) { }
+}
+
+public class ScopeD : SparseInject.Scope, IScopeD
+{
+    public ScopeD(Dependency[] dependencies, DependencyD[] dependenciesD) { }
+}
 
 public class Dependency { }
 public class DependencyA { }

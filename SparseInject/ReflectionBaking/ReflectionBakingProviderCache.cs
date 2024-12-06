@@ -9,7 +9,7 @@ namespace SparseInject
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.DivideByZeroChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public static class ReflectionBakingProviderCache
+    internal static class ReflectionBakingProviderCache
     {
         private static Dictionary<Assembly, IReflectionBakingProvider> _cache = new Dictionary<Assembly, IReflectionBakingProvider>(32);
 
