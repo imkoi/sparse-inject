@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SparseInject.SourceGenerator;
 
-class TypeMeta
+public class TypeMeta
 {
     public INamedTypeSymbol Symbol { get; }
     public string TypeName { get; }
@@ -25,7 +25,7 @@ class TypeMeta
         this.syntax = syntax;
 
         TypeName = symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-        FullTypeName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        FullTypeName = symbol.ToDisplayString();
 
         Constructor = GetConstructor();
         ConstructorParameters = GetConstructorParameters(Constructor);
@@ -71,8 +71,7 @@ class TypeMeta
         var parameters = constructorSymbol != null ? constructorSymbol.Parameters
             .Select(param =>
             {
-                var paramType =
-                    param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                var paramType = param.Type.ToDisplayString();
                 var paramName = param.Name;
                 return (paramType, paramName);
             })

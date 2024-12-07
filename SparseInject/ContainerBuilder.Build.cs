@@ -110,9 +110,12 @@ namespace SparseInject
                                 contractId = _contractIds.Count;
 
                                 _contractIds.Add(elementType, contractId);
+
+                                contractId = _contractIds.Count;
+                                _contractIds.Add(parameterType, contractId);
                             }
                         }
-                        else if (concrete.IsScope())
+                        else if (concrete.IsScope()) // TODO: is it work as expected?
                         {
                             contractId = _contractIds.Count;
 
@@ -154,6 +157,7 @@ namespace SparseInject
                                         continue;
                                     }
                                     
+                                    // TODO: add test that cover logic without throw
                                     throw new SparseInjectException($"Dependency '{pair.Key}' of '{containerType}' not registered");
                                 }
                             }
@@ -162,6 +166,7 @@ namespace SparseInject
                 }
                 else
                 {
+                    // TODO: add test that cover throw
                     throw new SparseInjectException($"Container {containerType} not registered");
                 }
             }

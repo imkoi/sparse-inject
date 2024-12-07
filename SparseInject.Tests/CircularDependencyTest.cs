@@ -125,7 +125,7 @@ public class CircularDependencyTest
     }
     
     private class E0 { public E0(E1 value) { } }
-    private class E1 { public E1(E2_1 value, E2_2 empty) { } }
+    private class E1 { public E1(E2_2 empty, E2_1 value) { } }
     private class E2_1 { public E2_1(E0 value) { } }
     private class E2_2 { }
     

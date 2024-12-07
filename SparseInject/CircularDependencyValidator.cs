@@ -34,7 +34,7 @@ namespace SparseInject
             if (depth > 0 && originConcreteIndex == concreteIndex)
             {
                 ThrowRecursiveByReflection(concrete.Type, new List<Type>(depth));
-            }
+            } // TODO: think how to cover this line
             
             var constructorContractsCount = concrete.GetConstructorContractsCount();
             var constructorContractsIndex = concrete.GetConstructorContractsIndex();
@@ -119,7 +119,7 @@ namespace SparseInject
                 ThrowRecursiveByReflection(x.ParameterType, stack);
             }
         
-            stack.RemoveAt(stack.Count - 1);
+            stack.RemoveAt(stack.Count - 1); // TODO: check if this code reachable
         }
     }
 }

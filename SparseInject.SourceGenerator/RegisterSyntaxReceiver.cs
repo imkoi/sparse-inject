@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -12,7 +13,7 @@ public class RegisterSyntaxReceiver : ISyntaxReceiver
     {
         TypesWithGenerator = new HashSet<string>();
     }
-    
+
     public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
     {
         if (syntaxNode is not IdentifierNameSyntax)
@@ -30,33 +31,13 @@ public class RegisterSyntaxReceiver : ISyntaxReceiver
         
         syntaxNode = syntaxNode.Parent;
         
-        if (syntaxNode is GenericNameSyntax genericNameSyntax && genericNameSyntax.Identifier.Text.StartsWith("Register"))
+        if (syntaxNode is GenericNameSyntax genericNameSyntax)
         {
-            syntaxNode = syntaxNode.Parent;
+            var identifierName = genericNameSyntax.Identifier.Text;
             
-            if (syntaxNode is not MemberAccessExpressionSyntax)
+            if (identifierName == "Register" || identifierName == "RegisterScope")
             {
-                return;
-            }
-            
-            syntaxNode = syntaxNode.Parent;
-            
-            if (syntaxNode is not InvocationExpressionSyntax)
-            {
-                return;
-            }
-
-            while (syntaxNode is not CompilationUnitSyntax)
-            {
-                syntaxNode = syntaxNode.Parent;
-            }
-
-            foreach (var usingDirective in (syntaxNode as CompilationUnitSyntax).Usings)
-            {
-                if (usingDirective.Name is IdentifierNameSyntax identifierNameSyntax && identifierNameSyntax.Identifier.Text == "SparseInject")
-                {
-                    TypesWithGenerator.Add(genericArgumentName);
-                }
+                TypesWithGenerator.Add(genericArgumentName);
             }
         }
     }

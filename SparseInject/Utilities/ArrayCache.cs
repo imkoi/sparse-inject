@@ -10,7 +10,7 @@ namespace SparseInject
     internal static class ArrayCache
     {
         internal static object[][] _cache;
-        private static object[] _reserved = new object[1024 * 64];
+        private static object[] _reserved = new object[1024];
         private static int _count;
 
         private static Reserved _originalReserved = new Reserved()
@@ -48,10 +48,18 @@ namespace SparseInject
 
             return _cache;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Reserved PullReserved(int length)
         {
+            var arrayLen = _originalReserved.Array.Length;
+            var freeSlots = arrayLen - _count;
+
+            if (freeSlots - length < 0)
+            {
+                Array.Resize(ref _originalReserved.Array, (arrayLen + Math.Abs(freeSlots - length)) * 2);
+            }
+            
             ref var reserved = ref _originalReserved;
             
             reserved.StartIndex = _count;

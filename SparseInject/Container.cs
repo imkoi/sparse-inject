@@ -69,9 +69,11 @@ namespace SparseInject
                 {
                     if (_parentContainer != null)
                     {
+                        // TODO: add test that cover this case
                         return _parentContainer.Resolve(type);
                     }
                     
+                    // TODO: add test that cover this case
                     throw new SparseInjectException($"Trying to resolve unknown type '{type}'");
                 }
                 
@@ -175,6 +177,7 @@ namespace SparseInject
                                     }
                                     else
                                     {
+                                        // TODO: Add test that cover this logic
                                         throw new SparseInjectException($"Trying to resolve unknown type '{unknownParameter}'");
                                     }
                                 }
@@ -262,7 +265,7 @@ namespace SparseInject
                 }
                 catch (Exception exception)
                 {
-                    throw new SparseInjectException($"Failed resolve array of '{instances.GetType().GetElementType()}' because it has instance of type '{instance.GetType()}'\n{exception}");
+                    throw new SparseInjectException($"Failed create array of '{instances.GetType().GetElementType()}' because it has instance of type '{instance.GetType()}'\n{exception}");
                 }
 #else
                 instances.SetValue(instance, i);
@@ -280,6 +283,7 @@ namespace SparseInject
 
                 if (denseIndex < 0 && _parentContainer != null)
                 {
+                    // TODO: add test that have recursion case
                     return _parentContainer.TryGetConcrete(type, out concrete);
                 }
 
@@ -291,6 +295,7 @@ namespace SparseInject
                 return true;
             }
 
+            // TODO: add test that have concrete not found case
             concrete = default(Concrete);
             return false;
         }
@@ -304,6 +309,7 @@ namespace SparseInject
 
             if (_parentContainer != null)
             {
+                // TODO: add test that have recursion case
                 return _parentContainer.ContractExist(contractId);
             }
 
@@ -320,9 +326,11 @@ namespace SparseInject
             
             if (_parentContainer != null)
             {
+                // TODO: add test that have recursion case
                 return TryFindContainerWithContract(contractId, out container);
             }
 
+            // TODO: add test that have container not found case
             container = null;
             
             return false;

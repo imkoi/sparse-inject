@@ -1,0 +1,134 @@
+using System;
+using Microsoft.CodeAnalysis;
+
+namespace SparseInject.SourceGenerator;
+
+public static class InstanceFactoryGenerator
+{
+    public static bool TryGenerate(TypeMeta typeMeta,
+        CodeWriter codeWriter, GeneratorExecutionContext context, out string resultGeneratorName)
+    {
+        resultGeneratorName = string.Empty;
+        
+        if (typeMeta.IsGenerics)
+        {
+            return false;
+        }
+        
+        var constructorSymbol = typeMeta.Constructor;
+
+        if (constructorSymbol != null)
+        {
+            if (!constructorSymbol.CanBeCallFromInternal())
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DiagnosticDescriptors.PrivateConstructorNotSupported,
+                    typeMeta.GetLocation(),
+                    typeMeta.TypeName));
+                return false;
+            }
+
+            if (constructorSymbol.Arity > 0)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DiagnosticDescriptors.GenericsNotSupported,
+                    typeMeta.GetLocation(),
+                    typeMeta.TypeName));
+                return false;
+            }
+        }
+
+        // var typeName = typeMeta.TypeName
+        //     .Replace("global::", "")
+        //     .Replace("<", "_")
+        //     .Replace(">", "_");
+
+        using (codeWriter.CreateClass(typeMeta.Symbol,
+                   new []
+                   {
+                       "int constructorParametersIndex"
+                   },
+                   new []
+                   {
+                       "ConstructorParametersIndex = constructorParametersIndex;",
+                       $"ConstructorParametersCount = {typeMeta.ConstructorParameters.Length};"
+                   },
+                   out resultGeneratorName))
+        {
+            using (codeWriter.Scope("public override object Create(object[] arguments)"))
+            {
+                var parameters = typeMeta.ConstructorParameters;
+                
+                if (constructorSymbol != null)
+                {
+                    var args = new string[parameters.Length];
+                
+                    for (var i = 0; i < parameters.Length; i++)
+                    {
+                        args[i] = $"({parameters[i].paramType})(arguments[{i}])";
+                    }
+
+                    codeWriter.WriteLine($"return new {typeMeta.FullTypeName}({string.Join(", ", args)});");
+                }
+                else
+                {
+                    codeWriter.WriteLine($"return new {typeMeta.FullTypeName}();");
+                }
+            }
+        }
+
+        return true;
+    }
+    
+    private static IDisposable CreateClass(this CodeWriter writer, ITypeSymbol typeSymbol,
+        string[] constructorParameters, string[] constructorLines,
+        out string resultGeneratorName)
+    {
+        var generatorName = string.Empty;
+        resultGeneratorName = string.Empty;
+        
+        var namespaceName = typeSymbol.ContainingNamespace.ToDisplayString();
+        IDisposable namespaceScope = new EmptyScope();
+        
+        if (!string.IsNullOrEmpty(namespaceName))
+        {
+            resultGeneratorName += namespaceName + ".";
+
+            namespaceScope = writer.Scope($"namespace {namespaceName}");
+        }
+        
+        var containingType = typeSymbol.ContainingType;
+
+        while (containingType != null)
+        {
+            var containingTypeName = containingType.Name + "_";
+            
+            generatorName += containingTypeName;
+            
+            containingType = containingType.ContainingType;
+        }
+        
+        var className = typeSymbol.Name;
+        
+        generatorName += $"{className}_SparseInject_InstanceFactory";
+        resultGeneratorName += generatorName;
+
+        writer.WriteLine("#if UNITY_2018_1_OR_NEWER");
+        writer.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.NullChecks, false)]");
+        writer.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.DivideByZeroChecks, false)]");
+        writer.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.ArrayBoundsChecks, false)]");
+        writer.WriteLine("[UnityEngine.Scripting.Preserve]");
+        writer.WriteLine("#endif");
+        var classScope = writer.Scope($"public class {generatorName} : InstanceFactoryBase");
+        
+        using (writer.Scope($"public {generatorName}({string.Join(",", constructorParameters)})"))
+        {
+            foreach (var constructorLine in constructorLines)
+            {
+                writer.WriteLine(constructorLine);
+            }
+        }
+
+        return new CompositeScope(namespaceScope, classScope);
+    }
+}

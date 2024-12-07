@@ -20,17 +20,12 @@ public class SourceGenerator : ISourceGenerator
 
     public void Execute(GeneratorExecutionContext context)
     {
-        var sparseInjectReferenced = false;
-
-        foreach (var referencedAssembly in context.Compilation.ReferencedAssemblyNames)
+        if (context.SyntaxReceiver is not RegisterSyntaxReceiver receiver)
         {
-            if (referencedAssembly.Name == "SparseInject")
-            {
-                sparseInjectReferenced = true;
-            }
+            return;
         }
 
-        if (!sparseInjectReferenced)
+        if (!HasReference(context, "SparseInject"))
         {
             return;
         }
@@ -40,30 +35,20 @@ public class SourceGenerator : ISourceGenerator
             Location.None,
             context.Compilation.Assembly.Name));
         
-        if (context.SyntaxReceiver is not RegisterSyntaxReceiver receiver)
-            return;
-        
         var compilation = context.Compilation;
 
-        var codeWriter = new CodeWriter();
-        
-        var generatedClasses = new List<GeneratedInstanceFactory>();
-        
-        codeWriter.AppendLine("using System;");
-        codeWriter.AppendLine("using System.Collections.Generic;");
-        codeWriter.AppendLine("using System.Runtime.CompilerServices;");
-        codeWriter.AppendLine("using SparseInject;");
-        
-        codeWriter.AppendLine("#if UNITY_2018_1_OR_NEWER");
-        codeWriter.AppendLine("using Unity.IL2CPP.CompilerServices;");
-        codeWriter.AppendLine("using UnityEngine.Scripting;");
-        codeWriter.AppendLine("#endif");
-        
-        codeWriter.AppendLine();
-        
+        var generatedClasses = new List<GeneratedInstanceFactory>(receiver.TypesWithGenerator.Count);
+        var codeWriter = new CodeWriter(4, new []
+        {
+            "System",
+            "System.Collections.Generic",
+            "System.Runtime.CompilerServices",
+            "SparseInject"
+        });
+
         foreach (var syntaxTree in compilation.SyntaxTrees)
         {
-            var semanticModel = compilation.GetSemanticModel(syntaxTree);
+            //var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
             var typeDeclarations = syntaxTree.GetRoot()
                 .DescendantNodes()
@@ -71,6 +56,8 @@ public class SourceGenerator : ISourceGenerator
 
             foreach (var typeDeclaration in typeDeclarations)
             {
+                var semanticModel = compilation.GetSemanticModel(typeDeclaration.SyntaxTree);
+                
                 var typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration);
                 
                 if (typeSymbol.TypeKind is TypeKind.Interface or TypeKind.Struct or TypeKind.Enum)
@@ -82,27 +69,18 @@ public class SourceGenerator : ISourceGenerator
                 {
                     continue;
                 }
-                
-                //TODO: check not inherit from unity object
-                
+
                 if (typeSymbol != null && receiver.TypesWithGenerator.Contains(typeSymbol.Name))
                 {
                     var typeDeclarationSyntax =
                         typeSymbol.DeclaringSyntaxReferences.First().GetSyntax() as TypeDeclarationSyntax;
                     var typeMeta = Analyzer.AnalyzeTypeSymbol(typeSymbol, typeDeclarationSyntax);
                     
-                    if (Emitter.TryEmitGeneratedInjector(typeMeta, codeWriter, context))
+                    if (InstanceFactoryGenerator.TryGenerate(typeMeta, codeWriter, context, out var generateTypeName))
                     {
-                        var typeName = typeMeta.TypeName
-                            .Replace("global::", "")
-                            .Replace("<", "_")
-                            .Replace(">", "_");
-                        
-                        var generateTypeName = $"{typeName}_SparseInject_GeneratedInstanceFactory";
-                        
                         generatedClasses.Add(new GeneratedInstanceFactory
                         {
-                            ClassName = typeName,
+                            Type = typeSymbol,
                             GeneratedFactoryName = generateTypeName,
                             ConstructorParameterTypes = typeMeta.ConstructorParameters
                         });
@@ -111,60 +89,75 @@ public class SourceGenerator : ISourceGenerator
             }
         }
         
-        codeWriter.AppendLine("#if UNITY_2018_1_OR_NEWER");
-        codeWriter.AppendLine("[Il2CppSetOption(Option.NullChecks, false)]");
-        codeWriter.AppendLine("[Il2CppSetOption(Option.DivideByZeroChecks, false)]");
-        codeWriter.AppendLine("[Il2CppSetOption(Option.ArrayBoundsChecks, false)]");
-        codeWriter.AppendLine("[Preserve]");
-        codeWriter.AppendLine("#endif");
-        using (codeWriter.BeginBlockScope("class SparseInject_ReflectionBakingProvider : IReflectionBakingProvider"))
+        codeWriter.WriteLine("#if UNITY_2018_1_OR_NEWER");
+        codeWriter.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.NullChecks, false)]");
+        codeWriter.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.DivideByZeroChecks, false)]");
+        codeWriter.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.ArrayBoundsChecks, false)]");
+        codeWriter.WriteLine("[UnityEngine.Scripting.Preserve]");
+        codeWriter.WriteLine("#endif");
+        using (codeWriter.Scope("class SparseInject_ReflectionBakingProvider : IReflectionBakingProvider"))
         {
-            codeWriter.AppendLine("public Type[] ConstructorParametersSpan => _constructorParameterTypes;");
+            codeWriter.WriteLine("public Type[] ConstructorParametersSpan => _constructorParameterTypes;");
             
-            codeWriter.AppendLine("private Dictionary<Type, InstanceFactoryBase> _cache;");
-            codeWriter.AppendLine("private Type[] _constructorParameterTypes;");
+            codeWriter.WriteLine("private Dictionary<Type, InstanceFactoryBase> _cache;");
+            codeWriter.WriteLine("private Type[] _constructorParameterTypes;");
             
-            using (codeWriter.BeginBlockScope("public void Initialize()"))
+            using (codeWriter.Scope("public void Initialize()"))
             {
                 var allConstructorParameters = generatedClasses.Sum(d => d.ConstructorParameterTypes.Length);
                 
-                codeWriter.AppendLine($"_cache = new Dictionary<Type, InstanceFactoryBase>({generatedClasses.Count});");
-                codeWriter.AppendLine($"_constructorParameterTypes = new Type[{allConstructorParameters}];");
+                codeWriter.WriteLine($"_cache = new Dictionary<Type, InstanceFactoryBase>({generatedClasses.Count});");
+                codeWriter.WriteLine($"_constructorParameterTypes = new Type[{allConstructorParameters}];");
 
                 var constructorIndex = 0;
 
                 foreach (var data in generatedClasses)
                 {
-                    codeWriter.AppendLine($"_cache.Add(typeof({data.ClassName}), new {data.GeneratedFactoryName}({constructorIndex}));");
+                    codeWriter.WriteLine($"_cache.Add(typeof({data.Type.ToDisplayString()}), new {data.GeneratedFactoryName}({constructorIndex}));");
 
                     for (var i = 0; i < data.ConstructorParameterTypes.Length; i++)
                     {
-                        codeWriter.AppendLine($"_constructorParameterTypes[{constructorIndex}] = typeof({data.ConstructorParameterTypes[i].paramType});");
+                        codeWriter.WriteLine($"_constructorParameterTypes[{constructorIndex}] = typeof({data.ConstructorParameterTypes[i].paramType});");
                         constructorIndex++;
                     }
                 }
             }
             
-            using (codeWriter.BeginBlockScope("public InstanceFactoryBase GetInstanceFactory(Type type)"))
+            using (codeWriter.Scope("public InstanceFactoryBase GetInstanceFactory(Type type)"))
             {
-                using (codeWriter.BeginBlockScope(
-                           "if (_cache.TryGetValue(type, out var instanceFactory))"))
+                using (codeWriter.Scope("if (_cache.TryGetValue(type, out var instanceFactory))"))
                 {
-                    codeWriter.AppendLine("return instanceFactory;");
+                    codeWriter.WriteLine("return instanceFactory;");
                 }
                 
-                codeWriter.AppendLine("return null;");
+                codeWriter.WriteLine("return null;");
             }
         }
-        
-        context.AddSource("SparseInject_GeneratedInstanceFactory.g.cs",
-            SourceText.From(codeWriter.ToString(), Encoding.UTF8));
+
+        var generatedCode = codeWriter.Build();
+
+        context.AddSource("SparseInject_GeneratedInstanceFactory.g.cs", SourceText.From(generatedCode, Encoding.UTF8));
+    }
+
+    private static bool HasReference(GeneratorExecutionContext context, string reference)
+    {
+        var referenced = false;
+
+        foreach (var referencedAssembly in context.Compilation.ReferencedAssemblyNames)
+        {
+            if (referencedAssembly.Name == reference)
+            {
+                referenced = true;
+            }
+        }
+
+        return referenced;
     }
 }
 
 class GeneratedInstanceFactory
 {
-    public string ClassName;
+    public ITypeSymbol Type;
     public string GeneratedFactoryName;
     public (string paramType, string paramName)[] ConstructorParameterTypes;
 }
