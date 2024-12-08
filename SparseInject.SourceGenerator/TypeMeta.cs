@@ -9,6 +9,7 @@ namespace SparseInject.SourceGenerator;
 public class TypeMeta
 {
     public INamedTypeSymbol Symbol { get; }
+    public List<string> GenericArgs { get; }
     public string TypeName { get; }
     public string FullTypeName { get; }
 
@@ -19,9 +20,10 @@ public class TypeMeta
 
     readonly TypeDeclarationSyntax syntax;
 
-    public TypeMeta(INamedTypeSymbol symbol, TypeDeclarationSyntax syntax)
+    public TypeMeta(INamedTypeSymbol symbol, List<string> genericArgs, TypeDeclarationSyntax syntax)
     {
         Symbol = symbol;
+        GenericArgs = genericArgs;
         this.syntax = syntax;
 
         TypeName = symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);

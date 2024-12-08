@@ -152,12 +152,16 @@ namespace SparseInject
 
             var concretesIndex = _lastContractsConcretesIndex;
             var concretesCount = contract.GetConcretesCount();
-            
-            contract.SetConcretesIndex(concretesIndex);
+
+            if (!contract.IsCollection())
+            {
+                contract.SetConcretesIndex(_lastContractsConcretesIndex);
+            }
             
             if (concretesCount == 0)
             {
                 contract.Type = contractType;
+                
                 contract.SetConcretesCount(1);
                 
                 var collectionContractId = GetOrAddContractId<T[]>(out _);

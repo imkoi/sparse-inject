@@ -107,14 +107,13 @@ namespace SparseInject
             var denseIndex = _contractsSparse[dependencyId];
 
             ref var contract = ref _contractsDense[denseIndex];
-            var instances = contract.IsCollection()
-                ? Array.CreateInstance(contract.Type, contract.GetConcretesCount())
-                : null;
+            var concretesCount = contract.GetConcretesCount();
+            var instances = contract.IsCollection() ? Array.CreateInstance(contract.Type, concretesCount) : null;
             var constructorContractsCount = -1;
             var constructorContractsIndex = -1;
             var reserved = default(ArrayCache.Reserved);
 
-            for (var i = 0; i < contract.GetConcretesCount(); i++)
+            for (var i = 0; i < concretesCount; i++)
             {
                 var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + i];
                 ref var concrete = ref _concretes[concreteIndex];

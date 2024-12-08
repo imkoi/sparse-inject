@@ -1,10 +1,8 @@
-﻿using System;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -70,20 +68,78 @@ public class SourceGenerator : ISourceGenerator
                     continue;
                 }
 
-                if (typeSymbol != null && receiver.TypesWithGenerator.Contains(typeSymbol.Name))
+                if (typeSymbol != null)
                 {
+                    var typeName = typeSymbol.Name;
+                    var listGenericArgs = new List<string>();
+                    
+                    if (typeSymbol is INamedTypeSymbol namedTypeSymbolSymbol && namedTypeSymbolSymbol.Arity > 0)
+                    {
+                        foreach (var typeNameForGen in receiver.TypesWithGenerator)
+                        {
+                            if (typeNameForGen.StartsWith(typeName) && typeNameForGen.EndsWith(">") &&
+                                typeNameForGen.Contains("<"))
+                            {
+                                var startIndex = typeNameForGen.IndexOf('<');
+                                var endIndex = typeNameForGen.LastIndexOf('>');
+                                
+                                if (startIndex != -1 && endIndex != -1 && endIndex > startIndex)
+                                {
+                                    var substring = typeNameForGen.Substring(startIndex + 1, endIndex - startIndex - 1);
+                                    listGenericArgs.Add(substring);
+                                }
+                            }
+                        }
+
+                        if (listGenericArgs.Count == 0)
+                        {
+                            continue;
+                        }
+                    }
+                    else if (!receiver.TypesWithGenerator.Contains(typeName))
+                    {
+                        continue;
+                    }
+                    
                     var typeDeclarationSyntax =
                         typeSymbol.DeclaringSyntaxReferences.First().GetSyntax() as TypeDeclarationSyntax;
-                    var typeMeta = Analyzer.AnalyzeTypeSymbol(typeSymbol, typeDeclarationSyntax);
                     
-                    if (InstanceFactoryGenerator.TryGenerate(typeMeta, codeWriter, context, out var generateTypeName))
+
+                    if (listGenericArgs?.Count > 0)
                     {
-                        generatedClasses.Add(new GeneratedInstanceFactory
+                        foreach (var genericArg in listGenericArgs)
                         {
-                            Type = typeSymbol,
-                            GeneratedFactoryName = generateTypeName,
-                            ConstructorParameterTypes = typeMeta.ConstructorParameters
-                        });
+                            var genericArgs = genericArg.Split(',').Select(x => x.Replace(" ", "")).ToList();
+                            
+                            var typeMeta = Analyzer.AnalyzeTypeSymbol(typeSymbol, typeDeclarationSyntax, genericArgs);
+                            
+                            if (InstanceFactoryGenerator.TryGenerate(typeMeta, codeWriter, context, out var generateTypeName, out var correctedTypeName))
+                            {
+                                generatedClasses.Add(new GeneratedInstanceFactory
+                                {
+                                    Type = typeSymbol,
+                                    TypeName = correctedTypeName,
+                                    GenericArgument = genericArg,
+                                    GeneratedFactoryName = generateTypeName,
+                                    ConstructorParameterTypes = typeMeta.ConstructorParameters
+                                });
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var typeMeta = Analyzer.AnalyzeTypeSymbol(typeSymbol, typeDeclarationSyntax);
+                        
+                        if (InstanceFactoryGenerator.TryGenerate(typeMeta, codeWriter, context, out var generateTypeName, out var correctedTypeName))
+                        {
+                            generatedClasses.Add(new GeneratedInstanceFactory
+                            {
+                                Type = typeSymbol,
+                                TypeName = correctedTypeName,
+                                GeneratedFactoryName = generateTypeName,
+                                ConstructorParameterTypes = typeMeta.ConstructorParameters
+                            });
+                        }
                     }
                 }
             }
@@ -113,7 +169,9 @@ public class SourceGenerator : ISourceGenerator
 
                 foreach (var data in generatedClasses)
                 {
-                    codeWriter.WriteLine($"_cache.Add(typeof({data.Type.ToDisplayString()}), new {data.GeneratedFactoryName}({constructorIndex}));");
+                    var typeName = data.GenericArgument != null && data.GenericArgument.Length > 0 ? data.TypeName : data.Type.ToDisplayString();
+                    
+                    codeWriter.WriteLine($"_cache.Add(typeof({typeName}), new {data.GeneratedFactoryName}({constructorIndex}));");
 
                     for (var i = 0; i < data.ConstructorParameterTypes.Length; i++)
                     {
@@ -158,6 +216,8 @@ public class SourceGenerator : ISourceGenerator
 class GeneratedInstanceFactory
 {
     public ITypeSymbol Type;
+    public string TypeName;
+    public string GenericArgument;
     public string GeneratedFactoryName;
     public (string paramType, string paramName)[] ConstructorParameterTypes;
 }

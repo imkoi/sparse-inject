@@ -6,14 +6,16 @@ namespace SparseInject.SourceGenerator;
 public static class InstanceFactoryGenerator
 {
     public static bool TryGenerate(TypeMeta typeMeta,
-        CodeWriter codeWriter, GeneratorExecutionContext context, out string resultGeneratorName)
+        CodeWriter codeWriter, GeneratorExecutionContext context, out string resultGeneratorName,
+        out string correctedTypeName)
     {
+        correctedTypeName = null;
         resultGeneratorName = string.Empty;
         
-        if (typeMeta.IsGenerics)
-        {
-            return false;
-        }
+        // if (typeMeta.IsGenerics)
+        // {
+        //     return false;
+        // }
         
         var constructorSymbol = typeMeta.Constructor;
 
@@ -25,6 +27,7 @@ public static class InstanceFactoryGenerator
                     DiagnosticDescriptors.PrivateConstructorNotSupported,
                     typeMeta.GetLocation(),
                     typeMeta.TypeName));
+                
                 return false;
             }
 
@@ -43,7 +46,7 @@ public static class InstanceFactoryGenerator
         //     .Replace("<", "_")
         //     .Replace(">", "_");
 
-        using (codeWriter.CreateClass(typeMeta.Symbol,
+        using (codeWriter.CreateClass(typeMeta,
                    new []
                    {
                        "int constructorParametersIndex"
@@ -58,6 +61,27 @@ public static class InstanceFactoryGenerator
             using (codeWriter.Scope("public override object Create(object[] arguments)"))
             {
                 var parameters = typeMeta.ConstructorParameters;
+
+                correctedTypeName = typeMeta.FullTypeName;
+                
+                if (typeMeta.GenericArgs != null)
+                {
+                    var typeNameSplitted = correctedTypeName.Split('.');
+                    var typeNameLast = typeNameSplitted[typeNameSplitted.Length - 1];
+                
+                    var startIndex = typeNameLast.IndexOf('<');
+                    var endIndex = typeNameLast.LastIndexOf('>');
+                                
+                    if (startIndex != -1 && endIndex != -1 && endIndex > startIndex)
+                    {
+                        var stringToReplace = typeNameLast.Substring(startIndex + 1, endIndex - startIndex - 1);
+                        typeNameLast = typeNameLast.Replace(stringToReplace, string.Join(",", typeMeta.GenericArgs));
+                    }
+                    
+                    typeNameSplitted[typeNameSplitted.Length - 1] = typeNameLast;
+                    
+                    correctedTypeName = string.Join(".", typeNameSplitted);
+                }
                 
                 if (constructorSymbol != null)
                 {
@@ -68,11 +92,11 @@ public static class InstanceFactoryGenerator
                         args[i] = $"({parameters[i].paramType})(arguments[{i}])";
                     }
 
-                    codeWriter.WriteLine($"return new {typeMeta.FullTypeName}({string.Join(", ", args)});");
+                    codeWriter.WriteLine($"return new {correctedTypeName}({string.Join(", ", args)});");
                 }
                 else
                 {
-                    codeWriter.WriteLine($"return new {typeMeta.FullTypeName}();");
+                    codeWriter.WriteLine($"return new {correctedTypeName}();");
                 }
             }
         }
@@ -80,17 +104,19 @@ public static class InstanceFactoryGenerator
         return true;
     }
     
-    private static IDisposable CreateClass(this CodeWriter writer, ITypeSymbol typeSymbol,
+    private static IDisposable CreateClass(this CodeWriter writer, TypeMeta typeMeta,
         string[] constructorParameters, string[] constructorLines,
         out string resultGeneratorName)
     {
+        var typeSymbol = typeMeta.Symbol;
+        
         var generatorName = string.Empty;
         resultGeneratorName = string.Empty;
         
         var namespaceName = typeSymbol.ContainingNamespace.ToDisplayString();
         IDisposable namespaceScope = new EmptyScope();
         
-        if (!string.IsNullOrEmpty(namespaceName))
+        if (!typeSymbol.ContainingNamespace.IsGlobalNamespace && !string.IsNullOrEmpty(namespaceName))
         {
             resultGeneratorName += namespaceName + ".";
 
@@ -109,6 +135,11 @@ public static class InstanceFactoryGenerator
         }
         
         var className = typeSymbol.Name;
+
+        if (typeMeta.GenericArgs != null)
+        {
+            className += "_" + string.Join("_", typeMeta.GenericArgs);
+        }
         
         generatorName += $"{className}_SparseInject_InstanceFactory";
         resultGeneratorName += generatorName;

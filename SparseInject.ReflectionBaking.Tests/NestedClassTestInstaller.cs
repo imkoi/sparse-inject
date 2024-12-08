@@ -1,16 +1,15 @@
-﻿namespace SparseInject.ReflectionBaking.Tests.Transient
-{
-    public static class TransientTestInstaller
-    {
-        public static void Install(IScopeBuilder scopeBuilder)
-        {
-            scopeBuilder.Register<TransientDependencyA>();
-            scopeBuilder.Register<ITransientDependencyB, TransientDependencyB>();
-            scopeBuilder.Register<ITransientDependencyC0, ITransientDependencyC1, TransientDependencyC>();
-            scopeBuilder.Register<ITransientDependencyD0, ITransientDependencyD1, ITransientDependencyD2, TransientDependencyD>();
-        }
-    }
+﻿namespace SparseInject.ReflectionBaking.Tests.NestedClass;
 
+public class NestedClassTestInstaller
+{
+    public static void Install(IScopeBuilder scopeBuilder)
+    {
+        scopeBuilder.Register<TransientDependencyA>();
+        scopeBuilder.Register<ITransientDependencyB, TransientDependencyB>();
+        scopeBuilder.Register<ITransientDependencyC0, ITransientDependencyC1, TransientDependencyC>();
+        scopeBuilder.Register<ITransientDependencyD0, ITransientDependencyD1, ITransientDependencyD2, TransientDependencyD>();
+    }
+    
     public class TransientDependencyA { }
 
     public interface ITransientDependencyB { }
