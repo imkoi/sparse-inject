@@ -64,10 +64,8 @@ namespace SparseInject
         private int[] BuildBakeImplementationDependencyIds(
             Type containerType,
             int implementationDependenciesCount,
-            object[][] implementationConstructorParameters,
-            int maxConstructorLength)
+            object[][] implementationConstructorParameters)
         {
-            var generatedInstanceFactoryDependencyIds = new int[maxConstructorLength];
             var dependencyReferences = new int[implementationDependenciesCount];
             var dependencyReferenceIndex = 0;
 
@@ -129,7 +127,6 @@ namespace SparseInject
                     }
 
                     dependencyReferences[parameterIndex + dependencyReferenceIndex] = contractId;
-                    generatedInstanceFactoryDependencyIds[parameterIndex] = contractId;
                 }
 
                 dependencyReferenceIndex += concreteConstructorParametersCount;

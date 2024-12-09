@@ -65,8 +65,7 @@ namespace SparseInject
             var concreteConstructorContractIds = BuildBakeImplementationDependencyIds(
                 containerType,
                 stats.implementationDependenciesCount,
-                stats.implementationConstructorParameters,
-                stats.maxConstructorLength);
+                stats.implementationConstructorParameters);
             
             CircularDependencyValidator.ThrowIfInvalid(new ContainerInfo(
                 parentContainer,
@@ -147,8 +146,9 @@ namespace SparseInject
         private void AddContract<T>(int concreteIndex)
         {
             var contractId = GetOrAddContractId<T>(out var contractType);
-            
             ref var contract = ref GetContract(contractId);
+
+            var nextIndexGrow = contract.IsCollection() ? _contractsSparse[contractId] + 1 : _contractsSparse[contractId] + 2;
 
             var concretesIndex = contract.GetConcretesIndex();
             var concretesCount = contract.GetConcretesCount();
@@ -179,19 +179,7 @@ namespace SparseInject
             }
 
             var nextContractsConcretesCount = _lastContractsConcretesIndex + 1;
-            
-            if (nextContractsConcretesCount > _contractsConcretesIndices.Length)
-            {
-                var oldSize = _contractsConcretesIndices.Length;
-                var newSize = nextContractsConcretesCount * 2;
-                
-                Array.Resize(ref _contractsConcretesIndices, newSize);
-
-                for (var i = oldSize; i < newSize; i++)
-                {
-                    _contractsConcretesIndices[i] = -1;
-                }
-            }
+            TryExtendCapacityContractConcreteIndices(nextContractsConcretesCount);
 
             var index = concretesIndex + concretesCount;
 
@@ -205,19 +193,11 @@ namespace SparseInject
 
                 _contractsConcretesIndices[index] = concreteIndex;
 
-                for (var i = 0; i < _dependenciesCount; i++)
+                for (; nextIndexGrow < _dependenciesCount; nextIndexGrow++)
                 {
-                    ref var contractToProcess = ref _contractsDense[i];
-                
-                    concretesIndex = contractToProcess.GetConcretesIndex();
-                    
-                    // >= because previous swapped contract not update index yet
-                    if (concretesIndex > index && contractToProcess.Type != contractType)
-                    {
-                        concretesIndex++;
-                        
-                        contractToProcess.SetConcretesIndex(concretesIndex);
-                    }
+                    ref var contractToProcess = ref _contractsDense[nextIndexGrow];
+
+                    contractToProcess.SetConcretesIndex(contractToProcess.GetConcretesIndex() + 1);
                 }
             }
             
@@ -243,6 +223,22 @@ namespace SparseInject
             }
             
             return ref _contractsDense[contractIndex];
+        }
+
+        private void TryExtendCapacityContractConcreteIndices(int targetCount)
+        {
+            if (targetCount > _contractsConcretesIndices.Length)
+            {
+                var oldSize = _contractsConcretesIndices.Length;
+                var newSize = targetCount * 2;
+                
+                Array.Resize(ref _contractsConcretesIndices, newSize);
+
+                for (var i = oldSize; i < newSize; i++)
+                {
+                    _contractsConcretesIndices[i] = -1;
+                }
+            }
         }
     }
 }
