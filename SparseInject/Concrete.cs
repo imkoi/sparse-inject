@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-#if UNITY_2019_1_OR_NEWER
-using Unity.IL2CPP.CompilerServices;
-#endif
 
 namespace SparseInject
 {
 #if UNITY_2019_1_OR_NEWER
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.NullChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.DivideByZeroChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 #endif
     public struct Concrete
     {
