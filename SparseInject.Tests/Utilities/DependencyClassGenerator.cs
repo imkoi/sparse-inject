@@ -7,6 +7,7 @@ namespace Utilities
 {
     public class DependencyClassGenerator
     {
+        [Ignore("dont run in unit test")]
         [Test]
         [TestCase(6)]
         public void GenerateDependencies(int depth)
