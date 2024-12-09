@@ -150,29 +150,27 @@ namespace SparseInject
             
             ref var contract = ref GetContract(contractId);
 
-            var concretesIndex = _lastContractsConcretesIndex;
+            var concretesIndex = contract.GetConcretesIndex();
             var concretesCount = contract.GetConcretesCount();
-
-            if (!contract.IsCollection())
-            {
-                contract.SetConcretesIndex(_lastContractsConcretesIndex);
-            }
             
             if (concretesCount == 0)
             {
-                contract.Type = contractType;
+                concretesIndex = _lastContractsConcretesIndex;
                 
+                contract.Type = contractType;
+                contract.SetConcretesIndex(concretesIndex);
                 contract.SetConcretesCount(1);
                 
                 var collectionContractId = GetOrAddContractId<T[]>(out _);
-
                 contract = ref GetContract(collectionContractId);
                 contract.Type = contractType;
                 contract.SetConcretesIndex(concretesIndex);
                 contract.MarkCollection();
             }
-            else
+            else if (!contract.IsCollection())
             {
+                contract.SetConcretesIndex(concretesIndex + 1);
+                
                 var collectionContractId = GetOrAddContractId<T[]>(out _);
 
                 contract = ref GetContract(collectionContractId);
@@ -210,11 +208,11 @@ namespace SparseInject
                 for (var i = 0; i < _dependenciesCount; i++)
                 {
                     ref var contractToProcess = ref _contractsDense[i];
-
+                
                     concretesIndex = contractToProcess.GetConcretesIndex();
                     
                     // >= because previous swapped contract not update index yet
-                    if (concretesIndex >= index)
+                    if (concretesIndex > index && contractToProcess.Type != contractType)
                     {
                         concretesIndex++;
                         

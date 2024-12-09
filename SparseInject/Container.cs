@@ -115,6 +115,8 @@ namespace SparseInject
 
             for (var i = 0; i < concretesCount; i++)
             {
+                var debugConcretesIndex = contract.GetConcretesIndex(); // remove
+                
                 var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + i];
                 ref var concrete = ref _concretes[concreteIndex];
 
