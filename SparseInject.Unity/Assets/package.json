@@ -10,10 +10,10 @@
   "licensesUrl": "https://github.com/imkoi/sparse-inject/blob/main/LICENSE",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/imkoi/sparse-inject.git?path=/SparseInject.Unity/Assets"
+    "url": "git+https://github.com/imkoi/sparse-inject.git?path=/com.voxcake.sparseinject"
   },
   "author": {
-    "name": "imKoi",
+    "name": "voxcake",
     "email": "sviridalos@gmail.com",
     "url": "https://github.com/imkoi/sparse-inject"
   }

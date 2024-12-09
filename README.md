@@ -3,6 +3,8 @@
 
 DI Container forged for game development
 
+https://github.com/imkoi/json-baker.git?path=/SparseInject.Unity/Assets
+
 ### Features
 - Transient and Singleton bindings - singletons will be disposed on container / scopes dispose
 - Value bindings - bind values as singletons
