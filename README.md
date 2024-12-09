@@ -1,4 +1,6 @@
 # SparseInject
+![main github action workflow](https://github.com/imkoi/sparse-inject/actions/workflows/dotnet.yml/badge.svg) [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 DI Container forged for game development
 
 ### Features
