@@ -1,10 +1,10 @@
-﻿using Unity.IL2CPP.CompilerServices;
-
-namespace SparseInject
+﻿namespace SparseInject
 {
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+#if UNITY_2019_1_OR_NEWER
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.NullChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.DivideByZeroChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+#endif
     public abstract class InstanceFactoryBase
     {
         public int ConstructorParametersIndex;

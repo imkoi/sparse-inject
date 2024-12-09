@@ -396,3 +396,46 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+
+
+
+
+# UNITY PROJECT
+SparseInject.Unity/[Ll]ibrary/
+SparseInject.Unity/[Tt]emp/
+SparseInject.Unity/[Oo]bj/
+SparseInject.Unity/[Bb]uild/
+SparseInject.Unity/[Bb]uilds/
+SparseInject.Unity/[Ll]ogs/
+SparseInject.Unity/[Mm]emoryCaptures/
+
+SparseInject.Unity/.idea/
+SparseInject.Unity/.vs/
+SparseInject.Unity/.gradle/
+
+SparseInject.Unity/ExportedObj/
+SparseInject.Unity/.consulo/
+SparseInject.Unity/*.csproj
+SparseInject.Unity/*.suo
+SparseInject.Unity/*.tmp
+SparseInject.Unity/*.user
+SparseInject.Unity/*.userprefs
+SparseInject.Unity/*.pidb
+SparseInject.Unity/*.booproj
+SparseInject.Unity/*.svd
+SparseInject.Unity/*.sln
+SparseInject.Unity/*.pdb
+SparseInject.Unity/*.mdb
+SparseInject.Unity/*.opendb
+SparseInject.Unity/*.VC.db
+SparseInject.Unity/.collabignore
+
+SparseInject.Unity/*.pidb.meta
+SparseInject.Unity/*.pdb.meta
+SparseInject.Unity/*.mdb.meta
+
+SparseInject.Unity/sysinfo.txt
+
+*.apk
+*.unitypackage

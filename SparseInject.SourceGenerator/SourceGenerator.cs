@@ -145,7 +145,7 @@ public class SourceGenerator : ISourceGenerator
             }
         }
         
-        codeWriter.WriteLine("#if UNITY_2018_1_OR_NEWER");
+        codeWriter.WriteLine("#if UNITY_2019_1_OR_NEWER");
         codeWriter.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.NullChecks, false)]");
         codeWriter.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.DivideByZeroChecks, false)]");
         codeWriter.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.ArrayBoundsChecks, false)]");

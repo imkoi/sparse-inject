@@ -144,7 +144,7 @@ public static class InstanceFactoryGenerator
         generatorName += $"{className}_SparseInject_InstanceFactory";
         resultGeneratorName += generatorName;
 
-        writer.WriteLine("#if UNITY_2018_1_OR_NEWER");
+        writer.WriteLine("#if UNITY_2019_1_OR_NEWER");
         writer.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.NullChecks, false)]");
         writer.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.DivideByZeroChecks, false)]");
         writer.WriteLine("[Unity.IL2CPP.CompilerServices.Il2CppSetOption(Option.ArrayBoundsChecks, false)]");

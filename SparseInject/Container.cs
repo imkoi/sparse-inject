@@ -2,13 +2,17 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+#if UNITY_2019_1_OR_NEWER
 using Unity.IL2CPP.CompilerServices;
+#endif
 
 namespace SparseInject
 {
+#if UNITY_2019_1_OR_NEWER
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.DivideByZeroChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+#endif
     public class Container : IScopeResolver
     {
         private readonly Type _containerType;

@@ -1,3 +1,4 @@
+#if UNITY_2019_1_OR_NEWER
 using System;
 
 namespace Unity.IL2CPP.CompilerServices
@@ -72,3 +73,4 @@ namespace Unity.IL2CPP.CompilerServices
         }
     }
 }
+#endif
