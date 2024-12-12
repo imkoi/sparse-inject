@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace SparseInject
 {
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2017_1_OR_NEWER
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.DivideByZeroChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
@@ -208,7 +208,8 @@ namespace SparseInject
                     {
                         constructorParameters = _emptyArray;
                     }
-
+                    
+#if UNITY_2021_2_OR_NEWER
                     if (concrete.HasInstanceFactory())
                     {
                         instance = concrete.GeneratedInstanceFactory.Create(constructorParameters);
@@ -230,6 +231,22 @@ namespace SparseInject
                             parameters: constructorParameters, culture: null);
 #endif
                     }
+#else
+#if DEBUG
+                    try
+                    {
+                        instance = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                            parameters: constructorParameters, culture: null);
+                    }
+                    catch(Exception exception)
+                    {
+                        throw new SparseInjectException($"Failed to create instance of '{concrete.Type}'\n{exception}");
+                    }
+#else
+                    instance = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                        parameters: constructorParameters, culture: null);
+#endif
+#endif
 
                     if (concrete.IsSingleton())
                     {

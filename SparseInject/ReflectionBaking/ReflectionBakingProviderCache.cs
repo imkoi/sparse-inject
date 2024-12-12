@@ -1,11 +1,12 @@
-﻿using System;
+﻿#pragma warning disable CS0162 // Unreachable code detected
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace SparseInject
 {
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2017_1_OR_NEWER
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.DivideByZeroChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
@@ -16,6 +17,13 @@ namespace SparseInject
 
         public static bool TryGetInstanceFactory(Type type, out InstanceFactoryBase instanceFactory, out Type[] constructorParameterTypes)
         {
+#if !UNITY_2021_2_OR_NEWER && !NET
+            instanceFactory = null;
+            constructorParameterTypes = null;
+            
+            return false;
+#endif
+            
             if (TryGetProvider(type.Assembly, out var provider))
             {
                 instanceFactory = provider.GetInstanceFactory(type);
