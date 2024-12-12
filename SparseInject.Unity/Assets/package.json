@@ -1,0 +1,20 @@
+{
+  "name": "com.voxcake.sparseinject",
+  "version": "1.0.0",
+  "displayName": "SparseInject",
+  "description": "Data-oriented dependency injection container forged for game development",
+  "unity": "2019.1",
+  "unityRelease": "1f1",
+  "documentationUrl": "https://github.com/imkoi/sparse-inject",
+  "changelogUrl": "https://github.com/imkoi/sparse-inject/commits/main",
+  "licensesUrl": "https://github.com/imkoi/sparse-inject/blob/main/LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imkoi/sparse-inject.git?path=/com.voxcake.sparseinject"
+  },
+  "author": {
+    "name": "voxcake",
+    "email": "sviridalos@gmail.com",
+    "url": "https://github.com/imkoi/sparse-inject"
+  }
+}
