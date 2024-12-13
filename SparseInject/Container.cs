@@ -209,7 +209,7 @@ namespace SparseInject
                         constructorParameters = _emptyArray;
                     }
                     
-#if UNITY_2021_2_OR_NEWER
+#if UNITY_2021_2_OR_NEWER || NET
                     if (concrete.HasInstanceFactory())
                     {
                         instance = concrete.GeneratedInstanceFactory.Create(constructorParameters);
