@@ -30,7 +30,15 @@ public class CollectionTest
         }
     }
 
-    private class Dependency : IDisposable
+    private class DependencyA : IDisposable
+    {
+        public void Dispose()
+        {
+            
+        }
+    }
+    
+    private class DependencyB : IDisposable
     {
         public void Dispose()
         {
@@ -61,7 +69,7 @@ public class CollectionTest
         var containerBuilder = new ContainerBuilder();
         
         containerBuilder.Register<TypeWithCollectionDependency>();
-        containerBuilder.Register<IDisposable, Dependency>();
+        containerBuilder.Register<IDisposable, DependencyA>();
         
         var container = containerBuilder.Build();
 
@@ -78,8 +86,8 @@ public class CollectionTest
         var containerBuilder = new ContainerBuilder();
         
         containerBuilder.Register<TypeWithCollectionDependency>();
-        containerBuilder.Register<IDisposable, Dependency>();
-        containerBuilder.Register<IDisposable, Dependency>();
+        containerBuilder.Register<IDisposable, DependencyA>();
+        containerBuilder.Register<IDisposable, DependencyA>();
         
         var container = containerBuilder.Build();
 
@@ -96,9 +104,9 @@ public class CollectionTest
         var containerBuilder = new ContainerBuilder();
         
         containerBuilder.Register<TypeWithCollectionDependency>();
-        containerBuilder.Register<IDisposable, Dependency>();
-        containerBuilder.Register<IDisposable, Dependency>();
-        containerBuilder.Register<IDisposable, Dependency>();
+        containerBuilder.Register<IDisposable, DependencyA>();
+        containerBuilder.Register<IDisposable, DependencyA>();
+        containerBuilder.Register<IDisposable, DependencyA>();
         
         var container = containerBuilder.Build();
 
@@ -115,40 +123,42 @@ public class CollectionTest
         var containerBuilder = new ContainerBuilder();
         
         containerBuilder.Register<TypeWithCollectionDependency>();
-        containerBuilder.Register<IDisposable, Dependency>();
+        containerBuilder.Register<IDisposable, DependencyA>();
         
         var container = containerBuilder.Build();
 
         // Asserts
         var instance = container.Resolve<IDisposable>();
 
-        instance.Should().BeOfType<Dependency>();
+        instance.Should().BeOfType<DependencyA>();
     }
     
-    // [Test]
-    // public void RegisterCollectionAndSingleDependency_WhenResolveCollection_ReturnConcatenatedCollection()
-    // {
-    //     // Setup
-    //     var containerBuilder = new ContainerBuilder();
-    //     
-    //     containerBuilder.RegisterValue<IDisposable[]>(new Dependency[2]);
-    //     containerBuilder.Register<IDisposable, Dependency>();
-    //     
-    //     var container = containerBuilder.Build();
-    //
-    //     // Asserts
-    //     var instance = container.Resolve<IDisposable[]>();
-    //
-    //     instance.Length.Should().Be(2);
-    // }
-    //
+    [Ignore("Not working yet")]
+    [Test]
+    public void RegisterCollectionAndSingleDependency_WhenResolveCollection_ReturnConcatenatedCollection()
+    {
+        // Setup
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.RegisterValue<IDisposable[]>(new DependencyA[4]);
+        containerBuilder.Register<IDisposable, DependencyA>();
+        containerBuilder.Register<IDisposable, DependencyB>();
+        
+        var container = containerBuilder.Build();
+    
+        // Asserts
+        var instance = container.Resolve<IDisposable[]>();
+    
+        instance.Length.Should().Be(6);
+    }
+    
     [Test]
     public void RegisterSingleCollection_WhenResolveSingle_ThrowProperException()
     {
         // Setup
         var containerBuilder = new ContainerBuilder();
         
-        containerBuilder.RegisterValue<IDisposable[]>(new Dependency[3]);
+        containerBuilder.RegisterValue<IDisposable[]>(new DependencyA[3]);
         
         var container = containerBuilder.Build();
 

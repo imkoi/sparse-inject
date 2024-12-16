@@ -101,23 +101,40 @@ namespace SparseInject
             
             throw new SparseInjectException($"Trying to resolve unknown type '{type}'");
         }
-
-        // TODO: make request should it resolve single instance or array
-        private object ResolveInternal(int dependencyId)
+        
+        private object ResolveInternal(int contractIndex)
         {
-            var denseIndex = _contractsSparse[dependencyId];
-
-            ref var contract = ref _contractsDense[denseIndex];
+            ref var contract = ref _contractsDense[contractIndex];
             var concretesCount = contract.GetConcretesCount();
-            var instances = contract.IsCollection() ? Array.CreateInstance(contract.Type, concretesCount) : null;
+            var instances = default(Array);
             var constructorContractsCount = -1;
             var constructorContractsIndex = -1;
             var reserved = default(ArrayCache.Reserved);
 
+            if (contract.IsCollection())
+            {
+                var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex()];
+                ref var concrete = ref _concretes[concreteIndex];
+                
+                if (concretesCount == 1 && concrete.IsSingleton() && concrete.HasValue())
+                {
+                    if (concrete.IsArray())
+                    {
+                        return concrete.Value;
+                    }
+                    
+                    instances = Array.CreateInstance(contract.Type, 1);
+                    
+                    instances.SetValue(concrete.Value, 0);
+                    
+                    return instances;
+                }
+                
+                instances = Array.CreateInstance(contract.Type, concretesCount);
+            }
+
             for (var i = 0; i < concretesCount; i++)
             {
-                var debugConcretesIndex = contract.GetConcretesIndex(); // remove
-                
                 var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + i];
                 ref var concrete = ref _concretes[concreteIndex];
 
@@ -144,14 +161,17 @@ namespace SparseInject
                         for (var j = 0; j < constructorContractsCount; j++)
                         {
                             var constructorDependencyId = _dependencyReferences[j + constructorContractsIndex];
+                            contractIndex = _contractsSparse[constructorDependencyId];
 
-                            if (_contractsSparse[constructorDependencyId] < 0)
+                            if (contractIndex < 0)
                             {
-                                reserved.Array[j + reserved.StartIndex] = container.ResolveInternal(constructorDependencyId);
+                                contractIndex = container._contractsSparse[constructorDependencyId];
+                                
+                                reserved.Array[j + reserved.StartIndex] = container.ResolveInternal(contractIndex);
                             }
                             else
                             {
-                                reserved.Array[j + reserved.StartIndex] = ResolveInternal(constructorDependencyId);
+                                reserved.Array[j + reserved.StartIndex] = ResolveInternal(contractIndex);
                             }
                         }
                     }
@@ -160,13 +180,16 @@ namespace SparseInject
                         for (var j = 0; j < constructorContractsCount; j++)
                         {
                             var constructorDependencyId = _dependencyReferences[j + constructorContractsIndex];
+                            contractIndex = _contractsSparse[constructorDependencyId];
 
-                            if (_contractsSparse[constructorDependencyId] < 0)
+                            if (contractIndex < 0)
                             {
                                 if (_parentContainer != null)
                                 {
+                                    contractIndex = _parentContainer._contractsSparse[constructorDependencyId]; // TODO: recursive find of container with dependency id
+                                    
                                     reserved.Array[j + reserved.StartIndex] =
-                                        _parentContainer.ResolveInternal(constructorDependencyId);
+                                        _parentContainer.ResolveInternal(contractIndex);
                                 }
                                 else
                                 {
@@ -186,7 +209,7 @@ namespace SparseInject
                             }
                             else
                             {
-                                reserved.Array[j + reserved.StartIndex] = ResolveInternal(constructorDependencyId);
+                                reserved.Array[j + reserved.StartIndex] = ResolveInternal(contractIndex);
                             }
                         }
                     }
