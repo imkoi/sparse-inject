@@ -10,8 +10,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SparseInject.SourceGenerato
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SparseInject.ReflectionBaking.Tests", "SparseInject.ReflectionBaking.Tests\SparseInject.ReflectionBaking.Tests.csproj", "{DA008B9E-F8D5-48F2-B8CF-1983CD9FE2E7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SparseInject.SourceGenerator3", "SparseInject.SourceGenerator3\SparseInject.SourceGenerator3.csproj", "{DADADB9E-80A6-4028-8D68-12563FBA2979}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,9 +36,5 @@ Global
 		{DA008B9E-F8D5-48F2-B8CF-1983CD9FE2E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA008B9E-F8D5-48F2-B8CF-1983CD9FE2E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA008B9E-F8D5-48F2-B8CF-1983CD9FE2E7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DADADB9E-80A6-4028-8D68-12563FBA2979}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DADADB9E-80A6-4028-8D68-12563FBA2979}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DADADB9E-80A6-4028-8D68-12563FBA2979}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DADADB9E-80A6-4028-8D68-12563FBA2979}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
