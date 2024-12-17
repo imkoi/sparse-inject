@@ -1,4 +1,4 @@
-name: .NET Tests on Push
+name: SparseInject CI/CD
 
 on:
   push:
@@ -7,22 +7,42 @@ on:
 
 jobs:
   build:
+    if: ${{ github.actor != 'github-actions[bot]' && github.event.pusher.email != 'github-actions[bot]@users.noreply.github.com' }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          persist-credentials: true
+          fetch-depth: 0
 
-      - name: Setup .NET
+      - name: Install .NET
         uses: actions/setup-dotnet@v2
         with:
           dotnet-version: '6.x'
 
-      - name: Install dependencies
+      - name: Install Project Dependencies
         run: dotnet restore
 
-      - name: Build
-        run: dotnet build --no-restore
+      - name: Build .NET Solution
+        run: dotnet build --no-restore --configuration Release
 
-      - name: Run tests
+      - name: Run Tests
         run: dotnet test --no-build --verbosity normal
+
+      - name: Build Source Generators
+        run: dotnet publish ./SparseInject.SourceGenerator/SparseInject.SourceGenerator.csproj -c Release
+
+      - name: Push Source Generator into SparseInject.Unity
+        run: |
+          mkdir -p SparseInject.Unity/Assets/Editor/DisabledSourceGenerators~/
+          cp ./SparseInject.SourceGenerator/bin/Release/netstandard2.0/3.8.0/SparseInject.SourceGenerator3.8.0.dll SparseInject.Unity/Assets/Editor/DisabledSourceGenerators~/
+          cp ./SparseInject.SourceGenerator/bin/Release/netstandard2.0/4.3.0/SparseInject.SourceGenerator4.3.0.dll SparseInject.Unity/Assets/Editor/DisabledSourceGenerators~/
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add SparseInject.Unity/Assets/Editor/DisabledSourceGenerators~/
+          git commit -m "bot push source generators into unity project"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
