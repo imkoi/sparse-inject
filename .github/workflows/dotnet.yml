@@ -33,16 +33,23 @@ jobs:
 
       - name: Build Source Generators
         run: dotnet publish ./SparseInject.SourceGenerator/SparseInject.SourceGenerator.csproj -c Release
-
-      - name: Push Source Generator into SparseInject.Unity
+        
+      - name: Update SparseInject.Unity Project
         run: |
+          echo "Copy framework standalone source files from SparseInject/ to SparseInject.Unity/Assets/Runtime/Core/"
+          rsync -av --exclude='AssemblyInfo.cs' --exclude='SparseInject.csproj' SparseInject/ SparseInject.Unity/Assets/Runtime/Core/
+          echo "Copy source generator dlls to SparseInject.Unity/Assets/Editor/DisabledSourceGenerators~/"
           mkdir -p SparseInject.Unity/Assets/Editor/DisabledSourceGenerators~/
           cp ./SparseInject.SourceGenerator/bin/Release/netstandard2.0/3.8.0/SparseInject.SourceGenerator3.8.0.dll SparseInject.Unity/Assets/Editor/DisabledSourceGenerators~/
           cp ./SparseInject.SourceGenerator/bin/Release/netstandard2.0/4.3.0/SparseInject.SourceGenerator4.3.0.dll SparseInject.Unity/Assets/Editor/DisabledSourceGenerators~/
+
+      - name: Push Patches into SparseInject.Unity
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add SparseInject.Unity/Assets/Editor/DisabledSourceGenerators~/
-          git commit -m "bot push source generators into unity project"
+          git add SparseInject.Unity/Assets/Runtime/Core/
+          git commit -m "bot push patches into unity project"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
