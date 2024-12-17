@@ -144,9 +144,10 @@ namespace SparseInject
         private void AddContract<T>(int concreteIndex)
         {
             var contractId = GetOrAddContractId<T>(out var contractType);
-            ref var contract = ref GetContract(contractId);
-
-            var nextIndexGrow = contract.IsCollection() ? _contractsSparse[contractId] + 1 : _contractsSparse[contractId] + 2;
+            var contractIndex = GetContractIndex(contractId);
+            ref var contract = ref _contractsDense[contractIndex];
+ 
+            var nextIndexGrow = -1;
 
             var concretesIndex = contract.GetConcretesIndex();
             var concretesCount = contract.GetConcretesCount();
@@ -159,21 +160,42 @@ namespace SparseInject
                 contract.SetConcretesIndex(concretesIndex);
                 contract.SetConcretesCount(1);
                 
-                var collectionContractId = GetOrAddContractId<T[]>(out _);
-                contract = ref GetContract(collectionContractId);
-                contract.Type = contractType;
-                contract.SetConcretesIndex(concretesIndex);
+                nextIndexGrow = _contractsSparse[contractId] + 2;
+
+                if (!contractType.IsArray)
+                {
+                    var collectionContractId = GetOrAddContractId<T[]>(out _);
+                    contractIndex = GetContractIndex(collectionContractId);
+                    contract = ref _contractsDense[contractIndex];
+
+                    if (contract.GetConcretesCount() == 0)
+                    {
+                        contract.Type = contractType;
+                        contract.SetConcretesIndex(concretesIndex);
+                    }
+                }
+                else
+                {
+                    contract.Type = contractType.GetElementType();
+                }
+
                 contract.MarkCollection();
             }
             else if (!contract.IsCollection())
             {
+                nextIndexGrow = _contractsSparse[contractId] + 2;
+                
                 contract.SetConcretesIndex(concretesIndex + 1);
                 
                 var collectionContractId = GetOrAddContractId<T[]>(out _);
-
-                contract = ref GetContract(collectionContractId);
+                contractIndex = GetContractIndex(collectionContractId);
+                contract = ref _contractsDense[contractIndex];
                 concretesIndex = contract.GetConcretesIndex();
                 concretesCount = contract.GetConcretesCount();
+            }
+            else
+            {
+                nextIndexGrow = _contractsSparse[contractId] + 1;
             }
 
             var nextContractsConcretesCount = _lastContractsConcretesIndex + 1;
@@ -206,7 +228,7 @@ namespace SparseInject
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ref Contract GetContract(int contractId)
+        private int GetContractIndex(int contractId)
         {
             ref var contractIndex = ref _contractsSparse[contractId];
             
@@ -219,8 +241,8 @@ namespace SparseInject
             {
                 Array.Resize(ref _contractsDense, contractIndex * 2);
             }
-            
-            return ref _contractsDense[contractIndex];
+
+            return contractIndex;
         }
 
         private void TryExtendCapacityContractConcreteIndices(int targetCount)
