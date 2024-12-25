@@ -32,6 +32,9 @@ namespace SparseInject
 
         private const int IsScopeShift = 50;
         private const ulong IsScopeMask = 1UL << IsScopeShift;
+        
+        private const int IsArrayShift = 51;
+        private const ulong IsArrayMask = 1UL << IsArrayShift;
 
         private const int HasValueShift = 52;
         private const ulong HasValueMask = 1UL << HasValueShift;
@@ -55,6 +58,12 @@ namespace SparseInject
         public bool IsScope()
         {
             return (Data & IsScopeMask) != 0;
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsArray()
+        {
+            return (Data & IsArrayMask) != 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -88,6 +97,15 @@ namespace SparseInject
         public void MarkScope()
         {
             Data |= IsScopeMask;
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void MarkArray(bool value)
+        {
+            if (value)
+                Data |= IsArrayMask;
+            else
+                Data &= ~IsArrayMask;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -78,6 +78,11 @@ namespace SparseInject
             concrete.MarkSingleton();
             concrete.MarkValue();
             concrete.Value = value;
+
+            if (value is Array)
+            {
+                concrete.MarkArray(true);
+            }
         }
 
         public void RegisterValue<TContract, TConcrete>(TConcrete value)
@@ -99,6 +104,11 @@ namespace SparseInject
             concrete.MarkSingleton();
             concrete.MarkValue();
             concrete.Value = value;
+            
+            if (value is Array)
+            {
+                concrete.MarkArray(true);
+            }
         }
         
         public void RegisterValue<TContract0, TContract1, TConcrete>(TConcrete value)
@@ -114,6 +124,11 @@ namespace SparseInject
             concrete.MarkSingleton();
             concrete.MarkValue();
             concrete.Value = value;
+            
+            if (value is Array)
+            {
+                concrete.MarkArray(true);
+            }
         }
         
         public void RegisterValue<TContract0, TContract1, TContract2, TConcrete>(TConcrete value)
@@ -131,6 +146,11 @@ namespace SparseInject
             concrete.MarkSingleton();
             concrete.MarkValue();
             concrete.Value = value;
+            
+            if (value is Array)
+            {
+                concrete.MarkArray(true);
+            }
         }
         
         public void RegisterFactory<T>(Func<T> factory)

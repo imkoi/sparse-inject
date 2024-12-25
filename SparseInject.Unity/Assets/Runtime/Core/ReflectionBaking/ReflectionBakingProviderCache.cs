@@ -17,7 +17,7 @@ namespace SparseInject
 
         public static bool TryGetInstanceFactory(Type type, out InstanceFactoryBase instanceFactory, out Type[] constructorParameterTypes)
         {
-#if !UNITY_2021_2_OR_NEWER && !NET
+#if !(UNITY_2021_2_OR_NEWER || NET)
             instanceFactory = null;
             constructorParameterTypes = null;
             
