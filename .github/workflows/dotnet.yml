@@ -27,13 +27,13 @@ jobs:
 
       - name: Build .NET Solution
         run: dotnet build --no-restore
+        
+      - name: Build Source Generators
+        run: dotnet publish ./SparseInject.SourceGenerator/SparseInject.SourceGenerator.csproj -c Release
 
       - name: Run Tests
         run: dotnet test --no-build --verbosity normal
 
-      - name: Build Source Generators
-        run: dotnet publish ./SparseInject.SourceGenerator/SparseInject.SourceGenerator.csproj -c Release
-        
       - name: Update SparseInject.Unity Project
         run: |
           echo "Copy framework standalone source files from SparseInject/ to SparseInject.Unity/Assets/Runtime/Core/"
