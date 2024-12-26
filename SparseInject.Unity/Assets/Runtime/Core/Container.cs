@@ -140,7 +140,7 @@ namespace SparseInject
                 
                 if (!(concrete.IsSingleton() && concrete.HasValue()))
                 {
-                    instance = ResolveConcreteInternal(ref contract, concreteIndex);
+                    instance = ResolveConcreteInternal(ref contract, ref concrete);
 
                     if (concrete.IsSingleton())
                     {
@@ -231,11 +231,10 @@ namespace SparseInject
             return instances;
         }
 
-        private object ResolveConcreteInternal(ref Contract contract, int concreteIndex)
+        private object ResolveConcreteInternal(ref Contract contract, ref Concrete concrete)
         {
             var reserved = default(ArrayCache.Reserved);
             var contractIndex = -1;
-            ref var concrete = ref _concretes[concreteIndex];
 
             var constructorContractsCount = concrete.GetConstructorContractsCount();
             var constructorContractsIndex = concrete.GetConstructorContractsIndex();
@@ -262,6 +261,25 @@ namespace SparseInject
                     {
                         contractIndex = container._contractsSparse[constructorDependencyId];
 
+                        if (contractIndex < 0)
+                        {
+                            var parent = container._parentContainer;
+                            
+                            while (parent != null)
+                            {
+                                contractIndex = parent._contractsSparse[constructorDependencyId];
+                                
+                                if (contractIndex < 0)
+                                {
+                                    parent = parent._parentContainer;
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        
                         reserved.Array[j + reserved.StartIndex] = container.ResolveInternal(contractIndex);
                     }
                     else
@@ -279,16 +297,23 @@ namespace SparseInject
 
                     if (contractIndex < 0)
                     {
-                        if (_parentContainer != null)
+                        var parent = _parentContainer;
+                        
+                        while (parent != null)
                         {
-                            contractIndex =
-                                _parentContainer._contractsSparse
-                                    [constructorDependencyId]; // TODO: recursive find of container with dependency id
-
-                            reserved.Array[j + reserved.StartIndex] =
-                                _parentContainer.ResolveInternal(contractIndex);
+                            contractIndex = parent._contractsSparse[constructorDependencyId];
+                                
+                            if (contractIndex < 0)
+                            {
+                                parent = parent._parentContainer;
+                            }
+                            else
+                            {
+                                break;
+                            }
                         }
-                        else
+                        
+                        if (contractIndex < 0)
                         {
                             var unknownParameter = concrete.ConstructorInfo.GetParameters()[j].ParameterType;
 
@@ -302,6 +327,11 @@ namespace SparseInject
                                 // TODO: Add test that cover this logic
                                 throw new SparseInjectException($"Trying to resolve unknown type '{unknownParameter}'");
                             }
+                        }
+                        else
+                        {
+                            reserved.Array[j + reserved.StartIndex] =
+                                _parentContainer.ResolveInternal(contractIndex);
                         }
                     }
                     else
