@@ -17,6 +17,7 @@ public class TypeMeta
     public (string paramType, string paramName)[] ConstructorParameters { get; }
 
     public bool IsGenerics => Symbol.Arity > 0;
+    public bool IsPrivate => Symbol.DeclaredAccessibility == Accessibility.Private;
 
     readonly TypeDeclarationSyntax syntax;
 

@@ -61,5 +61,13 @@ namespace SparseInject.SourceGenerator
             category: Category,
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
+        
+        public static readonly DiagnosticDescriptor PrivateTypesNotSupported = new(
+            id: "SION0008",
+            title: "The private types is not supported to code generation.",
+            messageFormat: "The registered type '{0}' is private. It cannot support source generator.",
+            category: Category,
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
     }
 }

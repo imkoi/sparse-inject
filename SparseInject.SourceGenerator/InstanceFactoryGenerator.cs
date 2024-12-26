@@ -12,11 +12,16 @@ public static class InstanceFactoryGenerator
         correctedTypeName = null;
         resultGeneratorName = string.Empty;
         
-        // if (typeMeta.IsGenerics)
-        // {
-        //     return false;
-        // }
-        
+        if (typeMeta.IsPrivate)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DiagnosticDescriptors.PrivateTypesNotSupported,
+                typeMeta.GetLocation(),
+                typeMeta.TypeName));
+                
+            return false;
+        }
+
         var constructorSymbol = typeMeta.Constructor;
 
         if (constructorSymbol != null)
@@ -40,11 +45,6 @@ public static class InstanceFactoryGenerator
                 return false;
             }
         }
-
-        // var typeName = typeMeta.TypeName
-        //     .Replace("global::", "")
-        //     .Replace("<", "_")
-        //     .Replace(">", "_");
 
         using (codeWriter.CreateClass(typeMeta,
                    new []
