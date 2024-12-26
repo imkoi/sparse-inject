@@ -47,6 +47,11 @@ public static class SparseInjectTool
         var disabledSourceGeneratorsFolder = Path
             .Combine(packageFolder, "Editor/DisabledSourceGenerators~")
             .Replace("\\", "/");
+
+        if (!Directory.Exists(enabledSourceGeneratorsFolder))
+        {
+            Directory.CreateDirectory(enabledSourceGeneratorsFolder);
+        }
         
         var sourceGeneratorFiles = Directory.GetFiles(disabledSourceGeneratorsFolder);
 
@@ -88,6 +93,11 @@ public static class SparseInjectTool
         var disabledSourceGeneratorsFolder = Path
             .Combine(packageFolder, "Editor/DisabledSourceGenerators~")
             .Replace("\\", "/");
+        
+        if (!Directory.Exists(enabledSourceGeneratorsFolder))
+        {
+            Directory.CreateDirectory(enabledSourceGeneratorsFolder);
+        }
         
         var sourceGeneratorFiles = Directory.GetFiles(enabledSourceGeneratorsFolder);
 
