@@ -162,7 +162,11 @@ namespace SparseInject
                 
                 nextIndexGrow = _contractsSparse[contractId] + 2;
 
-                if (!contractType.IsArray)
+                if (contractType.IsArray)
+                {
+                    contract.Type = contractType.GetElementType();
+                }
+                else
                 {
                     var collectionContractId = GetOrAddContractId<T[]>(out _);
                     contractIndex = GetContractIndex(collectionContractId);
@@ -173,10 +177,6 @@ namespace SparseInject
                         contract.Type = contractType;
                         contract.SetConcretesIndex(concretesIndex);
                     }
-                }
-                else
-                {
-                    contract.Type = contractType.GetElementType();
                 }
 
                 contract.MarkCollection();
