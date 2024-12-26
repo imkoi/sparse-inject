@@ -192,48 +192,42 @@ public class ScopeInheritedTest
         scope.ScopeA.Should().BeOfType<ScopeA>();
         scope.ScopeB.Should().BeOfType<ScopeB>();
     }
+
+    private class InnerScopeA : Scope { }
+    private class InnerScopeB : Scope { }
+    private class InnerScopeC : Scope { }
+    private class InnerScopeD : Scope { }
     
     [Test]
-    public void UnorderedWithSparseRewireBindings()
+    public void InnerScopesRegisteredInsideParents_WhenLastInnerScopeResolvedFromMain_ThrowException()
     {
+        // Setup
         var containerBuilder = new ContainerBuilder();
         
-        containerBuilder.Register<IPlayerControllerProcessor, PlayerMovementProcessor>();
-        containerBuilder.Register<IPlayerControllerProcessor, PlayerAnimationProcessor>();
-
-        containerBuilder.Register<PlayerController>();
-
-        containerBuilder.Register<IPlayerControllerProcessor, PlayerShootingProcessor>();
-   
-        containerBuilder.Register<PlayerService>();
-
-        var container = containerBuilder.Build();
-        var processors = container.Resolve<PlayerService>();
-        
-        processors.Should().NotBeNull();
-    }
-    
-    [Test]
-    public void UnorderedWithSparseRewireBindings_2()
-    {
-        var containerBuilder = new ContainerBuilder();
-        
-        containerBuilder.Register<IAudioManager, AudioManager>();
-        containerBuilder.Register<IPlayerControllerProcessor, PlayerMovementProcessor>();
-        containerBuilder.Register<IPlayerControllerProcessor, PlayerAnimationProcessor>();
-
-        containerBuilder.Register<PlayerController>();
-
-        containerBuilder.Register<IPlayerControllerProcessor, PlayerShootingProcessor>();
-        containerBuilder.Register<IAudioManager, PlayerAudioManager>();
-   
-        containerBuilder.Register<PlayerService>();
+        containerBuilder.RegisterScope<InnerScopeA>(configurationA =>
+        {
+            configurationA.RegisterScope<InnerScopeB>(configurationB =>
+            {
+                configurationB.RegisterScope<InnerScopeC>(configurationC =>
+                {
+                    configurationC.RegisterScope<InnerScopeD>(_ => { });
+                });
+            });
+        });
 
         var container = containerBuilder.Build();
-        var processors = container.Resolve<PlayerService>();
-
-        processors.Should().NotBeNull();
+        
+        // Asserts
+        container.Invoking(subject => subject.Resolve<InnerScopeB>())
+            .Should()
+            .Throw<SparseInjectException>();
+        
+        container.Invoking(subject => subject.Resolve<InnerScopeC>())
+            .Should()
+            .Throw<SparseInjectException>();
+        
+        container.Invoking(subject => subject.Resolve<InnerScopeD>())
+            .Should()
+            .Throw<SparseInjectException>();
     }
-    
-    // TODO: Add inherited scopes tests
 }

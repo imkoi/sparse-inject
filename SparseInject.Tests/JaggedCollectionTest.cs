@@ -133,7 +133,7 @@ public class JaggedCollectionTest
         instances[1].Should().BeOfType<DependencyA>();
     }
     
-    [Ignore("Need fixes in ContainerBuilder")]
+    [Ignore("Need fixes in core")]
     [Test]
     public void RegisterTwoCollections_WhenResolveJaggedCollection_ReturnConcatenatedCollection()
     {
@@ -170,6 +170,4 @@ public class JaggedCollectionTest
         collectionB[0].Should().BeOfType<DependencyB>();
         collectionB[0].Should().BeOfType<DependencyB>();
     }
-    
-    // TODO: create more test cases
 }

@@ -81,7 +81,7 @@ namespace SparseInject
 
             if (value is Array)
             {
-                concrete.MarkArray(true);
+                concrete.MarkArray();
             }
         }
 
@@ -107,7 +107,7 @@ namespace SparseInject
             
             if (value is Array)
             {
-                concrete.MarkArray(true);
+                concrete.MarkArray();
             }
         }
         
@@ -127,7 +127,7 @@ namespace SparseInject
             
             if (value is Array)
             {
-                concrete.MarkArray(true);
+                concrete.MarkArray();
             }
         }
         
@@ -149,7 +149,7 @@ namespace SparseInject
             
             if (value is Array)
             {
-                concrete.MarkArray(true);
+                concrete.MarkArray();
             }
         }
         

@@ -16,8 +16,26 @@ namespace SparseInject
         public ConstructorInfo ConstructorInfo;
         public InstanceFactoryBase GeneratedInstanceFactory;
         public object Value;
+        
+#if NET && DEBUG
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public bool DebugIsSingleton => IsSingleton();
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public bool DebugIsFactory => IsFactory();
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public bool DebugIsScope => IsScope();
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public bool DebugIsArray => IsArray();
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public bool DebugHasValue => HasValue();
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public bool DebugHasInstanceFactory => HasInstanceFactory();
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public int DebugConstructorContractsIndex => GetConstructorContractsIndex();
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public int DebugConstructorContractsCount => GetConstructorContractsCount();
+#endif
 
-        // Bit positions and masks
         private const int IndexShift = 0;
         private const ulong IndexMask = (1UL << 24) - 1UL;
 
@@ -100,12 +118,9 @@ namespace SparseInject
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void MarkArray(bool value)
+        public void MarkArray()
         {
-            if (value)
-                Data |= IsArrayMask;
-            else
-                Data &= ~IsArrayMask;
+            Data |= IsArrayMask;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

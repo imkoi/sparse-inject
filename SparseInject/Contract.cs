@@ -12,8 +12,7 @@ namespace SparseInject
     {
         public Type Type;
         public ulong Data; // 64 bit: 24 bit index, 24 bit count, 1 bit isSingleton, 1 bit isFactory, 1 bit isScope, 1 bit isArray, 1 bit HasValue, 1 bit hasInstanceFactory
-
-        // Bit positions and masks
+        
         private const ulong IndexMask = (1UL << 24) - 1UL;
 
         private const int CountShift = 24;
@@ -21,6 +20,15 @@ namespace SparseInject
 
         private const int IsArrayShift = 48;
         private const ulong IsArrayMask = 1UL << IsArrayShift;
+
+#if NET && DEBUG
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public bool DebugIsCollection => IsCollection();
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public int DebugConcretesIndex => GetConcretesIndex();
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public int DebugConcretesCount => GetConcretesCount();
+#endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsCollection()

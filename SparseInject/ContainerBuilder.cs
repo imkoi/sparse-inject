@@ -177,6 +177,10 @@ namespace SparseInject
                         contract.Type = contractType;
                         contract.SetConcretesIndex(concretesIndex);
                     }
+                    else
+                    {
+                        contract.SetConcretesCount(contract.GetConcretesCount() + 1);
+                    }
                 }
 
                 contract.MarkCollection();

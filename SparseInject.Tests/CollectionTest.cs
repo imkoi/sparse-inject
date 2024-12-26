@@ -132,8 +132,8 @@ public class CollectionTest
 
         instance.Should().BeOfType<DependencyA>();
     }
-
-    [Ignore("Need fixes in ContainerBuilder")]
+    
+    [Ignore("Need fixes in core")]
     [Test]
     public void RegisterCollectionAndSingleDependency_WhenResolveCollection_ReturnConcatenatedCollection()
     {
@@ -153,9 +153,62 @@ public class CollectionTest
         var container = containerBuilder.Build();
     
         // Asserts
-        var instance = container.Resolve<IDisposable[]>();
+        var instances = container.Resolve<IDisposable[]>();
+
+        instances[0].Should().BeOfType<DependencyA>();
+        instances[1].Should().BeOfType<DependencyA>();
+        instances[2].Should().BeOfType<DependencyA>();
+        instances[3].Should().BeOfType<DependencyA>();
+        instances[4].Should().BeOfType<DependencyA>();
+        instances[5].Should().BeOfType<DependencyB>();
+    }
     
-        instance.Length.Should().Be(6);
+    [Ignore("Need fixes in core")]
+    [Test]
+    public void RegisterCollectionAndTwoSingleDependency_WhenResolveSingle_ReturnLastConcrete()
+    {
+        // Setup
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.RegisterValue<IDisposable[]>(new DependencyA[4]
+        {
+            new DependencyA(),
+            new DependencyA(),
+            new DependencyA(),
+            new DependencyA()
+        });
+        containerBuilder.Register<IDisposable, DependencyA>();
+        containerBuilder.Register<IDisposable, DependencyB>();
+        
+        var container = containerBuilder.Build();
+    
+        // Asserts
+        var instance = container.Resolve<IDisposable>();
+
+        instance.Should().BeOfType<DependencyB>();
+    }
+    
+    [Test]
+    public void RegisterCollectionAndSingleDependency_WhenResolveSingle_ReturnCorrectConcrete()
+    {
+        // Setup
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.RegisterValue<IDisposable[]>(new DependencyA[4]
+        {
+            new DependencyA(),
+            new DependencyA(),
+            new DependencyA(),
+            new DependencyA()
+        });
+        containerBuilder.Register<IDisposable, DependencyA>();
+        
+        var container = containerBuilder.Build();
+    
+        // Asserts
+        var instance = container.Resolve<IDisposable>();
+
+        instance.Should().BeOfType<DependencyA>();
     }
     
     [Test]
@@ -314,5 +367,140 @@ public class CollectionTest
         container
             .Invoking(subject => subject.Resolve<IDisposable>()).Should()
             .Throw<SparseInjectException>();
+    }
+    
+    private class DependencyC : IDisposable { public void Dispose() { } }
+
+    private class DependenciesCollector
+    {
+        public IDisposable[] Disposables { get; }
+
+        public DependenciesCollector(IDisposable[] disposables)
+        {
+            Disposables = disposables;
+        }
+    }
+
+    [Test]
+    public void RegisterThreeDisposablesWithCollector_WhenResolve_ReturnCorrectInstances()
+    {
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.Register<DependenciesCollector>();
+        containerBuilder.Register<IDisposable, DependencyA>();
+        containerBuilder.Register<IDisposable, DependencyB>();
+        containerBuilder.Register<IDisposable, DependencyC>();
+
+        var container = containerBuilder.Build();
+        
+        // Asserts
+        container.Resolve<IDisposable>().Should().BeOfType<DependencyC>();
+        
+        var instances = container.Resolve<IDisposable[]>();
+        instances[0].Should().BeOfType<DependencyA>();
+        instances[1].Should().BeOfType<DependencyB>();
+        instances[2].Should().BeOfType<DependencyC>();
+        
+        container.Resolve<DependenciesCollector>().Disposables.Length.Should().Be(3);
+    }
+
+    [Test]
+    public void RegisterThreeDisposablesUnorderedWithCollector_WhenResolve_ReturnCorrectInstances()
+    {
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.Register<IDisposable, DependencyA>();
+        containerBuilder.Register<IDisposable, DependencyB>();
+
+        containerBuilder.Register<DependenciesCollector>();
+
+        containerBuilder.Register<IDisposable, DependencyC>();
+
+        // Asserts
+        var container = containerBuilder.Build();
+        var instances = container.Resolve<IDisposable[]>();
+        instances[0].Should().BeOfType<DependencyA>();
+        instances[1].Should().BeOfType<DependencyB>();
+        instances[2].Should().BeOfType<DependencyC>();
+    }
+    
+    private interface IArrayElementA { }
+    private interface IArrayElementB { }
+    private interface IArrayElementC { }
+    private class ArrayElement : IArrayElementA, IArrayElementB, IArrayElementC { }
+    
+    [Test]
+    public void RegisterArrayToOneContract_WhenResolve_ReturnCorrectInstances()
+    {
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.RegisterValue<IArrayElementA[], ArrayElement[]>(new ArrayElement[3]
+        {
+            new ArrayElement(),
+            new ArrayElement(),
+            new ArrayElement(),
+        });
+        
+        // Asserts
+        var container = containerBuilder.Build();
+        var instances = container.Resolve<IArrayElementA[]>();
+        instances[0].Should().BeOfType<ArrayElement>();
+        instances[1].Should().BeOfType<ArrayElement>();
+        instances[2].Should().BeOfType<ArrayElement>();
+    }
+    
+    [Test]
+    public void RegisterArrayToTwoContract_WhenResolve_ReturnCorrectInstances()
+    {
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.RegisterValue<IArrayElementA[], IArrayElementB[], ArrayElement[]>(new ArrayElement[3]
+        {
+            new ArrayElement(),
+            new ArrayElement(),
+            new ArrayElement(),
+        });
+        
+        // Asserts
+        var container = containerBuilder.Build();
+        var instancesA = container.Resolve<IArrayElementA[]>();
+        instancesA[0].Should().BeOfType<ArrayElement>();
+        instancesA[1].Should().BeOfType<ArrayElement>();
+        instancesA[2].Should().BeOfType<ArrayElement>();
+        
+        var instancesB = container.Resolve<IArrayElementB[]>();
+        instancesB[0].Should().BeOfType<ArrayElement>();
+        instancesB[1].Should().BeOfType<ArrayElement>();
+        instancesB[2].Should().BeOfType<ArrayElement>();
+    }
+    
+    [Test]
+    public void RegisterArrayToThreeContract_WhenResolve_ReturnCorrectInstances()
+    {
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.RegisterValue<IArrayElementA[], IArrayElementB[], IArrayElementC[], ArrayElement[]>(new ArrayElement[3]
+        {
+            new ArrayElement(),
+            new ArrayElement(),
+            new ArrayElement(),
+        });
+        
+        // Asserts
+        var container = containerBuilder.Build();
+        var instancesA = container.Resolve<IArrayElementA[]>();
+        instancesA[0].Should().BeOfType<ArrayElement>();
+        instancesA[1].Should().BeOfType<ArrayElement>();
+        instancesA[2].Should().BeOfType<ArrayElement>();
+        
+        var instancesB = container.Resolve<IArrayElementB[]>();
+        instancesB[0].Should().BeOfType<ArrayElement>();
+        instancesB[1].Should().BeOfType<ArrayElement>();
+        instancesB[2].Should().BeOfType<ArrayElement>();
+        
+        var instancesC = container.Resolve<IArrayElementC[]>();
+        instancesC[0].Should().BeOfType<ArrayElement>();
+        instancesC[1].Should().BeOfType<ArrayElement>();
+        instancesC[2].Should().BeOfType<ArrayElement>();
     }
 }
