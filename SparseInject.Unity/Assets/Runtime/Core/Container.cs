@@ -68,7 +68,9 @@ namespace SparseInject
         {
             if (_contractIds.TryGetValue(type, out var id))
             {
-                if (_contractsSparse[id] < 0)
+                var contractIndex = _contractsSparse[id];
+                
+                if (contractIndex < 0)
                 {
                     if (_parentContainer != null)
                     {
@@ -80,7 +82,7 @@ namespace SparseInject
                     throw new SparseInjectException($"Trying to resolve unknown type '{type}'");
                 }
                 
-                return ResolveInternal(id);
+                return ResolveInternal(contractIndex);
             }
 
             return ResolveFallback(type);
@@ -322,8 +324,7 @@ namespace SparseInject
                         }
                         else
                         {
-                            reserved.Array[j + reserved.StartIndex] =
-                                _parentContainer.ResolveInternal(contractIndex);
+                            reserved.Array[j + reserved.StartIndex] = parent.ResolveInternal(contractIndex);
                         }
                     }
                     else
@@ -443,13 +444,22 @@ namespace SparseInject
                 return true;
             }
             
-            if (_parentContainer != null)
+            var parent = _parentContainer;
+
+            while (parent != null)
             {
-                // TODO: add test that have recursion case
-                return TryFindContainerWithContract(contractId, out container);
+                if (parent._contractsSparse[contractId] < 0)
+                {
+                    parent = parent._parentContainer;
+                }
+                else
+                {
+                    container = parent;
+
+                    return true;
+                }
             }
 
-            // TODO: add test that have container not found case
             container = null;
             
             return false;
