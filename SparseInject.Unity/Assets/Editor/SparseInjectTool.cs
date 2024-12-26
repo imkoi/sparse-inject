@@ -1,10 +1,8 @@
 ﻿#pragma warning disable CS0162 // Unreachable code detected
 #if UNITY_2021_2_OR_NEWER
-using System;
 using System.IO;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 public static class SparseInjectTool
@@ -28,6 +26,11 @@ public static class SparseInjectTool
     {
         if (IsSourceGeneratorsEnabled())
         {
+            Menu.SetChecked(EnableReflectionBakingName, true);
+            Menu.SetChecked(DisableReflectionBakingName, false);
+            
+            AssetDatabase.Refresh();
+            
             return;
         }
         
@@ -64,6 +67,11 @@ public static class SparseInjectTool
     {
         if (!IsSourceGeneratorsEnabled())
         {
+            Menu.SetChecked(EnableReflectionBakingName, false);
+            Menu.SetChecked(DisableReflectionBakingName, true);
+            
+            AssetDatabase.Refresh();
+            
             return;
         }
         
@@ -108,19 +116,14 @@ public static class SparseInjectTool
             .Combine(packageFolder, "Editor/EnabledSourceGenerators")
             .Replace("\\", "/");
 
-        if (!File.Exists(enabledSourceGeneratorsFolder))
+        if (!Directory.Exists(enabledSourceGeneratorsFolder))
         {
             return false;
         }
         
         var files = Directory.GetFiles(enabledSourceGeneratorsFolder, "*.dll", SearchOption.AllDirectories);
 
-        if (!files.Any())
-        {
-            return false;
-        }
-        
-        return true;
+        return files.Any();
     }
 
     private static string GetPackageFolderPath()
@@ -147,7 +150,7 @@ public static class SparseInjectTool
             }
         }
 
-        return null;
+        return Application.dataPath;
     }
 }
 #endif
