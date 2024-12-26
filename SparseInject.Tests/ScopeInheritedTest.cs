@@ -230,4 +230,46 @@ public class ScopeInheritedTest
             .Should()
             .Throw<SparseInjectException>();
     }
+    
+    private class Dependency { }
+    private class DependencyF { public DependencyF(Dependency dependency) { } }
+    private class InnerScopeF : Scope { public InnerScopeF(DependencyF dependency) { } }
+    
+    [Test]
+    public void InnerScopesRegisteredInsideManyParents_WhenLastInnerScopeResolvedWithDependencyFromMain_ReturnCorrectScope()
+    {
+        // Setup
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.Register<Dependency>();
+        
+        containerBuilder.RegisterScope<InnerScopeA>(configurationA =>
+        {
+            configurationA.RegisterScope<InnerScopeB>(configurationB =>
+            {
+                configurationB.RegisterScope<InnerScopeC>(configurationC =>
+                {
+                    configurationC.RegisterScope<InnerScopeD>(configuratorD =>
+                    {
+                        configuratorD.RegisterScope<InnerScopeF>(configuratorF =>
+                        {
+                            configuratorF.Register<DependencyF>();
+                        });
+                    });
+                });
+            });
+        });
+
+        var container = containerBuilder.Build();
+        
+        // Asserts
+        var scopeF = container
+            .Resolve<InnerScopeA>()._container
+            .Resolve<InnerScopeB>()._container
+            .Resolve<InnerScopeC>()._container
+            .Resolve<InnerScopeD>()._container
+            .Resolve<InnerScopeF>();
+
+        scopeF.Should().BeOfType<InnerScopeF>();
+    }
 }

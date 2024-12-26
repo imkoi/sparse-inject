@@ -32,8 +32,14 @@ namespace SparseInject
 
             if (depth > 0 && originConcreteIndex == concreteIndex)
             {
-                ThrowRecursiveByReflection(concrete.Type, new List<Type>(depth));
-            } // TODO: think how to cover this line
+                ConstructExceptionRecursiveByReflection(concrete.Type, new List<Type>(depth), out var exception);
+
+                //TODO: inspect this case
+                if (exception != null)
+                {
+                    throw exception;
+                }
+            }
             
             var constructorContractsCount = concrete.GetConstructorContractsCount();
             var constructorContractsIndex = concrete.GetConstructorContractsIndex();
@@ -70,16 +76,18 @@ namespace SparseInject
                 
                     for (var j = 0; j < constructorContract.GetConcretesCount(); j++)
                     {
-                        var concreteId = contractsConcretesIndices[j + constructorContract.GetConcretesIndex()];
+                        var concreteIdx = contractsConcretesIndices[j + constructorContract.GetConcretesIndex()];
                         
-                        ThrowIfInvalidRecursive(originConcreteIndex, concreteId, containerInfo, depth + 1);
+                        ThrowIfInvalidRecursive(originConcreteIndex, concreteIdx, containerInfo, depth + 1);
                     }
                 }
             }
         }
         
-        private static void ThrowRecursiveByReflection(Type type, List<Type> stack)
+        private static void ConstructExceptionRecursiveByReflection(Type type, List<Type> stack, out SparseInjectException exception)
         {
+            exception = null;
+            
             for (var i = 0; i < stack.Count; i++)
             {
                 var dependency = stack[i];
@@ -109,7 +117,9 @@ namespace SparseInject
                         ident++;
                     }
 
-                    throw new SparseInjectException(sb.ToString());
+                    exception = new SparseInjectException(sb.ToString());
+                    
+                    return;
                 }
             }
         
@@ -119,7 +129,7 @@ namespace SparseInject
             
             foreach (var x in constructor.parameters)
             {
-                ThrowRecursiveByReflection(x.ParameterType, stack);
+                ConstructExceptionRecursiveByReflection(x.ParameterType, stack, out exception);
             }
         
             stack.RemoveAt(stack.Count - 1); // TODO: check if this code reachable
