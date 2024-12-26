@@ -19,17 +19,17 @@ namespace SparseInject
             
             for (var i = 0; i < concretesCount; i++)
             {
-                ThrowIfInvalidRecursive(i, i, containerInfo, 0);
+                ThrowIfInvalidRecursive(containerInfo.Concretes, i, i, containerInfo, 0);
             }
         }
 
-        private static void ThrowIfInvalidRecursive(int originConcreteIndex, int concreteIndex,
+        private static void ThrowIfInvalidRecursive(Concrete[] originConcretes, int originConcreteIndex, int concreteIndex,
             ContainerInfo containerInfo, int depth)
         {
             var concretes = containerInfo.Concretes;
-            
             ref var concrete = ref concretes[concreteIndex];
 
+            // Probably need to check the type, because could be identical index for different types
             if (depth > 0 && originConcreteIndex == concreteIndex)
             {
                 ConstructExceptionRecursiveByReflection(concrete.Type, new List<Type>(depth), out var exception);
@@ -52,6 +52,7 @@ namespace SparseInject
             
             for (var i = 0; i < constructorContractsCount; i++)
             {
+                var containerInfoToCheck = default(ContainerInfo);
                 var constructorContractId = concreteConstructorContractIds[i + constructorContractsIndex];
                 var constructorContractIndex = contractsSparse[constructorContractId];
                 
@@ -68,6 +69,11 @@ namespace SparseInject
                     concreteConstructorContractIds = targetContainerInfo.ConcreteConstructorContractIds;
                     
                     constructorContractIndex = contractsSparse[constructorContractId]; // don't need to check that exist because was found through TryFindContainerWithContract
+                    containerInfoToCheck = targetContainerInfo;
+                }
+                else
+                {
+                    containerInfoToCheck = containerInfo;
                 }
 
                 if (constructorContractIndex >= 0)
@@ -78,7 +84,8 @@ namespace SparseInject
                     {
                         var concreteIdx = contractsConcretesIndices[j + constructorContract.GetConcretesIndex()];
                         
-                        ThrowIfInvalidRecursive(originConcreteIndex, concreteIdx, containerInfo, depth + 1);
+                        ThrowIfInvalidRecursive(originConcretes, originConcreteIndex, concreteIdx,
+                            containerInfoToCheck, depth + 1);
                     }
                 }
             }

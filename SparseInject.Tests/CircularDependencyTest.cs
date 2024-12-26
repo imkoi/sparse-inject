@@ -91,9 +91,9 @@ public class CircularDependencyTest
             .Where(exception => expectedStringsInExceptionMessage.All(contains => exception.Message.Contains(contains)));
     }
     
-    private class D0 { public D0(D1 value) { } }
-    private class D1 : Scope { public D1(D2 value) { } }
-    private class D2 { public D2(D0 value) { } }
+    private class D0 { public D0(D1 value) { } } // reference D1
+    private class D1 : Scope { public D1(D2 value) { } } // reference D2
+    private class D2 { public D2(D0 value) { } } // reference D0
     
     [Test]
     public void CaseD_WhenResolveScope_ThrowProperException()
