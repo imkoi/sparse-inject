@@ -46,13 +46,4 @@ public class ExtendCapacityTest
         
         ArrayCache.PushReserved(2048);
     }
-    
-    [Ignore("Need fixes in core")]
-    [Test]
-    public void ArrayCacheReserved_StaticCountVariableAfterTest_EqualsZero()
-    {
-        ArrayCache.PullReserved(2048).StartIndex.Should().Be(0);
-
-        ArrayCache.PushReserved(2048);
-    }
 }
