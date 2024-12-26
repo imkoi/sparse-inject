@@ -8,7 +8,7 @@ namespace SparseInject
         
         public virtual void Dispose()
         {
-            
+            _container.Dispose();
         }
     }
 }
