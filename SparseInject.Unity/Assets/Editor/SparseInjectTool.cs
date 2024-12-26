@@ -53,7 +53,12 @@ public static class SparseInjectTool
             Directory.CreateDirectory(enabledSourceGeneratorsFolder);
         }
         
-        var sourceGeneratorFiles = Directory.GetFiles(disabledSourceGeneratorsFolder);
+        var sourceGeneratorFiles = Directory.GetFiles(disabledSourceGeneratorsFolder)
+#if UNITY_2022_3_OR_NEWER
+            .Where(file => file.Contains("SparseInject.SourceGenerator3.8.0.dll"));
+#else
+            .Where(file => file.Contains("SparseInject.SourceGenerator4.3.0.dll"));
+#endif
 
         foreach (var sourceGeneratorFile in sourceGeneratorFiles)
         {
