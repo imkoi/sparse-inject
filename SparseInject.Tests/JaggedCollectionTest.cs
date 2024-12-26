@@ -133,5 +133,43 @@ public class JaggedCollectionTest
         instances[1].Should().BeOfType<DependencyA>();
     }
     
+    [Ignore("Need fixes in ContainerBuilder")]
+    [Test]
+    public void RegisterTwoCollections_WhenResolveJaggedCollection_ReturnConcatenatedCollection()
+    {
+        // Setup
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.RegisterValue<IDisposable[]>(new DependencyA[2]
+        {
+            new DependencyA(),
+            new DependencyA()
+        });
+        containerBuilder.RegisterValue<IDisposable[]>(new DependencyB[2]
+        {
+            new DependencyB(),
+            new DependencyB()
+        });
+        
+        var container = containerBuilder.Build();
+    
+        // Asserts
+        var instances = container.Resolve<IDisposable[][]>();
+    
+        instances.Length.Should().Be(2);
+        
+        var collectionA = instances[0];
+        var collectionB = instances[1];
+        
+        collectionA.Length.Should().Be(2);
+        collectionB.Length.Should().Be(2);
+        
+        collectionA[0].Should().BeOfType<DependencyA>();
+        collectionA[1].Should().BeOfType<DependencyA>();
+        
+        collectionB[0].Should().BeOfType<DependencyB>();
+        collectionB[0].Should().BeOfType<DependencyB>();
+    }
+    
     // TODO: create more test cases
 }

@@ -132,15 +132,21 @@ public class CollectionTest
 
         instance.Should().BeOfType<DependencyA>();
     }
-    
-    [Ignore("not work yet")]
+
+    [Ignore("Need fixes in ContainerBuilder")]
     [Test]
     public void RegisterCollectionAndSingleDependency_WhenResolveCollection_ReturnConcatenatedCollection()
     {
         // Setup
         var containerBuilder = new ContainerBuilder();
         
-        containerBuilder.RegisterValue<IDisposable[]>(new DependencyA[4]);
+        containerBuilder.RegisterValue<IDisposable[]>(new DependencyA[4]
+        {
+            new DependencyA(),
+            new DependencyA(),
+            new DependencyA(),
+            new DependencyA()
+        });
         containerBuilder.Register<IDisposable, DependencyA>(); // should not set new index for collection - should take collection concretes index
         containerBuilder.Register<IDisposable, DependencyB>();
         
@@ -174,6 +180,32 @@ public class CollectionTest
         instances[3].Should().BeOfType<DependencyA>();
         instances[4].Should().BeOfType<DependencyA>();
         instances[5].Should().BeOfType<DependencyA>();
+    }
+    
+    [Test]
+    public void RegisterDependenciesAndCollection_WhenResolveCollectionMultipleTimes_CollectionElementsIsCorrect()
+    {
+        // Setup
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.Register<IDisposable, DependencyA>();
+        containerBuilder.Register<IDisposable, DependencyB>();
+        containerBuilder.RegisterValue<IDisposable[]>(new DependencyA[4] {new DependencyA(), new DependencyA(), new DependencyA(), new DependencyA()});
+        
+        var container = containerBuilder.Build();
+    
+        // Asserts
+        var instancesA = container.Resolve<IDisposable[]>();
+        var instancesB = container.Resolve<IDisposable[]>();
+        
+        instancesA.Length.Should().Be(instancesB.Length);
+
+        instancesA[0].Should().NotBe(instancesB[0]);
+        instancesA[1].Should().NotBe(instancesB[1]);
+        instancesA[2].Should().Be(instancesB[2]);
+        instancesA[3].Should().Be(instancesB[3]);
+        instancesA[4].Should().Be(instancesB[4]);
+        instancesA[5].Should().Be(instancesB[5]);
     }
     
     [Test]
