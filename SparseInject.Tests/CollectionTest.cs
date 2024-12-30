@@ -133,7 +133,6 @@ public class CollectionTest
         instance.Should().BeOfType<DependencyA>();
     }
     
-    [Ignore("Need fixes in core")]
     [Test]
     public void RegisterCollectionAndSingleDependency_WhenResolveCollection_ReturnConcatenatedCollection()
     {
@@ -162,8 +161,7 @@ public class CollectionTest
         instances[4].Should().BeOfType<DependencyA>();
         instances[5].Should().BeOfType<DependencyB>();
     }
-    
-    [Ignore("Need fixes in core")]
+
     [Test]
     public void RegisterCollectionAndTwoSingleDependency_WhenResolveSingle_ReturnLastConcrete()
     {

@@ -99,7 +99,7 @@ public class JaggedCollectionTest
     }
     
     [Test]
-    public void RegisterJaggedAndSimpleCollection_WhenResolveCollection_ReturnNotConcatenatedCollection()
+    public void RegisterJaggedAndSimpleCollection_WhenResolveOneRankCollection_ReturnNotConcatenatedCollection()
     {
         // Setup
         var containerBuilder = new ContainerBuilder();
@@ -133,7 +133,51 @@ public class JaggedCollectionTest
         instances[1].Should().BeOfType<DependencyA>();
     }
     
-    [Ignore("Need fixes in core")]
+    [Test]
+    public void RegisterJaggedAndSimpleCollection_WhenResolveTwoRankCollection_ReturnConcatenatedCollection()
+    {
+        // Setup
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.RegisterValue<IDisposable[]>(new DependencyA[2]
+        {
+            new DependencyA(),
+            new DependencyA()
+        });
+        containerBuilder.RegisterValue<IDisposable[][]>(new IDisposable[2][]
+        {
+            new DependencyA[2]
+            {
+                new DependencyA(),
+                new DependencyA()
+            },
+            new DependencyB[2]
+            {
+                new DependencyB(),
+                new DependencyB()
+            }
+        });
+        
+        var container = containerBuilder.Build();
+    
+        // Asserts
+        var instances = container.Resolve<IDisposable[][]>();
+    
+        instances.Length.Should().Be(3);
+        var instances0 = instances[0];
+        var instances1 = instances[1];
+        var instances2 = instances[2];
+
+        instances0[0].Should().BeOfType<DependencyA>();
+        instances0[1].Should().BeOfType<DependencyA>();
+        
+        instances1[0].Should().BeOfType<DependencyA>();
+        instances1[1].Should().BeOfType<DependencyA>();
+        
+        instances2[0].Should().BeOfType<DependencyB>();
+        instances2[1].Should().BeOfType<DependencyB>();
+    }
+
     [Test]
     public void RegisterTwoCollections_WhenResolveJaggedCollection_ReturnConcatenatedCollection()
     {

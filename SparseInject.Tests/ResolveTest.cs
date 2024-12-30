@@ -25,8 +25,7 @@ public class ResolveTest
 
         scope._container.Resolve<MainScopeDependency>().Should().BeOfType<MainScopeDependency>();
     }
-    
-    [Ignore("Need fixes in core")]
+
     [Test]
     public void RegisteredInnerScopes_WhenLastScopeResolveInstanceFromMain_ReturnCorrectInstance()
     {

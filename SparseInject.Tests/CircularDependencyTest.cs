@@ -177,4 +177,40 @@ public class CircularDependencyTest
             .Throw<SparseInjectException>()
             .Where(exception => expectedStringsInExceptionMessage.All(contains => exception.Message.Contains(contains)));
     }
+    
+    private class Dependency { }
+    private class G0 { public G0(G1 value) { } } // reference G1
+    private class G1 : Scope { public G1(G2 value) { } } // reference G2
+    private class G2 { public G2(G0 value) { } } // reference G0
+    
+    [Ignore("Produce circular dependency")]
+    [Test] // TODO: need fixes of test case
+    public void CaseG_WhenResolveScope_ThrowProperException()
+    {
+        // Setup
+        var expectedStringsInExceptionMessage = new []
+        {
+            typeof(G0).ToString(),
+            typeof(G1).ToString(),
+            typeof(G2).ToString(),
+        };
+        
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.Register<Dependency>();
+        containerBuilder.Register<G0>();
+        containerBuilder.RegisterScope<G1>(scopeBuilder =>
+        {
+            scopeBuilder.Register<G2>();
+        });
+
+        var container = containerBuilder.Build();
+
+        // Asserts
+        container
+            .Invoking(subject => subject.Resolve<G0>())
+            .Should()
+            .Throw<SparseInjectException>()
+            .Where(exception => expectedStringsInExceptionMessage.All(contains => exception.Message.Contains(contains)));
+    }
 }
