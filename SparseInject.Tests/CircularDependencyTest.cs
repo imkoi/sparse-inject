@@ -183,8 +183,7 @@ public class CircularDependencyTest
     private class G1 : Scope { public G1(G2 value) { } } // reference G2
     private class G2 { public G2(G0 value) { } } // reference G0
     
-    [Ignore("Produce circular dependency")]
-    [Test] // TODO: need fixes of test case
+    [Test]
     public void CaseG_WhenResolveScope_ThrowProperException()
     {
         // Setup
