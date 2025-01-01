@@ -24,7 +24,7 @@ namespace SparseInject
         
         private int _lastContractsConcretesIndex;
         
-        public ContainerBuilder(int capacity = 2048) : this(null, new Dictionary<Type, int>(capacity), capacity)
+        public ContainerBuilder(int capacity = 1024) : this(null, new Dictionary<Type, int>(capacity), capacity)
         {
             
         }
@@ -36,19 +36,22 @@ namespace SparseInject
         {
             _parentContainer = parentContainer;
             _contractIds = contractIds;
-            _contractsSparse = new int[capacity];
-            _contractsDense = new Contract[capacity];
-            _contractsConcretesIndices = new int[capacity];
+            
             _concretes = new Concrete[capacity];
-
-            for (var i = 0; i < capacity; i++)
-            {
-                _contractsSparse[i] = -1;
-            }
-
+            _contractsConcretesIndices = new int[capacity];
+            
             for (var i = 0; i < capacity; i++)
             {
                 _contractsConcretesIndices[i] = -1;
+            }
+
+            capacity *= 2;
+            _contractsSparse = new int[capacity];
+            _contractsDense = new Contract[capacity];
+            
+            for (var i = 0; i < capacity; i++)
+            {
+                _contractsSparse[i] = -1;
             }
         }
         
