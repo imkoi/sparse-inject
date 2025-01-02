@@ -166,7 +166,7 @@ public class CollectionTest
     public void RegisterCollectionAndTwoSingleDependency_WhenResolveSingle_ReturnLastConcrete()
     {
         // Setup
-        var containerBuilder = new ContainerBuilder();
+        var containerBuilder = new ContainerBuilder(1);
         
         containerBuilder.RegisterValue<IDisposable[]>(new DependencyA[4]
         {
@@ -179,7 +179,7 @@ public class CollectionTest
         containerBuilder.Register<IDisposable, DependencyB>();
         
         var container = containerBuilder.Build();
-    
+
         // Asserts
         var instance = container.Resolve<IDisposable>();
 
@@ -220,7 +220,7 @@ public class CollectionTest
         containerBuilder.RegisterValue<IDisposable[]>(new DependencyA[4] {new DependencyA(), new DependencyA(), new DependencyA(), new DependencyA()});
         
         var container = containerBuilder.Build();
-    
+
         // Asserts
         var instances = container.Resolve<IDisposable[]>();
     
@@ -409,13 +409,12 @@ public class CollectionTest
         
         containerBuilder.Register<IDisposable, DependencyA>();
         containerBuilder.Register<IDisposable, DependencyB>();
-
         containerBuilder.Register<DependenciesCollector>();
-
         containerBuilder.Register<IDisposable, DependencyC>();
-
-        // Asserts
+        
         var container = containerBuilder.Build();
+        
+        // Asserts
         var instances = container.Resolve<IDisposable[]>();
         instances[0].Should().BeOfType<DependencyA>();
         instances[1].Should().BeOfType<DependencyB>();

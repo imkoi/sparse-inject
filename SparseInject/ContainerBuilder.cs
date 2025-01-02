@@ -60,6 +60,14 @@ namespace SparseInject
             return BuildInternal(null, null);
         }
 
+#if DEBUG
+        internal ContainerBuilderInfo GetContainerBuilderInfo()
+        {
+            return new ContainerBuilderInfo(_parentContainer, _contractsSparse, _contractsDense,
+                _contractsConcretesIndices, _concretes, _concretesCount);
+        }
+#endif
+
         internal Container BuildInternal(Type containerType, Container parentContainer)
         {
             var stats = BuildPrecomputeDependenciesCount();
@@ -149,8 +157,6 @@ namespace SparseInject
             var contractId = GetOrAddContractId<T>(out var contractType);
             var contractIndex = GetContractIndex(contractId);
             ref var contract = ref _contractsDense[contractIndex];
- 
-            var nextIndexGrow = -1;
 
             var concretesIndex = contract.GetConcretesIndex();
             var concretesCount = contract.GetConcretesCount();
@@ -159,56 +165,67 @@ namespace SparseInject
             {
                 concretesIndex = _lastContractsConcretesIndex;
                 
-                contract.Type = contractType;
-                contract.SetConcretesIndex(concretesIndex);
-                contract.SetConcretesCount(1);
-                
-                nextIndexGrow = _contractsSparse[contractId] + 2;
-
                 if (contractType.IsArray)
                 {
                     contract.Type = contractType.GetElementType();
+                    contract.MarkCollection();
+                    
+                    if (_contractIds.TryGetValue(contract.Type, out var prevContractId) && prevContractId < _contractsSparse.Length)
+                    {
+                        var prevContractIndex = _contractsSparse[prevContractId];
+
+                        if (prevContractIndex >= 0)
+                        {
+                            ref var prevContract = ref _contractsDense[prevContractIndex];
+                            
+                            concretesIndex = prevContract.GetConcretesIndex();
+                        }
+                    }
                 }
                 else
                 {
-                    var collectionContractId = GetOrAddContractId<T[]>(out _);
-                    contractIndex = GetContractIndex(collectionContractId);
-                    contract = ref _contractsDense[contractIndex];
-
-                    if (contract.GetConcretesCount() == 0)
-                    {
-                        contract.Type = contractType;
-                        contract.SetConcretesIndex(concretesIndex);
-                    }
-                    else
-                    {
-                        contract.SetConcretesCount(contract.GetConcretesCount() + 1);
-                    }
+                    contract.Type = contractType;
                 }
-
-                contract.MarkCollection();
-            }
-            else if (!contract.IsCollection())
-            {
-                nextIndexGrow = _contractsSparse[contractId] + 2;
                 
-                contract.SetConcretesIndex(concretesIndex + 1);
-                
-                var collectionContractId = GetOrAddContractId<T[]>(out _);
-                contractIndex = GetContractIndex(collectionContractId);
-                contract = ref _contractsDense[contractIndex];
-                concretesIndex = contract.GetConcretesIndex();
-                concretesCount = contract.GetConcretesCount();
+                contract.SetConcretesIndex(concretesIndex);
+                contract.SetConcretesCount(1);
             }
             else
             {
-                nextIndexGrow = _contractsSparse[contractId] + 1;
+                contract.SetConcretesCount(++concretesCount);
+            }
+
+            // collection contract
+            
+            var collectionContractId = GetOrAddContractId<T[]>(out _);
+            var collectionContractIndex = GetContractIndex(collectionContractId);
+            ref var collectionContract = ref _contractsDense[collectionContractIndex];
+
+            var collectionConcretesIndex = collectionContract.GetConcretesIndex();
+            var collectionConcretesCount = collectionContract.GetConcretesCount();
+            
+            var nextIndexGrow = -1;
+            
+            if (collectionConcretesCount == 0)
+            {
+                collectionConcretesIndex = contract.IsCollection() ? _lastContractsConcretesIndex : concretesIndex;
+                
+                collectionContract.Type = contractType;
+                collectionContract.SetConcretesIndex(collectionConcretesIndex);
+                
+                nextIndexGrow = _contractsSparse[contractId] + 2;
+                
+                collectionContract.MarkCollection();
+            }
+            else
+            {
+                nextIndexGrow = _contractsSparse[contractId] + 2;
             }
 
             var nextContractsConcretesCount = _lastContractsConcretesIndex + 1;
             TryExtendCapacityContractConcreteIndices(nextContractsConcretesCount);
 
-            var index = concretesIndex + concretesCount;
+            var index = collectionConcretesIndex + collectionConcretesCount;
 
             if (index == _lastContractsConcretesIndex)
             {
@@ -216,6 +233,7 @@ namespace SparseInject
             }
             else
             {
+                // TODO: this functional not work as expected
                 Array.Copy(_contractsConcretesIndices, index, _contractsConcretesIndices, index + 1, _lastContractsConcretesIndex - index);
 
                 _contractsConcretesIndices[index] = concreteIndex;
@@ -230,8 +248,7 @@ namespace SparseInject
             
             _lastContractsConcretesIndex++;
 
-            concretesCount++;
-            contract.SetConcretesCount(concretesCount);
+            collectionContract.SetConcretesCount(++collectionConcretesCount);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

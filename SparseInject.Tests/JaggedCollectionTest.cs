@@ -1,6 +1,5 @@
 ﻿using System;
 using FluentAssertions;
-using NSubstitute;
 using NUnit.Framework;
 using SparseInject;
 
@@ -159,7 +158,7 @@ public class JaggedCollectionTest
         });
         
         var container = containerBuilder.Build();
-    
+
         // Asserts
         var instances = container.Resolve<IDisposable[][]>();
     

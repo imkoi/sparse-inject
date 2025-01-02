@@ -217,10 +217,16 @@ namespace SparseInject
 
                 if (concrete.IsArray())
                 {
-                    var array = concrete.Value as Array;
+                    var array = instance as Array;
                     var arrayLength = array.Length;
 
-                    if (arrayLength == 0)
+                    if (concrete.Type == contract.Type)
+                    {
+                        instances.SetValue(array, instancesIndex);
+
+                        instancesIndex++;
+                    }
+                    else if (arrayLength == 0)
                     {
                         var newLength = instances.Length - 1;
 
@@ -232,7 +238,7 @@ namespace SparseInject
                     else if (arrayLength == 1)
                     {
                         instances.SetValue(array.GetValue(0), instancesIndex);
-                            
+                        
                         instancesIndex++;
                     }
                     else
