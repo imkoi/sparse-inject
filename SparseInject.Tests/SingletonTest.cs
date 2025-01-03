@@ -23,14 +23,8 @@ public class SingletonTest
         public int DefaultValueInitializedThroughConstructor { get; }
         public int DefaultValueInitializedThroughProperty { get; }
     }
-
-    private interface IPlayerTwo : IPlayer
-    {
-    }
-
-    private interface IPlayerThree : IPlayer
-    {
-    }
+    private interface IPlayerTwo : IPlayer { }
+    private interface IPlayerThree : IPlayer { }
 
     [Test]
     public void Registered_WhenResolved_ReturnCorrectValue()
