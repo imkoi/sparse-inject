@@ -19,26 +19,24 @@ namespace SparseInject
             
             for (var i = 0; i < concretesCount; i++)
             {
-                ThrowIfInvalidRecursive(containerInfo.Concretes, i, i, containerInfo, 0);
+                ThrowIfInvalidRecursive(i, ref containerInfo, i, ref containerInfo, 0);
             }
         }
 
-        private static void ThrowIfInvalidRecursive(Concrete[] originConcretes, int originConcreteIndex, int concreteIndex,
-            ContainerInfo containerInfo, int depth)
+        private static void ThrowIfInvalidRecursive(
+            int originConcreteIndex, ref ContainerInfo originContainerInfo,
+            int concreteIndex, ref ContainerInfo containerInfo,
+            int depth)
         {
             var concretes = containerInfo.Concretes;
             ref var concrete = ref concretes[concreteIndex];
+            ref var originConcrete = ref originContainerInfo.Concretes[originConcreteIndex];
 
-            // Probably need to check the type, because could be identical index for different types
-            if (depth > 0 && originConcreteIndex == concreteIndex)
+            if (depth > 0 && concrete.Type == originConcrete.Type)
             {
-                ConstructExceptionRecursiveByReflection(concrete.Type, new List<Type>(depth), out var exception);
+                ConstructExceptionRecursiveByReflection(originConcrete.Type, new List<Type>(depth), out var exception);
 
-                //TODO: inspect this case
-                if (exception != null)
-                {
-                    throw exception;
-                }
+                throw exception;
             }
             
             var constructorContractsCount = concrete.GetConstructorContractsCount();
@@ -52,7 +50,7 @@ namespace SparseInject
             
             for (var i = 0; i < constructorContractsCount; i++)
             {
-                var containerInfoToCheck = default(ContainerInfo);
+                var nextContainerInfo = containerInfo;
                 var constructorContractId = concreteConstructorContractIds[i + constructorContractsIndex];
                 var constructorContractIndex = contractsSparse[constructorContractId];
                 
@@ -68,12 +66,21 @@ namespace SparseInject
                     contractsConcretesIndices = targetContainerInfo.ContractsConcretesIndices;
                     concreteConstructorContractIds = targetContainerInfo.ConcreteConstructorContractIds;
                     
-                    constructorContractIndex = contractsSparse[constructorContractId]; // don't need to check that exist because was found through TryFindContainerWithContract
-                    containerInfoToCheck = targetContainerInfo;
+                    constructorContractIndex = contractsSparse[constructorContractId];
+                    nextContainerInfo = targetContainerInfo;
                 }
-                else
+
+                if (constructorContractIndex < 0)
                 {
-                    containerInfoToCheck = containerInfo;
+                    constructorContractIndex = originContainerInfo.ContractsSparse[constructorContractId];
+
+                    if (constructorContractIndex >= 0)
+                    {
+                        contractsDense = originContainerInfo.ContractsDense;
+                        contractsConcretesIndices = originContainerInfo.ContractsConcretesIndices;
+                        
+                        nextContainerInfo = originContainerInfo;
+                    }
                 }
 
                 if (constructorContractIndex >= 0)
@@ -84,8 +91,8 @@ namespace SparseInject
                     {
                         var concreteIdx = contractsConcretesIndices[j + constructorContract.GetConcretesIndex()];
                         
-                        ThrowIfInvalidRecursive(originConcretes, originConcreteIndex, concreteIdx,
-                            containerInfoToCheck, depth + 1);
+                        ThrowIfInvalidRecursive(originConcreteIndex, ref originContainerInfo, concreteIdx,
+                            ref nextContainerInfo, depth + 1);
                     }
                 }
             }

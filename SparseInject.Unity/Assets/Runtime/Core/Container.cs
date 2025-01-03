@@ -110,41 +110,86 @@ namespace SparseInject
         {
             ref var contract = ref _contractsDense[contractIndex];
             var concretesCount = contract.GetConcretesCount();
-            var instances = default(Array);
-            var instancesIndex = 0;
 
             if (contract.IsCollection())
             {
-                var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex()];
-                ref var concrete = ref _concretes[concreteIndex];
-                
-                if (concretesCount == 1 && concrete.IsSingleton() && concrete.HasValue())
+                return ResolveMultipleConcrete(concretesCount, ref contract);
+            }
+            
+            return ResolveSingleConcrete(concretesCount, ref contract);
+        }
+
+        private object ResolveSingleConcrete(int concretesCount, ref Contract contract)
+        {
+            var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + concretesCount - 1];
+            ref var concrete = ref _concretes[concreteIndex];
+
+            var instance = default(object);
+            
+            if (!(concrete.IsSingleton() && concrete.HasValue()))
+            {
+                instance = CreateConcrete(ref contract, ref concrete);
+
+                if (concrete.IsSingleton())
                 {
-                    if (concrete.IsArray())
-                    {
-                        return concrete.Value;
-                    }
-                    
-                    instances = Array.CreateInstance(contract.Type, 1);
-                    
-                    instances.SetValue(concrete.Value, instancesIndex);
-                    
-                    return instances;
+                    concrete.Value = instance;
+                    concrete.MarkValue();
                 }
-                
-                instances = Array.CreateInstance(contract.Type, concretesCount);
+            }
+            else
+            {
+                if (concrete.IsFactory())
+                {
+                    var factoryWithResolver = (Func<IScopeResolver, object>) concrete.Value;
+                    var factory = factoryWithResolver.Invoke(this);
+                        
+                    instance = factory;
+                        
+                    concrete.Value = instance;
+                    concrete.MarkFactory(false);
+                }
+                else
+                {
+                    instance = concrete.Value;
+                }
             }
 
+            return instance;
+        }
+
+        private object ResolveMultipleConcrete(int concretesCount, ref Contract contract)
+        {
+            var instancesIndex = 0;
+            
+            var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex()];
+            ref var concrete = ref _concretes[concreteIndex];
+                
+            if (concretesCount == 1 && concrete.IsSingleton() && concrete.HasValue())
+            {
+                if (concrete.IsArray())
+                {
+                    return concrete.Value;
+                }
+                    
+                var result = Array.CreateInstance(contract.Type, 1);
+                    
+                result.SetValue(concrete.Value, instancesIndex);
+                    
+                return result;
+            }
+            
+            var instances = Array.CreateInstance(contract.Type, concretesCount);
+            
             for (var i = 0; i < concretesCount; i++)
             {
-                var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + i];
-                ref var concrete = ref _concretes[concreteIndex];
+                concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + i];
+                concrete = ref _concretes[concreteIndex];
 
                 var instance = default(object);
                 
                 if (!(concrete.IsSingleton() && concrete.HasValue()))
                 {
-                    instance = ResolveConcreteInternal(ref contract, ref concrete);
+                    instance = CreateConcrete(ref contract, ref concrete);
 
                     if (concrete.IsSingleton())
                     {
@@ -170,17 +215,18 @@ namespace SparseInject
                     }
                 }
 
-                if (!contract.IsCollection())
-                {
-                    return instance;
-                }
-
                 if (concrete.IsArray())
                 {
-                    var array = concrete.Value as Array;
+                    var array = instance as Array;
                     var arrayLength = array.Length;
 
-                    if (arrayLength == 0)
+                    if (concrete.Type == contract.Type)
+                    {
+                        instances.SetValue(array, instancesIndex);
+
+                        instancesIndex++;
+                    }
+                    else if (arrayLength == 0)
                     {
                         var newLength = instances.Length - 1;
 
@@ -192,7 +238,7 @@ namespace SparseInject
                     else if (arrayLength == 1)
                     {
                         instances.SetValue(array.GetValue(0), instancesIndex);
-                            
+                        
                         instancesIndex++;
                     }
                     else
@@ -224,7 +270,7 @@ namespace SparseInject
             return instances;
         }
 
-        private object ResolveConcreteInternal(ref Contract contract, ref Concrete concrete)
+        private object CreateConcrete(ref Contract contract, ref Concrete concrete)
         {
             var reserved = default(ArrayCache.Reserved);
             var contractIndex = -1;
@@ -251,13 +297,15 @@ namespace SparseInject
                     var constructorDependencyId = _dependencyReferences[j + constructorContractsIndex];
                     contractIndex = _contractsSparse[constructorDependencyId];
 
+                    // not exist in current scope - find in created one
                     if (contractIndex < 0)
                     {
                         contractIndex = createdContainer._contractsSparse[constructorDependencyId];
 
+                        // not exist in current scope - find in parent
                         if (contractIndex < 0)
                         {
-                            var parent = createdContainer._parentContainer;
+                            var parent = _parentContainer;
                             
                             while (parent != null)
                             {
@@ -269,12 +317,15 @@ namespace SparseInject
                                 }
                                 else
                                 {
+                                    reserved.Array[j + reserved.StartIndex] = parent.ResolveInternal(contractIndex);
                                     break;
                                 }
                             }
                         }
-                        
-                        reserved.Array[j + reserved.StartIndex] = createdContainer.ResolveInternal(contractIndex);
+                        else
+                        {
+                            reserved.Array[j + reserved.StartIndex] = createdContainer.ResolveInternal(contractIndex);
+                        }
                     }
                     else
                     {
