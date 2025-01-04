@@ -317,9 +317,17 @@ namespace SparseInject
                                 }
                                 else
                                 {
-                                    reserved.Array[j + reserved.StartIndex] = parent.ResolveInternal(contractIndex);
                                     break;
                                 }
+                            }
+
+                            if (parent != null)
+                            {
+                                reserved.Array[j + reserved.StartIndex] = parent.ResolveInternal(contractIndex);
+                            }
+                            else
+                            {
+                                reserved.Array[j + reserved.StartIndex] = TryGetEmptyArray(ref concrete, j);
                             }
                         }
                         else
@@ -360,18 +368,7 @@ namespace SparseInject
                         
                         if (contractIndex < 0)
                         {
-                            var unknownParameter = concrete.ConstructorInfo.GetParameters()[j].ParameterType;
-
-                            if (unknownParameter.IsArray)
-                            {
-                                reserved.Array[j + reserved.StartIndex] =
-                                    Array.CreateInstance(unknownParameter.GetElementType(), 0);
-                            }
-                            else
-                            {
-                                // TODO: Add test that cover this logic
-                                throw new SparseInjectException($"Trying to resolve unknown type '{unknownParameter}'");
-                            }
+                            reserved.Array[j + reserved.StartIndex] = TryGetEmptyArray(ref concrete, j);
                         }
                         else
                         {
@@ -470,6 +467,25 @@ namespace SparseInject
             concrete = default(Concrete);
             return false;
         }
+        
+        internal (Concrete concrete, Container container) GetConcreteWithContainer(Type type)
+        {
+            var contractId = _contractIds[type];
+            var denseIndex = _contractsSparse[contractId];
+            
+            var container = this;
+
+            while (denseIndex < 0)
+            {
+                container = container._parentContainer;
+                denseIndex = container._contractsSparse[contractId];
+            }
+
+            var contract = _contractsDense[denseIndex];
+            var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + contract.GetConcretesCount() - 1];
+
+            return (_concretes[concreteIndex], container);
+        }
 
         public bool ContractExist(int contractId)
         {
@@ -516,6 +532,7 @@ namespace SparseInject
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetDependencyContractId(int contractIndex)
         {
             return _dependencyReferences[contractIndex];
@@ -550,6 +567,18 @@ namespace SparseInject
             _fallbackElements = null;
 
             _isDisposed = true;
+        }
+
+        private object TryGetEmptyArray(ref Concrete concrete, int parameterIndex)
+        {
+            var unknownParameter = concrete.ConstructorInfo.GetParameters()[parameterIndex].ParameterType;
+
+            if (unknownParameter.IsArray)
+            {
+                return Array.CreateInstance(unknownParameter.GetElementType(), 0);
+            }
+            
+            throw new SparseInjectException($"Trying to resolve unknown type '{unknownParameter}'");
         }
     }
 }

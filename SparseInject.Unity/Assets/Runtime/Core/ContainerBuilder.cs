@@ -169,18 +169,6 @@ namespace SparseInject
                 {
                     contract.Type = contractType.GetElementType();
                     contract.MarkCollection();
-                    
-                    if (_contractIds.TryGetValue(contract.Type, out var prevContractId) && prevContractId < _contractsSparse.Length)
-                    {
-                        var prevContractIndex = _contractsSparse[prevContractId];
-
-                        if (prevContractIndex >= 0)
-                        {
-                            ref var prevContract = ref _contractsDense[prevContractIndex];
-                            
-                            concretesIndex = prevContract.GetConcretesIndex();
-                        }
-                    }
                 }
                 else
                 {
