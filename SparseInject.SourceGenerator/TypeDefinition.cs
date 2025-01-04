@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SparseInject.SourceGenerator;
 
-public class TypeMeta
+public class TypeDefinition
 {
     public INamedTypeSymbol Symbol { get; }
     public List<string> GenericArgs { get; }
@@ -15,13 +15,11 @@ public class TypeMeta
 
     public IMethodSymbol? Constructor { get; }
     public (string paramType, string paramName)[] ConstructorParameters { get; }
-
-    public bool IsGenerics => Symbol.Arity > 0;
     public bool IsPrivate => Symbol.DeclaredAccessibility == Accessibility.Private;
 
     readonly TypeDeclarationSyntax syntax;
 
-    public TypeMeta(INamedTypeSymbol symbol, List<string> genericArgs, TypeDeclarationSyntax syntax)
+    public TypeDefinition(INamedTypeSymbol symbol, List<string> genericArgs, TypeDeclarationSyntax syntax)
     {
         Symbol = symbol;
         GenericArgs = genericArgs;
@@ -39,26 +37,6 @@ public class TypeMeta
         return syntax?.Identifier.GetLocation() ??
                Symbol.Locations.FirstOrDefault() ??
                Location.None;
-    }
-
-    public bool InheritsFrom(INamedTypeSymbol baseSymbol)
-    {
-        var baseName = baseSymbol.ToString();
-        var symbol = Symbol;
-        while (true)
-        {
-            if (symbol.ToString() == baseName)
-            {
-                return true;
-            }
-            if (symbol.BaseType != null)
-            {
-                symbol = symbol.BaseType;
-                continue;
-            }
-            break;
-        }
-        return false;
     }
 
     private IMethodSymbol? GetConstructor()
@@ -81,10 +59,5 @@ public class TypeMeta
             .ToArray() : Array.Empty<(string paramType, string paramName)>();
 
         return parameters;
-    }
-
-    public bool IsNested()
-    {
-        return Symbol.ContainingType != null;
     }
 }

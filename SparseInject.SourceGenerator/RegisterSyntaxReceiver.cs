@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -39,30 +38,5 @@ public class RegisterSyntaxReceiver : ISyntaxReceiver
                 }
             }
         }
-
-        // if (syntaxNode is not IdentifierNameSyntax)
-        // {
-        //     return;
-        // }
-        //
-        // var genericArgumentName = (syntaxNode as IdentifierNameSyntax).Identifier.Text;
-        // syntaxNode = syntaxNode.Parent;
-        //
-        // if (syntaxNode is not TypeArgumentListSyntax)
-        // {
-        //     return;
-        // }
-        //
-        // syntaxNode = syntaxNode.Parent;
-        //
-        // if (syntaxNode is GenericNameSyntax genericNameSyntax)
-        // {
-        //     var identifierName = genericNameSyntax.Identifier.Text;
-        //     
-        //     if (identifierName == "Register" || identifierName == "RegisterScope")
-        //     {
-        //         TypesWithGenerator.Add(genericArgumentName);
-        //     }
-        // }
     }
 }

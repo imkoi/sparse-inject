@@ -5,33 +5,33 @@ namespace SparseInject.SourceGenerator;
 
 public static class InstanceFactoryGenerator
 {
-    public static bool TryGenerate(TypeMeta typeMeta,
+    public static bool TryGenerate(TypeDefinition typeDefinition,
         CodeWriter codeWriter, GeneratorExecutionContext context, out string resultGeneratorName,
         out string correctedTypeName)
     {
         correctedTypeName = null;
         resultGeneratorName = string.Empty;
         
-        if (typeMeta.IsPrivate)
+        if (typeDefinition.IsPrivate)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DiagnosticDescriptors.PrivateTypesNotSupported,
-                typeMeta.GetLocation(),
-                typeMeta.TypeName));
+                typeDefinition.GetLocation(),
+                typeDefinition.TypeName));
                 
             return false;
         }
 
-        var constructorSymbol = typeMeta.Constructor;
+        var constructorSymbol = typeDefinition.Constructor;
 
         if (constructorSymbol != null)
         {
-            if (!constructorSymbol.CanBeCallFromInternal())
+            if (!(constructorSymbol.DeclaredAccessibility >= Accessibility.Internal)) // can be called from internal
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DiagnosticDescriptors.PrivateConstructorNotSupported,
-                    typeMeta.GetLocation(),
-                    typeMeta.TypeName));
+                    typeDefinition.GetLocation(),
+                    typeDefinition.TypeName));
                 
                 return false;
             }
@@ -39,14 +39,14 @@ public static class InstanceFactoryGenerator
             if (constructorSymbol.Arity > 0)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.GenericsNotSupported,
-                    typeMeta.GetLocation(),
-                    typeMeta.TypeName));
+                    DiagnosticDescriptors.GenericsConstructorNotSupported,
+                    typeDefinition.GetLocation(),
+                    typeDefinition.TypeName));
                 return false;
             }
         }
 
-        using (codeWriter.CreateClass(typeMeta,
+        using (codeWriter.CreateClass(typeDefinition,
                    new []
                    {
                        "int constructorParametersIndex"
@@ -54,17 +54,17 @@ public static class InstanceFactoryGenerator
                    new []
                    {
                        "ConstructorParametersIndex = constructorParametersIndex;",
-                       $"ConstructorParametersCount = {typeMeta.ConstructorParameters.Length};"
+                       $"ConstructorParametersCount = {typeDefinition.ConstructorParameters.Length};"
                    },
                    out resultGeneratorName))
         {
             using (codeWriter.Scope("public override object Create(object[] arguments)"))
             {
-                var parameters = typeMeta.ConstructorParameters;
+                var parameters = typeDefinition.ConstructorParameters;
 
-                correctedTypeName = typeMeta.FullTypeName;
+                correctedTypeName = typeDefinition.FullTypeName;
                 
-                if (typeMeta.GenericArgs != null)
+                if (typeDefinition.GenericArgs != null)
                 {
                     var typeNameSplitted = correctedTypeName.Split('.');
                     var typeNameLast = typeNameSplitted[typeNameSplitted.Length - 1];
@@ -75,7 +75,7 @@ public static class InstanceFactoryGenerator
                     if (startIndex != -1 && endIndex != -1 && endIndex > startIndex)
                     {
                         var stringToReplace = typeNameLast.Substring(startIndex + 1, endIndex - startIndex - 1);
-                        typeNameLast = typeNameLast.Replace(stringToReplace, string.Join(",", typeMeta.GenericArgs));
+                        typeNameLast = typeNameLast.Replace(stringToReplace, string.Join(",", typeDefinition.GenericArgs));
                     }
                     
                     typeNameSplitted[typeNameSplitted.Length - 1] = typeNameLast;
@@ -104,11 +104,11 @@ public static class InstanceFactoryGenerator
         return true;
     }
     
-    private static IDisposable CreateClass(this CodeWriter writer, TypeMeta typeMeta,
+    private static IDisposable CreateClass(this CodeWriter writer, TypeDefinition typeDefinition,
         string[] constructorParameters, string[] constructorLines,
         out string resultGeneratorName)
     {
-        var typeSymbol = typeMeta.Symbol;
+        var typeSymbol = typeDefinition.Symbol;
         
         var generatorName = string.Empty;
         resultGeneratorName = string.Empty;
@@ -136,9 +136,9 @@ public static class InstanceFactoryGenerator
         
         var className = typeSymbol.Name;
 
-        if (typeMeta.GenericArgs != null)
+        if (typeDefinition.GenericArgs != null)
         {
-            className += "_" + string.Join("_", typeMeta.GenericArgs);
+            className += "_" + string.Join("_", typeDefinition.GenericArgs);
         }
         
         generatorName += $"{className}_SparseInject_InstanceFactory";

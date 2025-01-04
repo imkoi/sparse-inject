@@ -111,7 +111,7 @@ public class SourceGenerator : ISourceGenerator
                         {
                             var genericArgs = genericArg.Split(',').Select(x => x.Replace(" ", "")).ToList();
                             
-                            var typeMeta = Analyzer.AnalyzeTypeSymbol(typeSymbol, typeDeclarationSyntax, genericArgs);
+                            var typeMeta = TypeAnalyzer.AnalyzeTypeSymbol(typeSymbol, typeDeclarationSyntax, genericArgs);
                             
                             if (InstanceFactoryGenerator.TryGenerate(typeMeta, codeWriter, context, out var generateTypeName, out var correctedTypeName))
                             {
@@ -128,7 +128,7 @@ public class SourceGenerator : ISourceGenerator
                     }
                     else
                     {
-                        var typeMeta = Analyzer.AnalyzeTypeSymbol(typeSymbol, typeDeclarationSyntax);
+                        var typeMeta = TypeAnalyzer.AnalyzeTypeSymbol(typeSymbol, typeDeclarationSyntax);
                         
                         if (InstanceFactoryGenerator.TryGenerate(typeMeta, codeWriter, context, out var generateTypeName, out var correctedTypeName))
                         {
