@@ -14,13 +14,13 @@ namespace SparseInject
             registerMethod.Invoke(this);
         }
 
-        public void Register<TConcreteContract>(Lifetime lifetime = Lifetime.Transient)
+        public RegistrationOptions Register<TConcreteContract>(Lifetime lifetime = Lifetime.Transient)
             where TConcreteContract : class
         {
-            Register<TConcreteContract, TConcreteContract>(lifetime);
+            return Register<TConcreteContract, TConcreteContract>(lifetime);
         }
 
-        public void Register<TContract, TConcrete>(Lifetime lifetime = Lifetime.Transient)
+        public RegistrationOptions Register<TContract, TConcrete>(Lifetime lifetime = Lifetime.Transient)
             where TContract : class
             where TConcrete : class, TContract
         {
@@ -32,9 +32,15 @@ namespace SparseInject
             {
                 concrete.MarkSingleton();
             }
+            
+            return new RegistrationOptions
+            {
+                _builder = this,
+                _concreteIndex = index
+            };
         }
         
-        public void Register<TContract0, TContract1, TConcrete>(Lifetime lifetime = Lifetime.Transient)
+        public RegistrationOptions Register<TContract0, TContract1, TConcrete>(Lifetime lifetime = Lifetime.Transient)
             where TContract0 : class
             where TContract1 : class
             where TConcrete : class, TContract0, TContract1
@@ -48,9 +54,15 @@ namespace SparseInject
             {
                 concrete.MarkSingleton();
             }
+            
+            return new RegistrationOptions
+            {
+                _builder = this,
+                _concreteIndex = index
+            };
         }
         
-        public void Register<TContract0, TContract1, TContract2, TConcrete>(Lifetime lifetime = Lifetime.Transient)
+        public RegistrationOptions Register<TContract0, TContract1, TContract2, TConcrete>(Lifetime lifetime = Lifetime.Transient)
             where TContract0 : class
             where TContract1 : class
             where TContract2 : class
@@ -66,9 +78,15 @@ namespace SparseInject
             {
                 concrete.MarkSingleton();
             }
+            
+            return new RegistrationOptions
+            {
+                _builder = this,
+                _concreteIndex = index
+            };
         }
 
-        public void RegisterValue<TConcreteContract>(TConcreteContract value)
+        public RegistrationOptions RegisterValue<TConcreteContract>(TConcreteContract value)
             where TConcreteContract : class
         {
             ref var concrete = ref AddConcrete(typeof(TConcreteContract), out var index);
@@ -83,9 +101,15 @@ namespace SparseInject
             {
                 concrete.MarkArray();
             }
+            
+            return new RegistrationOptions
+            {
+                _builder = this,
+                _concreteIndex = index
+            };
         }
 
-        public void RegisterValue<TContract, TConcrete>(TConcrete value)
+        public RegistrationOptions RegisterValue<TContract, TConcrete>(TConcrete value)
             where TContract : class
             where TConcrete : class, TContract
         {
@@ -109,9 +133,15 @@ namespace SparseInject
             {
                 concrete.MarkArray();
             }
+            
+            return new RegistrationOptions
+            {
+                _builder = this,
+                _concreteIndex = index
+            };
         }
         
-        public void RegisterValue<TContract0, TContract1, TConcrete>(TConcrete value)
+        public RegistrationOptions RegisterValue<TContract0, TContract1, TConcrete>(TConcrete value)
             where TContract0 : class
             where TContract1 : class
             where TConcrete : class, TContract0, TContract1
@@ -129,9 +159,15 @@ namespace SparseInject
             {
                 concrete.MarkArray();
             }
+            
+            return new RegistrationOptions
+            {
+                _builder = this,
+                _concreteIndex = index
+            };
         }
         
-        public void RegisterValue<TContract0, TContract1, TContract2, TConcrete>(TConcrete value)
+        public RegistrationOptions RegisterValue<TContract0, TContract1, TContract2, TConcrete>(TConcrete value)
             where TContract0 : class
             where TContract1 : class
             where TContract2 : class
@@ -151,6 +187,12 @@ namespace SparseInject
             {
                 concrete.MarkArray();
             }
+
+            return new RegistrationOptions
+            {
+                _builder = this,
+                _concreteIndex = index
+            };
         }
         
         public void RegisterFactory<T>(Func<T> factory)

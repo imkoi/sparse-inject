@@ -26,6 +26,12 @@ namespace SparseInject
         private object[] _emptyArray;
 
         private Dictionary<Type, Type> _fallbackElements = new Dictionary<Type, Type>(4);
+
+        private int[] _createdDisposableIndices;
+        private int _createdDisposableCount;
+        
+        private readonly int[] _valueDisposableIndices;
+        private readonly int _valueDisposableCount;
         
         private bool _isDisposed;
 
@@ -39,7 +45,9 @@ namespace SparseInject
             Concrete[] concretes,
             int[] dependencyReferences,
             int maxConstructorLength,
-            int concretesCount)
+            int concretesCount,
+            int[] valueDisposablesIndices,
+            int valueDisposablesCount)
         {
             _containerType = containerType;
             _parentContainer = parentContainer;
@@ -50,6 +58,9 @@ namespace SparseInject
             _concretes = concretes;
             _dependencyReferences = dependencyReferences;
             _concretesCount = concretesCount;
+            
+            _valueDisposableIndices = valueDisposablesIndices;
+            _valueDisposableCount = valueDisposablesCount;
 
             _arrays = ArrayCache.GetConstructorParametersPool(maxConstructorLength);
             _emptyArray = _arrays[0];
@@ -140,6 +151,11 @@ namespace SparseInject
                 {
                     concrete.Value = instance;
                     concrete.MarkValue();
+                    
+                    if (concrete.IsDisposable())
+                    {
+                        AddCreatedDisposable(concreteIndex);
+                    }
                 }
             }
             else
@@ -185,6 +201,11 @@ namespace SparseInject
                     {
                         concrete.Value = instance;
                         concrete.MarkValue();
+
+                        if (concrete.IsDisposable())
+                        {
+                            AddCreatedDisposable(concreteIndex);
+                        }
                     }
                 }
                 else
@@ -508,6 +529,9 @@ namespace SparseInject
             {
                 throw new ObjectDisposedException(_containerType?.Name ?? nameof(Container));
             }
+
+            DisposeCreatedDisposables();
+            DisposeValueDisposables();
             
             _parentContainer = null;
             _contractIds = null;
@@ -526,11 +550,64 @@ namespace SparseInject
             _isDisposed = true;
         }
 
+        private void DisposeValueDisposables()
+        {
+            var disposablesCount = _valueDisposableCount;
+
+            for (var i = 0; i < disposablesCount; i++)
+            {
+                var disposableConcreteIndex = _valueDisposableIndices[i];
+                ref var disposableConcrete = ref _concretes[disposableConcreteIndex];
+
+                if (disposableConcrete.IsDisposable())
+                {
+                    if (disposableConcrete.Value is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+            }
+        }
+        
+        private void DisposeCreatedDisposables()
+        {
+            var disposableIndex = _createdDisposableCount - 1;
+
+            for (; disposableIndex >= 0; disposableIndex--)
+            {
+                var disposableConcreteIndex = _createdDisposableIndices[disposableIndex];
+                ref var disposableConcrete = ref _concretes[disposableConcreteIndex];
+
+                if (disposableConcrete.IsDisposable())
+                {
+                    if (disposableConcrete.Value is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+            }
+        }
+
         private object TryGetEmptyArray(ref Concrete concrete, int parameterIndex)
         {
             var unknownParameter = concrete.ConstructorInfo.GetParameters()[parameterIndex].ParameterType;
 
             return Array.CreateInstance(unknownParameter.GetElementType(), 0);
+        }
+
+        private void AddCreatedDisposable(int concreteIndex)
+        {
+            if (_createdDisposableCount == 0)
+            {
+                _createdDisposableIndices = new int[32];
+            }
+            else if (_createdDisposableCount + 1 >= _createdDisposableIndices.Length)
+            {
+                Array.Resize(ref _createdDisposableIndices, _createdDisposableIndices.Length * 2);
+            }
+            
+            _createdDisposableIndices[_createdDisposableCount] = concreteIndex;
+            _createdDisposableCount++;
         }
     }
 }

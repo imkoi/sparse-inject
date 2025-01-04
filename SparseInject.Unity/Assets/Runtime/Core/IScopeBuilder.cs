@@ -6,31 +6,31 @@ namespace SparseInject
     {
         void Register(Action<IScopeBuilder> registerMethod);
         
-        void Register<TKey>(Lifetime lifetime = Lifetime.Transient)
+        RegistrationOptions Register<TKey>(Lifetime lifetime = Lifetime.Transient)
             where TKey : class;
-        void Register<TKey, TImplementation>(Lifetime lifetime = Lifetime.Transient)
+        RegistrationOptions Register<TKey, TImplementation>(Lifetime lifetime = Lifetime.Transient)
             where TKey : class
             where TImplementation : class, TKey;
-        void Register<TContract0, TContract1, TConcrete>(Lifetime lifetime = Lifetime.Transient)
+        RegistrationOptions Register<TContract0, TContract1, TConcrete>(Lifetime lifetime = Lifetime.Transient)
             where TContract0 : class
             where TContract1 : class
             where TConcrete : class, TContract0, TContract1;
-        void Register<TContract0, TContract1, TContract2, TConcrete>(Lifetime lifetime = Lifetime.Transient)
+        RegistrationOptions Register<TContract0, TContract1, TContract2, TConcrete>(Lifetime lifetime = Lifetime.Transient)
             where TContract0 : class
             where TContract1 : class
             where TContract2 : class
             where TConcrete : class, TContract0, TContract1, TContract2;
         
-        void RegisterValue<TContract>(TContract value)
+        RegistrationOptions RegisterValue<TContract>(TContract value)
             where TContract : class;
-        void RegisterValue<TContract, TImplementation>(TImplementation value)
+        RegistrationOptions RegisterValue<TContract, TImplementation>(TImplementation value)
             where TContract : class
             where TImplementation : class, TContract;
-        void RegisterValue<TContract0, TContract1, TConcrete>(TConcrete value)
+        RegistrationOptions RegisterValue<TContract0, TContract1, TConcrete>(TConcrete value)
             where TContract0 : class
             where TContract1 : class
             where TConcrete : class, TContract0, TContract1;
-        void RegisterValue<TContract0, TContract1, TContract2, TConcrete>(TConcrete value)
+        RegistrationOptions RegisterValue<TContract0, TContract1, TContract2, TConcrete>(TConcrete value)
             where TContract0 : class
             where TContract1 : class
             where TContract2 : class

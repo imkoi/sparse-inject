@@ -27,6 +27,8 @@ namespace SparseInject
         [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
         public bool DebugIsArray => IsArray();
         [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        public bool DebugIsDisposable => IsDisposable();
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
         public bool DebugHasValue => HasValue();
         [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
         public bool DebugHasInstanceFactory => HasInstanceFactory();
@@ -59,6 +61,9 @@ namespace SparseInject
 
         private const int HasInstanceFactoryShift = 53;
         private const ulong HasInstanceFactoryMask = 1UL << HasInstanceFactoryShift;
+        
+        private const int IsDisposableShift = 54;
+        private const ulong IsDisposableMask = 1UL << IsDisposableShift;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSingleton()
@@ -82,6 +87,12 @@ namespace SparseInject
         public bool IsArray()
         {
             return (Data & IsArrayMask) != 0;
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsDisposable()
+        {
+            return (Data & IsDisposableMask) != 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -133,6 +144,12 @@ namespace SparseInject
         public void MarkInstanceFactory()
         {
             Data |= HasInstanceFactoryMask;
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void MarkDisposable()
+        {
+            Data |= IsDisposableMask;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

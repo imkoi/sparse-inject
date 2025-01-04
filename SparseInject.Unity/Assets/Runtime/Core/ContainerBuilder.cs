@@ -19,6 +19,9 @@ namespace SparseInject
         private int[] _contractsConcretesIndices;
         private Concrete[] _concretes;
 
+        private int[] _valueDisposablesIndices;
+        private int _valueDisposablesCount;
+
         private int _dependenciesCount;
         private int _concretesCount;
         
@@ -95,7 +98,9 @@ namespace SparseInject
                 _concretes,
                 concreteConstructorContractIds,
                 stats.maxConstructorLength,
-                _concretesCount);
+                _concretesCount,
+                _valueDisposablesIndices,
+                _valueDisposablesCount);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -270,6 +275,33 @@ namespace SparseInject
                 {
                     _contractsConcretesIndices[i] = -1;
                 }
+            }
+        }
+
+        internal void MarkConcreteDisposable(int concreteIndex)
+        {
+            ref var concrete = ref _concretes[concreteIndex];
+
+            if (!concrete.IsSingleton())
+            {
+                throw new SparseInjectException("Only singleton contracts could be marked as disposable.");
+            }
+            
+            concrete.MarkDisposable();
+
+            if (concrete.HasValue())
+            {
+                if (_valueDisposablesCount == 0)
+                {
+                    _valueDisposablesIndices = new int[32];
+                }
+                else if (_valueDisposablesCount + 1 >= _valueDisposablesIndices.Length)
+                {
+                    Array.Resize(ref _valueDisposablesIndices, _valueDisposablesIndices.Length * 2);
+                }
+            
+                _valueDisposablesIndices[_valueDisposablesCount] = concreteIndex;
+                _valueDisposablesCount++;
             }
         }
     }
