@@ -135,14 +135,14 @@ namespace SparseInject
 
             if (containerType != null)
             {
-                var concreteWithContainer = _parentContainer.GetConcreteWithContainer(containerType);
+                var concrete = _parentContainer.GetConcreteByContractType(containerType); // could it be upper current parent container???
 
-                concreteConstructorParametersCount = concreteWithContainer.concrete.GetConstructorContractsCount();
-                var constructorContractsIndex = concreteWithContainer.concrete.GetConstructorContractsIndex();
+                concreteConstructorParametersCount = concrete.GetConstructorContractsCount();
+                var constructorContractsIndex = concrete.GetConstructorContractsIndex();
                     
                 for (var i = 0; i < concreteConstructorParametersCount; i++) // foreach dependencies of scope
                 {
-                    contractId = concreteWithContainer.container.GetDependencyContractId(constructorContractsIndex + i); // get contractId of dependency
+                    contractId = _parentContainer.GetDependencyContractId(constructorContractsIndex + i); // get contractId of dependency
 
                     if (_contractsSparse[contractId] >= 0) // if dependency exist in scope - skip
                     {

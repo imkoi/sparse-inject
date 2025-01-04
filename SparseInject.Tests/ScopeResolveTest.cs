@@ -4,7 +4,7 @@ using NUnit.Framework;
 using SparseInject;
 
 [TestFixture]
-public class ResolveTest
+public class ScopeResolveTest
 {
     private class ScopeA : Scope { }
     private class ScopeB : Scope { }
@@ -80,6 +80,36 @@ public class ResolveTest
         var scopeC = scopeB._container.Resolve<ScopeC>();
         
         scopeC._container.Invoking(subject => subject.Resolve<ScopeD>()).Should().NotThrow();
+    }
+    
+    [Test]
+    public void RegisteredInnerScopes_WhenLastScopeResolveNotRegisteredDependency_ReturnCorrectInstance()
+    {
+        var containerBuilder = new ContainerBuilder();
+        
+        containerBuilder.RegisterScope<ScopeA>(configuratorA =>
+        {
+            configuratorA.RegisterScope<ScopeB>(configuratorB =>
+            {
+                configuratorB.RegisterScope<ScopeC>(configuratorC =>
+                {
+                    configuratorC.RegisterScope<ScopeD>(configuratorD =>
+                    {
+                        configuratorD.Register<MainScopeDependency>();
+                    });
+                });
+            });
+        });
+        
+        // Asserts
+        var container = containerBuilder.Build();
+        
+        var scopeA = container.Resolve<ScopeA>();
+        var scopeB = scopeA._container.Resolve<ScopeB>();
+        var scopeC = scopeB._container.Resolve<ScopeC>();
+        var scopeD = scopeC._container.Resolve<ScopeD>();
+        
+        scopeC._container.Invoking(subject => subject.Resolve<MainScopeDependency>()).Should().Throw<SparseInjectException>();
     }
     
     [Test]

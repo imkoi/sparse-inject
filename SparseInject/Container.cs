@@ -68,21 +68,27 @@ namespace SparseInject
         {
             if (_contractIds.TryGetValue(type, out var id))
             {
+                var container = this;
                 var contractIndex = _contractsSparse[id];
                 
-                if (contractIndex < 0)
+                while (contractIndex < 0)
                 {
-                    if (_parentContainer != null)
+                    container = container._parentContainer;
+
+                    if (container == null)
                     {
-                        // TODO: add test that cover this case
-                        return _parentContainer.Resolve(type);
+                        break;
                     }
                     
-                    // TODO: add test that cover this case
-                    throw new SparseInjectException($"Trying to resolve unknown type '{type}'");
+                    contractIndex = container._contractsSparse[id];
                 }
-                
-                return ResolveInternal(contractIndex);
+
+                if (contractIndex >= 0)
+                {
+                    return container.ResolveInternal(contractIndex);
+                }
+
+                throw new SparseInjectException($"Trying to resolve unknown type '{type}'");
             }
 
             return ResolveFallback(type);
@@ -160,30 +166,14 @@ namespace SparseInject
         private object ResolveMultipleConcrete(int concretesCount, ref Contract contract)
         {
             var instancesIndex = 0;
-            
-            var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex()];
-            ref var concrete = ref _concretes[concreteIndex];
-                
-            if (concretesCount == 1 && concrete.IsSingleton() && concrete.HasValue())
-            {
-                if (concrete.IsArray())
-                {
-                    return concrete.Value;
-                }
-                    
-                var result = Array.CreateInstance(contract.Type, 1);
-                    
-                result.SetValue(concrete.Value, instancesIndex);
-                    
-                return result;
-            }
+            var concreteIndex = -1;
             
             var instances = Array.CreateInstance(contract.Type, concretesCount);
             
             for (var i = 0; i < concretesCount; i++)
             {
                 concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + i];
-                concrete = ref _concretes[concreteIndex];
+                ref var concrete = ref _concretes[concreteIndex];
 
                 var instance = default(object);
                 
@@ -443,48 +433,15 @@ namespace SparseInject
 #endif
         }
 
-        internal bool TryGetConcrete(Type type, out Concrete concrete)
-        {
-            if (_contractIds.TryGetValue(type, out var contractId))
-            {
-                var denseIndex = _contractsSparse[contractId];
-
-                if (denseIndex < 0 && _parentContainer != null)
-                {
-                    // TODO: add test that have recursion case
-                    return _parentContainer.TryGetConcrete(type, out concrete);
-                }
-
-                var contract = _contractsDense[denseIndex];
-                var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + contract.GetConcretesCount() - 1];
-
-                concrete = _concretes[concreteIndex];
-                
-                return true;
-            }
-
-            // TODO: add test that have concrete not found case
-            concrete = default(Concrete);
-            return false;
-        }
-        
-        internal (Concrete concrete, Container container) GetConcreteWithContainer(Type type)
+        internal Concrete GetConcreteByContractType(Type type)
         {
             var contractId = _contractIds[type];
             var denseIndex = _contractsSparse[contractId];
-            
-            var container = this;
-
-            while (denseIndex < 0)
-            {
-                container = container._parentContainer;
-                denseIndex = container._contractsSparse[contractId];
-            }
 
             var contract = _contractsDense[denseIndex];
             var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + contract.GetConcretesCount() - 1];
 
-            return (_concretes[concreteIndex], container);
+            return _concretes[concreteIndex];
         }
 
         public bool ContractExist(int contractId)
@@ -573,12 +530,7 @@ namespace SparseInject
         {
             var unknownParameter = concrete.ConstructorInfo.GetParameters()[parameterIndex].ParameterType;
 
-            if (unknownParameter.IsArray)
-            {
-                return Array.CreateInstance(unknownParameter.GetElementType(), 0);
-            }
-            
-            throw new SparseInjectException($"Trying to resolve unknown type '{unknownParameter}'");
+            return Array.CreateInstance(unknownParameter.GetElementType(), 0);
         }
     }
 }

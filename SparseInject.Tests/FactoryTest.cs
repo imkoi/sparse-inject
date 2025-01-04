@@ -353,8 +353,7 @@ public class FactoryTest
     }
 
     [Test]
-    public void
-        RegisteredFactoryToInterfaceWithContainerAndParameter_WhenResolvedAndInvokedMultipleTimes_ReturnDifferentValues() // TODO: implement
+    public void RegisteredFactoryToInterfaceWithContainerAndParameter_WhenResolvedAndInvokedMultipleTimes_ReturnDifferentValues()
     {
         // Setup
         var builder = new ContainerBuilder();
