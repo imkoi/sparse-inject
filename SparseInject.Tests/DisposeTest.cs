@@ -1,105 +1,127 @@
 ﻿using System;
 using FluentAssertions;
+using NSubstitute;
 using NUnit.Framework;
 using SparseInject;
 
 [TestFixture]
 public class DisposeTest
 {
+    private class DisposeCounter : IDisposable
+    {
+        public int Calls { get; private set; }
+        
+        public void Dispose()
+        {
+            Calls++;
+        }
+    } 
+    
     [Test]
-    public void Container_WhenDisposed_ThrowExceptionOnResolve()
+    public void TransientMarkedAsDisposable_WhenRegisteredWithBuilder_ThrowProperException()
     {
         // Setup
-        var containerBuilder = new ContainerBuilder();
-        var container = containerBuilder.Build();
+        var builder = new ContainerBuilder();
+
+        // Asserts
+        builder.Invoking(subject => subject.Register<DisposeCounter>().MarkDisposable()).Should()
+            .Throw<SparseInjectException>();
+    }
+    
+    [Test]
+    public void TransientMarkedAsDisposable_WhenMarkedAsDisposable_ThrowProperException()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+
+        var registrationOptions = builder.Register<DisposeCounter>();
+        
+        // Asserts
+        registrationOptions.Invoking(subject => subject.MarkDisposable()).Should()
+            .Throw<SparseInjectException>();
+    }
+    
+    [Test]
+    public void SingletonValue_WhenScopeDisposed_DisposeNotCalled()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+
+        var disposable = Substitute.For<IDisposable>();
+
+        builder.RegisterValue(disposable);
+        
+        var container = builder.Build();
         
         container.Dispose();
 
         // Asserts
-        container
-            .Invoking(subject => subject.Resolve<IDisposable[]>())
-            .Should()
-            .Throw<Exception>();
+        disposable.Received(0);
     }
     
     [Test]
-    public void Container_WhenDisposeTwice_ThrowException()
+    public void SingletonValueMarkedAsDisposable_WhenScopeDisposed_DisposeIsCalled()
     {
         // Setup
-        var containerBuilder = new ContainerBuilder();
-        var container = containerBuilder.Build();
+        var builder = new ContainerBuilder();
 
+        var disposable = Substitute.For<IDisposable>();
+        
+        builder.RegisterValue(disposable).MarkDisposable();
+        
+        var container = builder.Build();
+        
+        disposable.Received(0);
+        
         container.Dispose();
 
         // Asserts
-        container
-            .Invoking(subject => subject.Dispose())
-            .Should()
-            .Throw<Exception>();
-    }
-    
-    private class ScopeA : Scope { }
-    
-    [Test]
-    public void Scope_WhenDisposed_ThrowExceptionOnResolve()
-    {
-        // Setup
-        var containerBuilder = new ContainerBuilder();
-        
-        containerBuilder.RegisterScope<ScopeA>(_ => { });
-        
-        var container = containerBuilder.Build();
-        
-        var scopeA = container.Resolve<ScopeA>();
-        
-        scopeA.Dispose();
-
-        // Asserts
-        scopeA
-            .Invoking(subject => subject._container.Resolve<IDisposable[]>())
-            .Should()
-            .Throw<Exception>();
+        disposable.Received(1);
     }
     
     [Test]
-    public void Scope_WhenDisposeTwice_ThrowException()
+    public void SingletonValueMarkedAsDisposableWithBuilder_WhenScopeDisposed_DisposeIsCalled()
     {
         // Setup
-        var containerBuilder = new ContainerBuilder();
+        var builder = new ContainerBuilder();
+
+        var disposable = Substitute.For<IDisposable>();
+
+        var registrationOptions = builder.RegisterValue(disposable);
         
-        containerBuilder.RegisterScope<ScopeA>(_ => { });
+        registrationOptions.MarkDisposable();
         
-        var container = containerBuilder.Build();
+        var container = builder.Build();
         
-        var scopeA = container.Resolve<ScopeA>();
+        disposable.Received(0);
         
-        scopeA.Dispose();
+        container.Dispose();
 
         // Asserts
-        scopeA._container
-            .Invoking(subject => subject.Dispose())
-            .Should()
-            .Throw<Exception>();
+        disposable.Received(1);
     }
 
-    private class MainScopeDependency : IDisposable { public void Dispose() { } }
-    
     [Test]
-    public void MainContainer_WhenInnerScopeDisposeD_CanResolve()
+    public void SingletonsMarkedAsDisposable_WhenScopeDisposed_DisposeIsCalled()
     {
         // Setup
-        var containerBuilder = new ContainerBuilder();
-        
-        containerBuilder.Register<MainScopeDependency>();
-        containerBuilder.RegisterScope<ScopeA>(_ => { });
-        
-        var container = containerBuilder.Build();
-        
-        var scopeA = container.Resolve<ScopeA>();
-        
-        scopeA.Dispose();
+        var builder = new ContainerBuilder();
 
+        builder.Register<IDisposable, DisposeCounter>(Lifetime.Singleton).MarkDisposable();
+        builder.Register<DisposeCounter>(Lifetime.Singleton).MarkDisposable();
+
+        var container = builder.Build();
+        
+        var interfaceSingleton = container.Resolve<IDisposable>() as DisposeCounter;
+        var singleton = container.Resolve<DisposeCounter>();
+
+        interfaceSingleton.Calls.Should().Be(0);
+        singleton.Calls.Should().Be(0);
+        
+        container.Dispose();
+        
         // Asserts
-        container.Resolve<MainScopeDependency>().Should().BeOfType<MainScopeDependency>();
+        interfaceSingleton.Calls.Should().Be(1);
+        singleton.Calls.Should().Be(1);
     }
 }
