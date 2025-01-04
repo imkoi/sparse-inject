@@ -135,37 +135,36 @@ namespace SparseInject
 
             if (containerType != null)
             {
-                if (_parentContainer.TryGetConcrete(containerType, out var concreteContainer))
-                {
-                    concreteConstructorParametersCount = concreteContainer.GetConstructorContractsCount();
-                    var constructorContractsIndex = concreteContainer.GetConstructorContractsIndex();
+                var concreteWithContainer = _parentContainer.GetConcreteWithContainer(containerType);
+
+                concreteConstructorParametersCount = concreteWithContainer.concrete.GetConstructorContractsCount();
+                var constructorContractsIndex = concreteWithContainer.concrete.GetConstructorContractsIndex();
                     
-                    for (var i = 0; i < concreteConstructorParametersCount; i++)
+                for (var i = 0; i < concreteConstructorParametersCount; i++) // foreach dependencies of scope
+                {
+                    contractId = concreteWithContainer.container.GetDependencyContractId(constructorContractsIndex + i); // get contractId of dependency
+
+                    if (_contractsSparse[contractId] >= 0) // if dependency exist in scope - skip
                     {
-                        contractId = _parentContainer.GetDependencyContractId(constructorContractsIndex + i);
-                        
-                        if (_contractsSparse[contractId] < 0)
+                        continue;
+                    }
+
+                    if (!_parentContainer.ContractExist(contractId))
+                    {
+                        foreach (var pair in _contractIds)
                         {
-                            if (!_parentContainer.ContractExist(contractId))
+                            if (pair.Value != contractId)
                             {
-                                foreach (var pair in _contractIds)
-                                {
-                                    if (pair.Value != contractId)
-                                    {
-                                        continue;
-                                    }
-                                    
-                                    // TODO: add test that cover logic without throw
-                                    throw new SparseInjectException($"Dependency '{pair.Key}' of '{containerType}' not registered");
-                                }
+                                continue;
+                            }
+
+                            if (!pair.Key.IsArray)
+                            {
+                                throw new SparseInjectException(
+                                    $"Dependency '{pair.Key}' of '{containerType}' not registered");
                             }
                         }
                     }
-                }
-                else
-                {
-                    // TODO: add test that cover throw
-                    throw new SparseInjectException($"Container {containerType} not registered");
                 }
             }
 

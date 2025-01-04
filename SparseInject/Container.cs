@@ -467,6 +467,25 @@ namespace SparseInject
             concrete = default(Concrete);
             return false;
         }
+        
+        internal (Concrete concrete, Container container) GetConcreteWithContainer(Type type)
+        {
+            var contractId = _contractIds[type];
+            var denseIndex = _contractsSparse[contractId];
+            
+            var container = this;
+
+            while (denseIndex < 0)
+            {
+                container = container._parentContainer;
+                denseIndex = container._contractsSparse[contractId];
+            }
+
+            var contract = _contractsDense[denseIndex];
+            var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + contract.GetConcretesCount() - 1];
+
+            return (_concretes[concreteIndex], container);
+        }
 
         public bool ContractExist(int contractId)
         {
@@ -513,6 +532,7 @@ namespace SparseInject
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetDependencyContractId(int contractIndex)
         {
             return _dependencyReferences[contractIndex];
