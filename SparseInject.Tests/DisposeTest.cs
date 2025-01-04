@@ -124,4 +124,89 @@ public class DisposeTest
         interfaceSingleton.Calls.Should().Be(1);
         singleton.Calls.Should().Be(1);
     }
+    
+    [Test]
+    public void SingletonsCollectionMarkedAsDisposable_WhenScopeDisposed_DisposeIsCalled()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+        
+        var disposables = new IDisposable[]
+        {
+            new DisposeCounter(),
+            new DisposeCounter(),
+            new DisposeCounter(),
+            new DisposeCounter(),
+        };
+
+        builder.RegisterValue(disposables).MarkDisposable();
+
+        var container = builder.Build();
+
+        var instances = container.Resolve<IDisposable[]>();
+
+        foreach (var instance in instances)
+        {
+            if (instance is DisposeCounter disposableCounter)
+            {
+                disposableCounter.Calls.Should().Be(0);
+            }
+        }
+        
+        container.Dispose();
+        
+        foreach (var instance in instances)
+        {
+            if (instance is DisposeCounter disposableCounter)
+            {
+                disposableCounter.Calls.Should().Be(1);
+            }
+        }
+    }
+    
+    [Test]
+    public void SingletonsJaggedCollectionMarkedAsDisposable_WhenScopeDisposed_DisposeIsCalled()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+        
+        var disposables = new IDisposable[]
+        {
+            new DisposeCounter(),
+            new DisposeCounter(),
+            new DisposeCounter(),
+            new DisposeCounter(),
+        };
+
+        builder.RegisterValue(disposables).MarkDisposable();
+        builder.RegisterValue(disposables).MarkDisposable();
+
+        var container = builder.Build();
+
+        var instances = container.Resolve<IDisposable[][]>();
+
+        foreach (var instance in instances)
+        {
+            foreach (var disposable in instance)
+            {
+                if (disposable is DisposeCounter disposableCounter)
+                {
+                    disposableCounter.Calls.Should().Be(0);
+                }
+            }
+        }
+        
+        container.Dispose();
+        
+        foreach (var instance in instances)
+        {
+            foreach (var disposable in instance)
+            {
+                if (disposable is DisposeCounter disposableCounter)
+                {
+                    disposableCounter.Calls.Should().Be(2);
+                }
+            }
+        }
+    }
 }
