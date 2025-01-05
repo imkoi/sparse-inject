@@ -565,6 +565,16 @@ namespace SparseInject
                     {
                         disposable.Dispose();
                     }
+                    else if (disposableConcrete.Value is Array array)
+                    {
+                        foreach (var element in array)
+                        {
+                            if (element is IDisposable elementDisposable)
+                            {
+                                elementDisposable.Dispose();
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -583,6 +593,16 @@ namespace SparseInject
                     if (disposableConcrete.Value is IDisposable disposable)
                     {
                         disposable.Dispose();
+                    }
+                    else if (disposableConcrete.Value is Array array)
+                    {
+                        foreach (var element in array)
+                        {
+                            if (element is IDisposable elementDisposable)
+                            {
+                                elementDisposable.Dispose();
+                            }
+                        }
                     }
                 }
             }
