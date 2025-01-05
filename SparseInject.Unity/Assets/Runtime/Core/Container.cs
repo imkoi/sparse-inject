@@ -35,6 +35,8 @@ namespace SparseInject
         
         private bool _isDisposed;
 
+        internal event Action DisposeRequested;
+
         internal Container(
             Type containerType,
             Container parentContainer,
@@ -418,7 +420,7 @@ namespace SparseInject
                 {
                     var scope = concrete.GeneratedInstanceFactory.Create(constructorParameters) as Scope;
 
-                    scope._container = createdContainer;
+                    scope.SetContainer(createdContainer);
 
                     return scope;
                 }
@@ -431,7 +433,7 @@ namespace SparseInject
                 var scope = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
                     parameters: constructorParameters, culture: null) as Scope;
 
-                scope._container = createdContainer;
+                scope.SetContainer(createdContainer);
 
                 return scope;
             }
@@ -530,6 +532,7 @@ namespace SparseInject
                 throw new ObjectDisposedException(_containerType?.Name ?? nameof(Container));
             }
 
+            DisposeRequested?.Invoke();
             DisposeCreatedDisposables();
             DisposeValueDisposables();
             
@@ -559,23 +562,7 @@ namespace SparseInject
                 var disposableConcreteIndex = _valueDisposableIndices[i];
                 ref var disposableConcrete = ref _concretes[disposableConcreteIndex];
 
-                if (disposableConcrete.IsDisposable())
-                {
-                    if (disposableConcrete.Value is IDisposable disposable)
-                    {
-                        disposable.Dispose();
-                    }
-                    else if (disposableConcrete.Value is Array array)
-                    {
-                        foreach (var element in array)
-                        {
-                            if (element is IDisposable elementDisposable)
-                            {
-                                elementDisposable.Dispose();
-                            }
-                        }
-                    }
-                }
+                DisposeDisposable(disposableConcrete.Value);
             }
         }
         
@@ -588,22 +575,21 @@ namespace SparseInject
                 var disposableConcreteIndex = _createdDisposableIndices[disposableIndex];
                 ref var disposableConcrete = ref _concretes[disposableConcreteIndex];
 
-                if (disposableConcrete.IsDisposable())
+                DisposeDisposable(disposableConcrete.Value);
+            }
+        }
+        
+        private void DisposeDisposable(object disposableObject)
+        {
+            if (disposableObject is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+            else if (disposableObject is Array array)
+            {
+                foreach (var element in array)
                 {
-                    if (disposableConcrete.Value is IDisposable disposable)
-                    {
-                        disposable.Dispose();
-                    }
-                    else if (disposableConcrete.Value is Array array)
-                    {
-                        foreach (var element in array)
-                        {
-                            if (element is IDisposable elementDisposable)
-                            {
-                                elementDisposable.Dispose();
-                            }
-                        }
-                    }
+                    DisposeDisposable(element);
                 }
             }
         }
@@ -628,6 +614,11 @@ namespace SparseInject
             
             _createdDisposableIndices[_createdDisposableCount] = concreteIndex;
             _createdDisposableCount++;
+        }
+
+        internal Container GetParentContainer()
+        {
+            return _parentContainer;
         }
     }
 }
