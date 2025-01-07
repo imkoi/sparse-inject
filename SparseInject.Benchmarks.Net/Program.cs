@@ -1,4 +1,5 @@
-﻿using SparseInject.BenchmarkFramework;
+﻿
+using SparseInject.BenchmarkFramework;
 
 namespace SparseInject.Benchmarks.Net;
 
@@ -36,6 +37,7 @@ public class Program
             new SparseInjectTransientResolveBenchmark(),
             new VContainerTransientResolveBenchmark(),
             new AutofacTransientResolveBenchmark(),
+            new NativeTransientResolveBenchmark(),
             //new LightInjectTransientResolveBenchmark(),
         }, 10);
         
@@ -44,6 +46,7 @@ public class Program
             new SparseInjectTransientTotalBenchmark(),
             new VContainerTransientTotalBenchmark(),
             new AutofacTransientTotalBenchmark(),
+            new NativeTransientTotalBenchmark(),
             //new LightInjectTransientTotalBenchmark(),
         }, 10);
         
