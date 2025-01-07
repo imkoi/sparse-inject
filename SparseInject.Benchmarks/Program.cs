@@ -3,13 +3,14 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using FeaturelessResolver.Benchmarks;
 using SparseInject;
 
 public class Program
 {
     public static void Main()
     {
-        var containerBuilder = new ContainerBuilder(16);
+        var containerBuilder = new ContainerBuilder();
         var sw = new Stopwatch();
         var iter = 100;
         
