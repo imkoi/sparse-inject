@@ -5,7 +5,7 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
-        <RootNamespace>FeaturelessResolver.Benchmarks</RootNamespace>
+        <RootNamespace>SparseInject.Benchmarks</RootNamespace>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">

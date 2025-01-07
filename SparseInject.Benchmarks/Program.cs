@@ -1,9 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Diagnostics;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using FeaturelessResolver.Benchmarks;
 using SparseInject;
 
 public class Program
