@@ -113,14 +113,12 @@ namespace SparseInject
             where TContract : class
             where TConcrete : class, TContract
         {
-#if DEBUG
             if (typeof(TConcrete) != value.GetType())
             {
                 throw new SparseInjectException($"To register value of type '{value.GetType().Name}' " +
                                                 $"use 'RegisterValue<{typeof(TContract).Name}, {typeof(TConcrete).Name}, {value.GetType().Name}>(value)' method signature");
             }
-#endif
-            
+
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
 
             AddContract<TContract>(index);
