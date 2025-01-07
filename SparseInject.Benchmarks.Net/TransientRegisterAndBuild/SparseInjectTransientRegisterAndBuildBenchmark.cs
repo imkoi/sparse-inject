@@ -1,5 +1,5 @@
 ﻿using SparseInject;
-using SparseInject.Benchmarks.Core;
+using SparseInject.BenchmarkFramework;
 
 public class SparseInjectTransientRegisterAndBuildBenchmark : Benchmark
 {

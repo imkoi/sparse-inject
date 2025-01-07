@@ -6,7 +6,7 @@ namespace Utilities
 {
     public class VContainerBenchmarkPatcher
     {
-        private const string Path = "C:/github/sparseinject/SparseInject.Benchmarks.Net/TransientRegistrators/VContainerTransientContainerRegistrator.cs";
+        private const string Path = "C:/github/sparseinject/SparseInject.BenchmarkFramework.Net/TransientRegistrators/VContainerTransientContainerRegistrator.cs";
         
         [Ignore("Not needed")]
         [Test]

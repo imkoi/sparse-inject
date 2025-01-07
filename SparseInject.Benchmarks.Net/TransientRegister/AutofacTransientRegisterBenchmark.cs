@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using SparseInject.Benchmarks.Core;
+using SparseInject.BenchmarkFramework;
 
 public class AutofacTransientRegisterBenchmark : Benchmark
 {

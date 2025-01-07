@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SparseInject", "SparseInjec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SparseInject.Tests", "SparseInject.Tests\SparseInject.Tests.csproj", "{684F752F-0ECC-4991-B429-5D737D46AA50}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SparseInject.Benchmarks", "SparseInject.Benchmarks\SparseInject.Benchmarks.csproj", "{81522B5D-2E6A-4253-82D3-E955BE38291C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SparseInject.BenchmarkFramework", "SparseInject.BenchmarkFramework\SparseInject.BenchmarkFramework.csproj", "{81522B5D-2E6A-4253-82D3-E955BE38291C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SparseInject.SourceGenerator", "SparseInject.SourceGenerator\SparseInject.SourceGenerator.csproj", "{2584264A-90E5-453D-A63E-7D8F38A4574D}"
 EndProject

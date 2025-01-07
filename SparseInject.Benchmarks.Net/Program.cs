@@ -1,4 +1,4 @@
-﻿using SparseInject.Benchmarks.Core;
+﻿using SparseInject.BenchmarkFramework;
 
 namespace SparseInject.Benchmarks.Net;
 
@@ -28,7 +28,7 @@ public class Program
             new SparseInjectTransientRegisterAndBuildBenchmark(),
             new VContainerTransientRegisterAndBuildBenchmark(),
             new AutofacTransientRegisterAndBuildBenchmark(),
-            new LightInjectTransientRegisterAndBuildBenchmark(),
+            //new LightInjectTransientRegisterAndBuildBenchmark(),
         }, 10);
         
         benchmarkRunner.AddBenchmarkCategory("transient-resolve", new Benchmark[]
@@ -36,7 +36,7 @@ public class Program
             new SparseInjectTransientResolveBenchmark(),
             new VContainerTransientResolveBenchmark(),
             new AutofacTransientResolveBenchmark(),
-            new LightInjectTransientResolveBenchmark(),
+            //new LightInjectTransientResolveBenchmark(),
         }, 10);
         
         benchmarkRunner.AddBenchmarkCategory("transient-total", new Benchmark[]
@@ -44,9 +44,16 @@ public class Program
             new SparseInjectTransientTotalBenchmark(),
             new VContainerTransientTotalBenchmark(),
             new AutofacTransientTotalBenchmark(),
-            new LightInjectUncompiledTransientTotalBenchmark(),
+            //new LightInjectTransientTotalBenchmark(),
         }, 10);
         
         var summary = benchmarkRunner.Run();
+
+        var isBenchmarkLauncher = args == null || args.Length == 0;
+        
+        if (isBenchmarkLauncher)
+        {
+            Console.ReadLine();
+        }
     }
 }

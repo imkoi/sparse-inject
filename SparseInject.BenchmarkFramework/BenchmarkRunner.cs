@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace SparseInject.Benchmarks.Core;
+namespace SparseInject.BenchmarkFramework;
 
 public class BenchmarkRunner
 {

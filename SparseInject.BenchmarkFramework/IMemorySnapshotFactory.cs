@@ -1,4 +1,4 @@
-﻿namespace SparseInject.Benchmarks.Core;
+﻿namespace SparseInject.BenchmarkFramework;
 
 public interface IMemorySnapshotFactory
 {

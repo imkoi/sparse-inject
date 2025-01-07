@@ -1,4 +1,4 @@
-﻿using SparseInject.Benchmarks.Core;
+﻿using SparseInject.BenchmarkFramework;
 
 public class LightInjectTransientRegisterBenchmark : Benchmark
 {
