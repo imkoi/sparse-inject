@@ -1,5 +1,4 @@
-﻿#if DEBUG
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace SparseInject
@@ -40,4 +39,3 @@ namespace SparseInject
         }
     }
 }
-#endif
