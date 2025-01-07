@@ -1,7 +1,6 @@
-﻿#if DEBUG
-namespace SparseInject
+﻿namespace SparseInject
 {
-    public struct ContainerBuilderInfo
+    internal struct ContainerBuilderInfo
     {
         public readonly Container ParentContainer;
         public readonly int[] ContractsSparse;
@@ -27,4 +26,3 @@ namespace SparseInject
         }
     }
 }
-#endif

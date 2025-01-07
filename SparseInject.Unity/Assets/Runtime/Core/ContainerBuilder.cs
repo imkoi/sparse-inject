@@ -63,13 +63,11 @@ namespace SparseInject
             return BuildInternal(null, null);
         }
 
-#if DEBUG
         internal ContainerBuilderInfo GetContainerBuilderInfo()
         {
             return new ContainerBuilderInfo(_parentContainer, _contractsSparse, _contractsDense,
                 _contractsConcretesIndices, _concretes, _concretesCount);
         }
-#endif
 
         internal Container BuildInternal(Type containerType, Container parentContainer)
         {
