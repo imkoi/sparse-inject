@@ -1,15 +1,18 @@
-﻿namespace SparseInject.BenchmarkFramework;
+﻿using System.Collections.Generic;
 
-public class BenchmarkCategory
+namespace SparseInject.BenchmarkFramework
 {
-    public string Name { get; }
-    public IReadOnlyList<Benchmark> Benchmarks { get; }
-    public int Samples { get; }
-
-    public BenchmarkCategory(string name, Benchmark[] benchmarks, int samples)
+    public class BenchmarkCategory
     {
-        Name = name;
-        Samples = samples;
-        Benchmarks = new List<Benchmark>(benchmarks);
-    } 
+        public string Name { get; }
+        public IReadOnlyList<Benchmark> Benchmarks { get; }
+        public int Samples { get; }
+
+        public BenchmarkCategory(string name, Benchmark[] benchmarks, int samples)
+        {
+            Name = name;
+            Samples = samples;
+            Benchmarks = new List<Benchmark>(benchmarks);
+        } 
+    }
 }

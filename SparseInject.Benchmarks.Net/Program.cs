@@ -7,7 +7,12 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        var benchmarkRunner = new BenchmarkRunner(args, new DotNetMemorySnapshotFactory());
+        var benchmarkRunner = new BenchmarkRunner(
+            args,
+            null,
+            new DotNetMemorySnapshotFactory(),
+            new DotNetResourceCleaner(),
+            new DotNetBenchmarkMeasurer());
         
         benchmarkRunner.AddBenchmarkCategory("transient-register", new Benchmark[]
         {

@@ -1,15 +1,16 @@
-﻿namespace SparseInject.BenchmarkFramework;
-
-public class MemorySnapshot
+﻿namespace SparseInject.BenchmarkFramework
 {
-    public float WorkingSetMb { get; }
-    public float PrivateMemoryMb { get; }
-    public float VirtualMemoryMb { get; }
-
-    public MemorySnapshot(float workingSetMb, float privateMemoryMb, float virtualMemoryMb)
+    public class MemorySnapshot
     {
-        WorkingSetMb = workingSetMb;
-        PrivateMemoryMb = privateMemoryMb;
-        VirtualMemoryMb = virtualMemoryMb;
+        public float WorkingSetMb { get; }
+        public float PrivateMemoryMb { get; }
+        public float VirtualMemoryMb { get; }
+
+        public MemorySnapshot(float workingSetMb, float privateMemoryMb, float virtualMemoryMb)
+        {
+            WorkingSetMb = workingSetMb;
+            PrivateMemoryMb = privateMemoryMb;
+            VirtualMemoryMb = virtualMemoryMb;
+        }
     }
 }

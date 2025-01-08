@@ -1,6 +1,7 @@
-﻿namespace SparseInject.BenchmarkFramework;
-
-public interface IMemorySnapshotFactory
+﻿namespace SparseInject.BenchmarkFramework
 {
-    public MemorySnapshot Create();
+    public interface IMemorySnapshotFactory
+    {
+        public MemorySnapshot Create();
+    }
 }

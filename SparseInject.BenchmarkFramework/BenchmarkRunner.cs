@@ -1,91 +1,83 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
-namespace SparseInject.BenchmarkFramework;
-
-public class BenchmarkRunner
+namespace SparseInject.BenchmarkFramework
 {
-    private string[] _args;
-    private readonly IMemorySnapshotFactory _memorySnapshotFactory;
-    private readonly List<BenchmarkCategory> _categories;
-
-    public BenchmarkRunner(string[] args, IMemorySnapshotFactory memorySnapshotFactory)
+    public class BenchmarkRunner
     {
-        _args = args;
-        _memorySnapshotFactory = memorySnapshotFactory;
-        _categories = new List<BenchmarkCategory>(8);
-    }
+        private const string RunBenchmarkCommand = "--run-benchmark";
     
-    public void AddBenchmarkCategory(string categoryName, Benchmark[] benchmarks, int samples = 1)
-    {
-        _categories.Add(new BenchmarkCategory(categoryName, benchmarks, samples));
-    }
+        private string[] _args;
+        private readonly IReportStorage _reportStorage;
+        private readonly IMemorySnapshotFactory _memorySnapshotFactory;
+        private readonly IResourceCleaner _resourceCleaner;
+        private readonly IBenchmarkMeasurer _benchmarkMeasurer;
 
-    public string Run()
-    {
-        if (_args == null || _args.Length == 0)
+        private readonly List<BenchmarkCategory> _categories;
+
+        public bool IsRootStart => _args == null || !_args.Any(arg => arg.Contains(RunBenchmarkCommand)) ;
+
+        public BenchmarkRunner(
+            string[] args,
+            IReportStorage reportStorage,
+            IMemorySnapshotFactory memorySnapshotFactory,
+            IResourceCleaner resourceCleaner,
+            IBenchmarkMeasurer benchmarkMeasurer)
         {
-            var args = new List<string>(64);
-
-            foreach (var category in _categories)
-            {
-                foreach (var benchmark in category.Benchmarks)
-                {
-                    args.Add($"--run-benchmark {category.Name}:{benchmark.Name}");
-                }
-            }
-
-            foreach (var arguments in args)
-            {
-                var executablePath = Process.GetCurrentProcess().MainModule.FileName;
-
-                var processStartInfo = new ProcessStartInfo
-                {
-                    FileName = executablePath,
-                    Arguments = arguments,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false, // Required to redirect streams
-                    CreateNoWindow = true    // Don't create a window
-                };
-                
-                using (var process = Process.Start(processStartInfo))
-                {
-                    if (process == null)
-                    {
-                        throw new InvalidOperationException("Failed to start benchmark process.");
-                    }
-
-                    // Read the output streams
-                    string output = process.StandardOutput.ReadToEnd();
-                    string error = process.StandardError.ReadToEnd();
-
-                    process.WaitForExit();
-
-                    if (process.ExitCode != 0)
-                    {
-                        throw new InvalidOperationException($"Benchmark process exited with code {process.ExitCode}: {error}");
-                    }
-
-                    Console.WriteLine(output.Trim());
-                }
-            }
+            _args = args;
+            _reportStorage = reportStorage;
+            _memorySnapshotFactory = memorySnapshotFactory;
+            _resourceCleaner = resourceCleaner;
+            _benchmarkMeasurer = benchmarkMeasurer;
+            _categories = new List<BenchmarkCategory>(8);
         }
-        else
+    
+        public void AddBenchmarkCategory(string categoryName, Benchmark[] benchmarks, int samples = 1)
         {
-            var singleArgument = string.Join(" ", _args);
+            _categories.Add(new BenchmarkCategory(categoryName, benchmarks, samples));
+        }
 
-            var benchmarkInfo = GetBenchmarkInfoByArguments(singleArgument);
-            var benchmark = benchmarkInfo.benchmark;
-            
+        public string Run()
+        {
+            if (IsRootStart)
+            {
+                foreach (var category in _categories)
+                {
+                    foreach (var benchmark in category.Benchmarks)
+                    {
+                        var categoryName = category.Name;
+                        var benchmarkName = benchmark.Name;
+                        var samples = category.Samples;
+
+                        var arguments = $"{RunBenchmarkCommand} {category.Name}:{benchmark.Name}";
+                        
+                        _benchmarkMeasurer.Measure(categoryName, benchmarkName, samples, arguments, _reportStorage);
+                    }
+                }
+            }
+            else
+            {
+                var launchArgument = string.Join(" ", _args);
+                var benchmarkInfo = GetBenchmarkInfoByArguments(launchArgument);
+                var benchmark = benchmarkInfo.benchmark;
+
+                RunBenchmark(benchmarkInfo.category.Name, benchmark);
+            }
+
+            return string.Empty;
+        }
+
+        private void RunBenchmark(string categoryName, Benchmark benchmark)
+        {
             var stopwatch = Stopwatch.StartNew();
             stopwatch.Stop();
             stopwatch.Restart();
             
             benchmark.BeforeExecute();
-                
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
+            
+            _resourceCleaner.CleanResources();
 
             stopwatch.Restart();
             benchmark.Execute();
@@ -93,72 +85,25 @@ public class BenchmarkRunner
 
             var memorySnapshot = _memorySnapshotFactory.Create();
 
-            Console.WriteLine($"[{benchmarkInfo.category.Name}] {benchmark.Name}: {stopwatch.Elapsed.TotalMilliseconds.ToString("F2")} ms / {memorySnapshot.PrivateMemoryMb.ToString("F2")} mb");
+            Console.WriteLine($"[{categoryName}] {benchmark.Name}: {stopwatch.Elapsed.TotalMilliseconds.ToString("F2")} ms / {memorySnapshot.PrivateMemoryMb.ToString("F2")} mb");
         }
 
-        return string.Empty;
-    }
-
-    public string RunBenchmark(Benchmark benchmark)
-    {
-        var executablePath = Process.GetCurrentProcess().MainModule.FileName;
-
-        var arguments = $"--run-benchmark \"{benchmark.Name}\"";
-
-        var processStartInfo = new ProcessStartInfo
+        private (BenchmarkCategory category, Benchmark benchmark) GetBenchmarkInfoByArguments(string targetArguments)
         {
-            FileName = executablePath,
-            Arguments = arguments,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false, // Required to redirect streams
-            CreateNoWindow = true    // Don't create a window
-        };
-
-        try
-        {
-            using (var process = Process.Start(processStartInfo))
+            foreach (var category in _categories)
             {
-                if (process == null)
+                foreach (var benchmark in category.Benchmarks)
                 {
-                    throw new InvalidOperationException("Failed to start benchmark process.");
-                }
+                    var arguments = $"--run-benchmark {category.Name}:{benchmark.Name}";
 
-                // Read the output streams
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-
-                process.WaitForExit();
-
-                if (process.ExitCode != 0)
-                {
-                    throw new InvalidOperationException($"Benchmark process exited with code {process.ExitCode}: {error}");
-                }
-
-                return output.Trim();
-            }
-        }
-        catch (Exception ex)
-        {
-            return $"Error running benchmark {benchmark.Name}: {ex.Message}";
-        }
-    }
-
-    private (BenchmarkCategory category, Benchmark benchmark) GetBenchmarkInfoByArguments(string targetArguments)
-    {
-        foreach (var category in _categories)
-        {
-            foreach (var benchmark in category.Benchmarks)
-            {
-                var arguments = $"--run-benchmark {category.Name}:{benchmark.Name}";
-
-                if (targetArguments == arguments)
-                {
-                    return (category, benchmark);
+                    if (targetArguments == arguments)
+                    {
+                        return (category, benchmark);
+                    }
                 }
             }
-        }
         
-        return (null, null);
+            return (null, null);
+        }
     }
 }
