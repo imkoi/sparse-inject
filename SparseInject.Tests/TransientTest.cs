@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System;
+using FluentAssertions;
 using NUnit.Framework;
 using SparseInject;
 
@@ -226,5 +227,17 @@ public class TransientTest
 
         firstValue.Should().NotBe(secondValue);
         firstValue.Should().NotBe(thirdValue);
+    }
+    
+    [Test]
+    public void Container_WhenActionRegisteredWithNull_ThrowArgumentNullException()
+    {
+        // Setup
+        var builder = new ContainerBuilder();
+        
+        builder.Invoking(subject => subject.Register(null))
+            .Should()
+            .Throw<ArgumentNullException>()
+            .Where(exception => exception.ParamName.Equals("registerMethod"));
     }
 }
