@@ -7,6 +7,7 @@ namespace Utilities
 {
     public class NativeResolverGenerator
     {
+        [Ignore("Not need for tests")]
         [Test]
         [TestCase(6)]
         public void GenerateNativeResolver(int depth)
