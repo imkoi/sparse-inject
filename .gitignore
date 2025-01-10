@@ -398,7 +398,7 @@ FodyWeavers.xsd
 
 
 
-# UNITY PROJECT
+# UNITY PACKAGE PROJECT
 SparseInject.Unity/[Ll]ibrary/
 SparseInject.Unity/[Tt]emp/
 SparseInject.Unity/[Oo]bj/
@@ -433,6 +433,44 @@ SparseInject.Unity/*.pdb.meta
 SparseInject.Unity/*.mdb.meta
 
 SparseInject.Unity/sysinfo.txt
+
+
+# UNITY BENCHMARK PROJECT
+SparseInject.Benchmark.Unity/[Ll]ibrary/
+SparseInject.Benchmark.Unity/[Tt]emp/
+SparseInject.Benchmark.Unity/[Oo]bj/
+SparseInject.Benchmark.Unity/[Bb]uild/
+SparseInject.Benchmark.Unity/[Bb]uilds/
+SparseInject.Benchmark.Unity/[Ll]ogs/
+SparseInject.Benchmark.Unity/[Mm]emoryCaptures/
+
+SparseInject.Benchmark.Unity/.idea/
+SparseInject.Benchmark.Unity/.vs/
+SparseInject.Benchmark.Unity/.gradle/
+
+SparseInject.Benchmark.Unity/ExportedObj/
+SparseInject.Benchmark.Unity/.consulo/
+SparseInject.Benchmark.Unity/*.csproj
+SparseInject.Benchmark.Unity/*.suo
+SparseInject.Benchmark.Unity/*.tmp
+SparseInject.Benchmark.Unity/*.user
+SparseInject.Benchmark.Unity/*.userprefs
+SparseInject.Benchmark.Unity/*.pidb
+SparseInject.Benchmark.Unity/*.booproj
+SparseInject.Benchmark.Unity/*.svd
+SparseInject.Benchmark.Unity/*.sln
+SparseInject.Benchmark.Unity/*.pdb
+SparseInject.Benchmark.Unity/*.mdb
+SparseInject.Benchmark.Unity/*.opendb
+SparseInject.Benchmark.Unity/*.VC.db
+SparseInject.Benchmark.Unity/.collabignore
+
+SparseInject.Unity/*.pidb.meta
+SparseInject.Unity/*.pdb.meta
+SparseInject.Unity/*.mdb.meta
+
+SparseInject.Unity/sysinfo.txt
+
 
 *.apk
 *.unitypackage
