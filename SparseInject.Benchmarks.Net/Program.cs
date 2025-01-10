@@ -1,7 +1,7 @@
-﻿
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using SparseInject.BenchmarkFramework;
-
-namespace SparseInject.Benchmarks.Net;
 
 public class Program
 {
@@ -31,6 +31,12 @@ public class Program
             new DotNetBenchmarkMeasurer(),
             progress);
         
+        benchmarkRunner.AddBenchmarkCategory("type-id-provider", new Scenario[]
+        {
+            new TypeIdProviderScenario(),
+            new DictionaryScenario(),
+        }, 10);
+        
         benchmarkRunner.AddBenchmarkCategory("transient-register", new Scenario[]
         {
             new SparseInjectTransientRegisterScenario(),
@@ -51,7 +57,7 @@ public class Program
             new SparseInjectTransientRegisterAndBuildScenario(),
             new VContainerTransientRegisterAndBuildScenario(),
             new AutofacTransientRegisterAndBuildScenario(),
-            //new LightInjectTransientRegisterAndBuildBenchmark(),
+            new LightInjectTransientRegisterAndBuildScenario(),
         }, 5);
         
         benchmarkRunner.AddBenchmarkCategory("transient-resolve", new Scenario[]
@@ -60,7 +66,7 @@ public class Program
             new VContainerTransientResolveScenario(),
             new AutofacTransientResolveScenario(),
             new NativeTransientResolveScenario(),
-            //new LightInjectTransientResolveBenchmark(),
+            new LightInjectTransientResolveScenario(),
         }, 5);
         
         benchmarkRunner.AddBenchmarkCategory("transient-total", new Scenario[]
@@ -69,7 +75,7 @@ public class Program
             new VContainerTransientTotalScenario(),
             new AutofacTransientTotalScenario(),
             new NativeTransientTotalScenario(),
-            //new LightInjectTransientTotalBenchmark(),
+            new LightInjectTransientTotalScenario(),
         }, 5);
         
         var summary = await benchmarkRunner.RunAsync(cancellationTokenSource.Token);

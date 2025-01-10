@@ -127,15 +127,23 @@ namespace SparseInject.BenchmarkFramework
             
             _resourceCleaner.CleanResources();
             
-            var before = _memorySnapshotFactory.Create();
+            var beforeMemorySnapshot = _memorySnapshotFactory.Create();
+            var executeCount = scenario.ExecuteCount;
 
             stopwatch.Restart();
-            scenario.Execute();
+
+            for (var i = 0; i < executeCount; i++)
+            {
+                scenario.Execute();
+            }
+            
             stopwatch.Stop();
 
-            var afterMemorySnapshot = _memorySnapshotFactory.Create(before);
+            var afterMemorySnapshot = _memorySnapshotFactory.Create(beforeMemorySnapshot);
 
-            return new BenchmarkSampleReport(stopwatch.Elapsed, afterMemorySnapshot.PrivateMemoryMb);
+            var time = TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / executeCount);
+
+            return new BenchmarkSampleReport(time, afterMemorySnapshot.PrivateMemoryMb);
         }
 
         private (BenchmarkCategory category, Scenario scenario) GetScenarioInfoByArguments(string arguments)
