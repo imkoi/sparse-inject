@@ -2,7 +2,6 @@
 using NUnit.Framework;
 using SparseInject;
 
-[TestFixture]
 public class SingletonTest
 {
     private const int DefaultMaxHealth = 100;

@@ -3,7 +3,6 @@ using FluentAssertions;
 using NUnit.Framework;
 using SparseInject;
 
-[TestFixture]
 public class ExtendCapacityTest
 {
     private class Dependency : IDisposable

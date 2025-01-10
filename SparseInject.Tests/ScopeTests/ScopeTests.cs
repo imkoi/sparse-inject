@@ -4,7 +4,6 @@ using SparseInject;
 using SparseInject.Tests.Scopes;
 using SparseInject.Tests.Simple;
 
-[TestFixture]
 public class ScopeTests
 {
     [Test]

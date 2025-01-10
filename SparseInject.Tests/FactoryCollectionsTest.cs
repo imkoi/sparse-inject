@@ -5,7 +5,6 @@ using NSubstitute;
 using NUnit.Framework;
 using SparseInject;
 
-[TestFixture]
 public class FactoryCollectionsTest
 {
     private class Player : IPlayer

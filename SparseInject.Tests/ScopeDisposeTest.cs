@@ -3,7 +3,6 @@ using FluentAssertions;
 using NUnit.Framework;
 using SparseInject;
 
-[TestFixture]
 public class ScopeDisposeTest
 {
     [Test]

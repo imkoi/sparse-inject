@@ -3,7 +3,6 @@ using FluentAssertions;
 using NUnit.Framework;
 using SparseInject;
 
-[TestFixture]
 public class TransientTest
 {
     private const int DefaultMaxHealth = 100;

@@ -3,7 +3,6 @@ using NUnit.Framework;
 using SparseInject;
 using SparseInject.ReflectionBaking.Tests.Singleton;
 
-[TestFixture]
 public class SingletonReflectionBakingTest
 {
     [Test]

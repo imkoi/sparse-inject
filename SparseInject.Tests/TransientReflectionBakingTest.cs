@@ -3,7 +3,6 @@ using NUnit.Framework;
 using SparseInject;
 using SparseInject.ReflectionBaking.Tests.Transient;
 
-[TestFixture]
 public class TransientReflectionBakingTest
 {
     [Test]

@@ -3,7 +3,6 @@ using NSubstitute;
 using NUnit.Framework;
 using SparseInject;
 
-[TestFixture]
 public class TransientWithDependenciesTest
 {
     private class PlayerWithDependencies : IPlayerWithDependencies, IPlayerTwo, IPlayerThree

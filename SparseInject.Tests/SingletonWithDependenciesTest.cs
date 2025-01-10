@@ -2,7 +2,6 @@
 using NUnit.Framework;
 using SparseInject;
 
-[TestFixture]
 public class SingletonWithDependenciesTest
 {
     private class PlayerWithDependencies : IPlayerWithDependencies, IPlayerTwo, IPlayerThree

@@ -4,7 +4,6 @@ using NSubstitute;
 using NUnit.Framework;
 using SparseInject;
 
-[TestFixture]
 public class DisposeTest
 {
     private class DisposeCounter : IDisposable

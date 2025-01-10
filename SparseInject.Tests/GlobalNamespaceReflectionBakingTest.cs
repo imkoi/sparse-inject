@@ -3,7 +3,6 @@ using NUnit.Framework;
 using SparseInject;
 using SparseInject.ReflectionBaking.Tests.GlobalNamespace;
 
-[TestFixture]
 public class GlobalNamespaceReflectionBakingTest
 {
     [Test]

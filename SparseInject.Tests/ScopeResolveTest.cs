@@ -3,7 +3,6 @@ using FluentAssertions;
 using NUnit.Framework;
 using SparseInject;
 
-[TestFixture]
 public class ScopeResolveTest
 {
     private class ScopeA : Scope { }

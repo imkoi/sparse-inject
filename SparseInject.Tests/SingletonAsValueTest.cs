@@ -3,7 +3,6 @@ using NSubstitute;
 using NUnit.Framework;
 using SparseInject;
 
-[TestFixture]
 public class SingletonAsValueTest
 {
     private class PlayerWithDependencies : IPlayerWithDependencies, IPlayerTwo, IPlayerThree

@@ -3,7 +3,6 @@ using NUnit.Framework;
 using SparseInject;
 using SparseInject.ReflectionBaking.Tests.Scope;
 
-[TestFixture]
 public class ScopeReflectionBakingTest
 {
     [Test]

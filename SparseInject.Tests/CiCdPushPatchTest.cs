@@ -5,7 +5,6 @@ using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 
-[TestFixture]
 public class CiCdPushPatchTest
 {
     private static readonly HashSet<string> IgnoredFiles = new HashSet<string>()

@@ -3,7 +3,6 @@ using FluentAssertions;
 using NUnit.Framework;
 using SparseInject;
 
-[TestFixture]
 public class CircularDependencyTest
 {
     private class A0 { public A0(A1 value) { } }

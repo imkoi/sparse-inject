@@ -6,7 +6,6 @@ using NUnit.Framework;
 using SparseInject;
 using SparseInject.ReflectionBaking.Tests.PartialBaking;
 
-[TestFixture]
 public class GraphTest
 {
     private class DependencyA : IDisposable
