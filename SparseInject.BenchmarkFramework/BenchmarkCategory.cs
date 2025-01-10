@@ -5,14 +5,14 @@ namespace SparseInject.BenchmarkFramework
     public class BenchmarkCategory
     {
         public string Name { get; }
-        public IReadOnlyList<Benchmark> Benchmarks { get; }
+        public IReadOnlyList<Scenario> Benchmarks { get; }
         public int Samples { get; }
 
-        public BenchmarkCategory(string name, Benchmark[] benchmarks, int samples)
+        public BenchmarkCategory(string name, Scenario[] benchmarks, int samples)
         {
             Name = name;
             Samples = samples;
-            Benchmarks = new List<Benchmark>(benchmarks);
+            Benchmarks = new List<Scenario>(benchmarks);
         } 
     }
 }

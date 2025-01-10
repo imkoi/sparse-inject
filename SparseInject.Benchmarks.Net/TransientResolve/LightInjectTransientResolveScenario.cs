@@ -1,6 +1,6 @@
 ﻿using SparseInject.BenchmarkFramework;
 
-public class LightInjectTransientResolveBenchmark : Benchmark
+public class LightInjectTransientResolveScenario : Scenario
 {
     public override string Name => "LightInject";
     

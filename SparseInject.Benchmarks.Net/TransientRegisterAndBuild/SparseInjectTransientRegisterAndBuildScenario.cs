@@ -1,7 +1,7 @@
 ﻿using SparseInject;
 using SparseInject.BenchmarkFramework;
 
-public class SparseInjectTransientRegisterAndBuildBenchmark : Benchmark
+public class SparseInjectTransientRegisterAndBuildScenario : Scenario
 {
     public override string Name => "SparseInject";
     

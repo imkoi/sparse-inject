@@ -6,6 +6,7 @@
         <Nullable>disable</Nullable>
         <LangVersion>8</LangVersion>
         <RootNamespace>SparseInject</RootNamespace>
+        <IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
 
 </Project>

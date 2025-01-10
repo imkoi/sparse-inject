@@ -6,41 +6,38 @@ namespace SparseInject.BenchmarkFramework
 {
     public class DotNetBenchmarkMeasurer : IBenchmarkMeasurer
     {
-        public void Measure(string categoryName, string benchmarkName, int samples, string args, IReportStorage storage)
+        public void Measure(string categoryName, string benchmarkName)
         {
-            for (var i = 0; i < samples; i++)
+            var arguments = $"{BenchmarkConstants.RunBenchmarkCommand} {categoryName}:{benchmarkName}";
+            var processModule = Process.GetCurrentProcess().MainModule;
+            
+            if (processModule != null)
             {
-                var executablePath = Process.GetCurrentProcess().MainModule.FileName;
+                var executablePath = processModule.FileName;
 
                 var processStartInfo = new ProcessStartInfo
                 {
                     FileName = executablePath,
-                    Arguments = args,
-                    RedirectStandardOutput = true,
+                    Arguments = arguments,
                     RedirectStandardError = true,
-                    UseShellExecute = false, // Required to redirect streams
-                    CreateNoWindow = true    // Don't create a window
+                    UseShellExecute = false,
+                    CreateNoWindow = true
                 };
+
+                using var process = Process.Start(processStartInfo);
                 
-                using (var process = Process.Start(processStartInfo))
+                if (process == null)
                 {
-                    if (process == null)
-                    {
-                        throw new InvalidOperationException("Failed to start benchmark process.");
-                    }
+                    throw new InvalidOperationException("Failed to start benchmark process.");
+                }
 
-                    // Read the output streams
-                    var output = process.StandardOutput.ReadToEnd();
-                    var error = process.StandardError.ReadToEnd();
+                var error = process.StandardError.ReadToEnd();
 
-                    process.WaitForExit();
+                process.WaitForExit();
 
-                    if (process.ExitCode != 0)
-                    {
-                        throw new InvalidOperationException($"Benchmark process exited with code {process.ExitCode}: {error}");
-                    }
-
-                    Console.WriteLine(output.Trim());
+                if (process.ExitCode != 0)
+                {
+                    throw new InvalidOperationException($"Benchmark process exited with code {process.ExitCode}: {error}");
                 }
             }
         }

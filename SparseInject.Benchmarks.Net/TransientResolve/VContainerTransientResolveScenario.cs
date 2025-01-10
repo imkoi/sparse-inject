@@ -1,7 +1,7 @@
 ﻿using SparseInject.BenchmarkFramework;
 using VContainer;
 
-public class VContainerTransientResolveBenchmark : Benchmark
+public class VContainerTransientResolveScenario : Scenario
 {
     public override string Name => "VContainer";
     

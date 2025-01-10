@@ -1,7 +1,7 @@
 ﻿using Autofac;
 using SparseInject.BenchmarkFramework;
 
-public class AutofacTransientRegisterBenchmark : Benchmark
+public class AutofacTransientRegisterAndBuildScenario : Scenario
 {
     public override string Name => "Autofac";
     
@@ -10,5 +10,7 @@ public class AutofacTransientRegisterBenchmark : Benchmark
         var builder = new ContainerBuilder();
         
         AutofacTransientContainerRegistrator.Register(builder);
+
+        builder.Build();
     }
 }

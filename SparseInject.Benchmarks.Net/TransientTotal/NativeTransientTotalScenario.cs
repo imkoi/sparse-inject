@@ -1,6 +1,6 @@
 ﻿using SparseInject.BenchmarkFramework;
 
-public class NativeTransientTotalBenchmark : Benchmark
+public class NativeTransientTotalScenario : Scenario
 {
     public override string Name => "NativeResolver";
     

@@ -1,7 +1,7 @@
 ﻿using SparseInject.BenchmarkFramework;
 using VContainer;
 
-public class VContainerTransientRegisterBenchmark : Benchmark
+public class VContainerTransientRegisterAndBuildScenario : Scenario
 {
     public override string Name => "VContainer";
     
@@ -10,5 +10,7 @@ public class VContainerTransientRegisterBenchmark : Benchmark
         var builder = new ContainerBuilder();
         
         VContainerTransientContainerRegistrator.Register(builder);
+
+        builder.Build();
     }
 }

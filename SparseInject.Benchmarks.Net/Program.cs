@@ -5,63 +5,89 @@ namespace SparseInject.Benchmarks.Net;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
+        var cancellationTokenSource = new CancellationTokenSource();
+
+        Console.CancelKeyPress += OnCancelKeyPress;
+
+        void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            Console.CancelKeyPress -= OnCancelKeyPress;
+            
+            cancellationTokenSource.Cancel();
+            cancellationTokenSource.Dispose();
+        }
+
+        var progress = new BenchmarkProgress();
+
+        progress.Changed += OnBenchmarkProgressChanged;
+        
         var benchmarkRunner = new BenchmarkRunner(
             args,
-            null,
+            new DiskReportStorage("C:/github/sparseinject/SparseInject.Benchmarks.Net/bin/Release/net8.0/temp_report.txt"),
             new DotNetMemorySnapshotFactory(),
             new DotNetResourceCleaner(),
-            new DotNetBenchmarkMeasurer());
+            new DotNetBenchmarkMeasurer(),
+            progress);
         
-        benchmarkRunner.AddBenchmarkCategory("transient-register", new Benchmark[]
+        benchmarkRunner.AddBenchmarkCategory("transient-register", new Scenario[]
         {
-            new SparseInjectTransientRegisterBenchmark(),
-            new VContainerTransientRegisterBenchmark(),
-            new AutofacTransientRegisterBenchmark(),
-            new LightInjectTransientRegisterBenchmark(),
-        }, 10);
+            new SparseInjectTransientRegisterScenario(),
+            new VContainerTransientRegisterScenario(),
+            new AutofacTransientRegisterScenario(),
+            new LightInjectTransientRegisterScenario(),
+        }, 5);
         
-        benchmarkRunner.AddBenchmarkCategory("transient-build", new Benchmark[]
+        benchmarkRunner.AddBenchmarkCategory("transient-build", new Scenario[]
         {
-            new SparseInjectTransientBuildBenchmark(),
-            new VContainerTransientBuildBenchmark(),
-            new AutofacTransientBuildBenchmark(),
-        }, 10);
+            new SparseInjectTransientBuildScenario(),
+            new VContainerTransientBuildScenario(),
+            new AutofacTransientBuildScenario(),
+        }, 5);
         
-        benchmarkRunner.AddBenchmarkCategory("transient-register-and-build", new Benchmark[]
+        benchmarkRunner.AddBenchmarkCategory("transient-register-and-build", new Scenario[]
         {
-            new SparseInjectTransientRegisterAndBuildBenchmark(),
-            new VContainerTransientRegisterAndBuildBenchmark(),
-            new AutofacTransientRegisterAndBuildBenchmark(),
+            new SparseInjectTransientRegisterAndBuildScenario(),
+            new VContainerTransientRegisterAndBuildScenario(),
+            new AutofacTransientRegisterAndBuildScenario(),
             //new LightInjectTransientRegisterAndBuildBenchmark(),
-        }, 10);
+        }, 5);
         
-        benchmarkRunner.AddBenchmarkCategory("transient-resolve", new Benchmark[]
+        benchmarkRunner.AddBenchmarkCategory("transient-resolve", new Scenario[]
         {
-            new SparseInjectTransientResolveBenchmark(),
-            new VContainerTransientResolveBenchmark(),
-            new AutofacTransientResolveBenchmark(),
-            new NativeTransientResolveBenchmark(),
+            new SparseInjectTransientResolveScenario(),
+            new VContainerTransientResolveScenario(),
+            new AutofacTransientResolveScenario(),
+            new NativeTransientResolveScenario(),
             //new LightInjectTransientResolveBenchmark(),
-        }, 10);
+        }, 5);
         
-        benchmarkRunner.AddBenchmarkCategory("transient-total", new Benchmark[]
+        benchmarkRunner.AddBenchmarkCategory("transient-total", new Scenario[]
         {
-            new SparseInjectTransientTotalBenchmark(),
-            new VContainerTransientTotalBenchmark(),
-            new AutofacTransientTotalBenchmark(),
-            new NativeTransientTotalBenchmark(),
+            new SparseInjectTransientTotalScenario(),
+            new VContainerTransientTotalScenario(),
+            new AutofacTransientTotalScenario(),
+            new NativeTransientTotalScenario(),
             //new LightInjectTransientTotalBenchmark(),
-        }, 10);
+        }, 5);
         
-        var summary = benchmarkRunner.Run();
+        var summary = await benchmarkRunner.RunAsync(cancellationTokenSource.Token);
+
+        progress.Changed -= OnBenchmarkProgressChanged;
 
         var isBenchmarkLauncher = args == null || args.Length == 0;
         
         if (isBenchmarkLauncher)
         {
-            Console.ReadLine();
+            Console.WriteLine(summary);
+        }
+
+        OnCancelKeyPress(null, null);
+
+        void OnBenchmarkProgressChanged(float value)
+        {
+            Console.WriteLine($"Benchmark progress: {value * 100f:F2}");
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Autofac;
 using SparseInject.BenchmarkFramework;
 
-public class AutofacTransientBuildBenchmark : Benchmark
+public class AutofacTransientBuildScenario : Scenario
 {
     public override string Name => "Autofac";
     

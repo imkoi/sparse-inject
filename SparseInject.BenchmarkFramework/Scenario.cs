@@ -1,6 +1,6 @@
 ﻿namespace SparseInject.BenchmarkFramework
 {
-    public abstract class Benchmark
+    public abstract class Scenario
     {
         public abstract string Name { get; }
     

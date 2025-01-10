@@ -18,5 +18,9 @@
     <ItemGroup>
       <ProjectReference Include="..\SparseInject\SparseInject.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="Infrastructure\" />
+    </ItemGroup>
 
 </Project>

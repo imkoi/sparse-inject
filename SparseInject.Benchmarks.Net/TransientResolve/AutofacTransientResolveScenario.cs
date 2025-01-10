@@ -1,17 +1,17 @@
-﻿using SparseInject;
+﻿using Autofac;
 using SparseInject.BenchmarkFramework;
 
-public class SparseInjectTransientResolveBenchmark : Benchmark
+public class AutofacTransientResolveScenario : Scenario
 {
-    public override string Name => "SparseInject";
+    public override string Name => "Autofac";
     
-    private Container _container;
+    private IContainer _container;
 
     public override void BeforeExecute()
     {
         var builder = new ContainerBuilder();
         
-        SparseInjectTransientContainerRegistrator.Register(builder);
+        AutofacTransientContainerRegistrator.Register(builder);
         
         _container = builder.Build();
     }
