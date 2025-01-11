@@ -11,9 +11,16 @@ namespace Trashbin
         {
             var sb = new StringBuilder();
             var typeNames = new List<string>();
-        
-            // Начинаем с класса Class0, 2 зависимости
-            GenerateClass("Class0", 1, 2, depth, sb, typeNames);
+
+            if (depth > 0)
+            {
+                GenerateClass("Class0", 1, 2, depth, sb, typeNames);
+            }
+            else
+            {
+                sb.AppendLine("public class Class0_Depth0 { }");
+                typeNames.Add("Class0_Depth0");
+            }
         
             return (sb.ToString(), typeNames);
         }
@@ -22,7 +29,7 @@ namespace Trashbin
         {
             typeNames.Add(className);
         
-            sb.AppendLine($"public class {className}");
+            sb.AppendLine($"public class {className}_Depth{currentLevel}");
             sb.AppendLine("{");
 
             if (currentLevel < maxDepth)

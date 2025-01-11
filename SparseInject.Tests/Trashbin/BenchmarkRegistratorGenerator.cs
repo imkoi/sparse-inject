@@ -80,36 +80,42 @@ namespace Trashbin
                 { BenchmarkType.Zenject, DefineType.UnityOnly },
             };
         
+        [TestCase(0, BenchmarkType.SparseInject)]
         [TestCase(1, BenchmarkType.SparseInject)]
         [TestCase(2, BenchmarkType.SparseInject)]
         [TestCase(3, BenchmarkType.SparseInject)]
         [TestCase(4, BenchmarkType.SparseInject)]
         [TestCase(5, BenchmarkType.SparseInject)]
         
+        [TestCase(0, BenchmarkType.VContainer)]
         [TestCase(1, BenchmarkType.VContainer)]
         [TestCase(2, BenchmarkType.VContainer)]
         [TestCase(3, BenchmarkType.VContainer)]
         [TestCase(4, BenchmarkType.VContainer)]
         [TestCase(5, BenchmarkType.VContainer)]
         
+        [TestCase(0, BenchmarkType.Autofac)]
         [TestCase(1, BenchmarkType.Autofac)]
         [TestCase(2, BenchmarkType.Autofac)]
         [TestCase(3, BenchmarkType.Autofac)]
         [TestCase(4, BenchmarkType.Autofac)]
         [TestCase(5, BenchmarkType.Autofac)]
         
+        [TestCase(0, BenchmarkType.LightInject)]
         [TestCase(1, BenchmarkType.LightInject)]
         [TestCase(2, BenchmarkType.LightInject)]
         [TestCase(3, BenchmarkType.LightInject)]
         [TestCase(4, BenchmarkType.LightInject)]
         [TestCase(5, BenchmarkType.LightInject)]
         
+        [TestCase(0, BenchmarkType.Reflex)]
         [TestCase(1, BenchmarkType.Reflex)]
         [TestCase(2, BenchmarkType.Reflex)]
         [TestCase(3, BenchmarkType.Reflex)]
         [TestCase(4, BenchmarkType.Reflex)]
         [TestCase(5, BenchmarkType.Reflex)]
         
+        [TestCase(0, BenchmarkType.Zenject)]
         [TestCase(1, BenchmarkType.Zenject)]
         [TestCase(2, BenchmarkType.Zenject)]
         [TestCase(3, BenchmarkType.Zenject)]

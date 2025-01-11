@@ -6,6 +6,7 @@ namespace Trashbin
     [Ignore("Not used in CI")]
     public class BenchmarkTypesGenerator
     {
+        [TestCase(0)]
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(3)]
