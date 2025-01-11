@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using SparseInject.BenchmarkFramework;
+using SparseInject.Benchmarks.Net;
 
 public class Program
 {
@@ -37,46 +38,8 @@ public class Program
             new DictionaryScenario(),
         }, 10);
         
-        benchmarkRunner.AddBenchmarkCategory("transient-register", new Scenario[]
-        {
-            new SparseInjectTransientRegisterScenario(),
-            new VContainerTransientRegisterScenario(),
-            new AutofacTransientRegisterScenario(),
-            new LightInjectTransientRegisterScenario(),
-        }, 5);
-        
-        benchmarkRunner.AddBenchmarkCategory("transient-build", new Scenario[]
-        {
-            new SparseInjectTransientBuildScenario(),
-            new VContainerTransientBuildScenario(),
-            new AutofacTransientBuildScenario(),
-        }, 5);
-        
-        benchmarkRunner.AddBenchmarkCategory("transient-register-and-build", new Scenario[]
-        {
-            new SparseInjectTransientRegisterAndBuildScenario(),
-            new VContainerTransientRegisterAndBuildScenario(),
-            new AutofacTransientRegisterAndBuildScenario(),
-            new LightInjectTransientRegisterAndBuildScenario(),
-        }, 5);
-        
-        benchmarkRunner.AddBenchmarkCategory("transient-resolve", new Scenario[]
-        {
-            new SparseInjectTransientResolveScenario(),
-            new VContainerTransientResolveScenario(),
-            new AutofacTransientResolveScenario(),
-            new NativeTransientResolveScenario(),
-            new LightInjectTransientResolveScenario(),
-        }, 5);
-        
-        benchmarkRunner.AddBenchmarkCategory("transient-total", new Scenario[]
-        {
-            new SparseInjectTransientTotalScenario(),
-            new VContainerTransientTotalScenario(),
-            new AutofacTransientTotalScenario(),
-            new NativeTransientTotalScenario(),
-            new LightInjectTransientTotalScenario(),
-        }, 5);
+        TransientBenchmarkUtility.AddCategories(benchmarkRunner, 10);
+        SingletonBenchmarkUtility.AddCategories(benchmarkRunner, 10);
         
         var summary = await benchmarkRunner.RunAsync(cancellationTokenSource.Token);
 
