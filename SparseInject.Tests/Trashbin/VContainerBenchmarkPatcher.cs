@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 
-namespace Utilities
+namespace Trashbin
 {
     public class VContainerBenchmarkPatcher
     {

@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using NUnit.Framework;
 
-namespace Utilities
+namespace Trashbin
 {
     public class NativeResolverGenerator
     {

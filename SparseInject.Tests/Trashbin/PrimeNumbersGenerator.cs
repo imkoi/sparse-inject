@@ -2,7 +2,7 @@
 using System.Linq;
 using NUnit.Framework;
 
-namespace Utilities
+namespace Trashbin
 {
     public class PrimeNumbersGenerator
     {

@@ -1,54 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
-using NUnit.Framework;
 
-namespace Utilities
+namespace Trashbin
 {
-    public class DependencyClassGenerator
+    public class Utilities
     {
-        [Ignore("dont run in unit test")]
-        [Test]
-        [TestCase(6)]
-        public void GenerateDependencies(int depth)
-        {
-            var (generatedCode, typeNames) = GenerateClasses(depth);
-
-            var codeLines = generatedCode.Split("\n");
-
-            for (int i = 0; i < codeLines.Length; i++)
-            {
-                codeLines[i] = codeLines[i].Replace("\n", "").Replace("\r", "");
-            }
-        
-            File.WriteAllLines($"C:/github/sparseinject/SparseInject.Tests/TestSources/GeneratedDependencies.cs", codeLines);
-
-
-            var sb = new StringBuilder();
-
-            sb.AppendLine("using SparseInject;");
-            sb.AppendLine();
-            sb.AppendLine("public static class ContainerBinder");
-            sb.AppendLine("{");
-            sb.AppendLine("    public static void BindDeps(ContainerBuilder container)");
-            sb.AppendLine("    {");
-            foreach (var typeName in typeNames)
-            {
-                sb.AppendLine($"        container.Register<{typeName}>();");
-            }
-            sb.AppendLine("    }");
-            sb.AppendLine("}");
-
-            var binder = sb.ToString().Split("\n");
-        
-            for (int i = 0; i < binder.Length; i++)
-            {
-                binder[i] = binder[i].Replace("\n", "").Replace("\r", "");
-            }
-        
-            File.WriteAllLines($"C:/github/sparseinject/SparseInject.Tests/TestSources/ContainerBinder.cs", binder);
-        }
-    
         public static (string source, List<string> typeNames) GenerateClasses(int depth)
         {
             var sb = new StringBuilder();
@@ -109,9 +67,14 @@ namespace Utilities
                 for (int i = 1; i <= dependencies; i++)
                 {
                     string dependentClass = $"{className}Dep{i}";
-                    GenerateClass(dependentClass, currentLevel + 1, dependencies + 3, maxDepth, sb, typeNames);
+                    GenerateClass(dependentClass, currentLevel + 1, dependencies * 2, maxDepth, sb, typeNames);
                 }
             }
+        }
+        
+        public static string GetRootFolder()
+        {
+            return string.Join("/", Directory.GetCurrentDirectory().Replace('\\', '/').Split("/").TakeWhile(path => path != "SparseInject.Tests"));
         }
     }
 }
