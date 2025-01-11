@@ -1,4 +1,5 @@
-﻿using SparseInject.BenchmarkFramework;
+﻿using LightInject;
+using SparseInject.BenchmarkFramework;
 
 public class LightInjectTransientTotalScenario : Scenario
 {

@@ -1,4 +1,5 @@
-﻿using SparseInject.BenchmarkFramework;
+﻿using LightInject;
+using SparseInject.BenchmarkFramework;
 
 public class LightInjectTransientResolveScenario : Scenario
 {
@@ -8,7 +9,7 @@ public class LightInjectTransientResolveScenario : Scenario
 
     public override void BeforeExecute()
     {
-        _container = new LightInject.ServiceContainer();
+        _container = new ServiceContainer();
         
         LightInjectTransientContainerRegistrator.Register(_container);
     }
