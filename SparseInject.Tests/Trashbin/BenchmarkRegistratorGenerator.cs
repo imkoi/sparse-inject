@@ -5,7 +5,7 @@ using NUnit.Framework;
 
 namespace Trashbin
 {
-    [Ignore("Not used in CI")]
+    [Ignore("Used only to generate classes for benchmarks")]
     public class BenchmarkRegistratorGenerator
     {
         public enum BenchmarkType
@@ -43,7 +43,7 @@ namespace Trashbin
                 { BenchmarkType.VContainer, "ContainerBuilder" },
                 { BenchmarkType.Autofac, "ContainerBuilder" },
                 { BenchmarkType.LightInject, "ServiceContainer" },
-                { BenchmarkType.Reflex, "ContainerBuilder;" },
+                { BenchmarkType.Reflex, "ContainerBuilder" },
                 { BenchmarkType.Zenject, "DiContainer" },
             };
 
@@ -54,8 +54,8 @@ namespace Trashbin
                 { BenchmarkType.VContainer, "builder.Register(typeof({0}), Lifetime.Transient)" },
                 { BenchmarkType.Autofac, "builder.RegisterType<{0}>()" },
                 { BenchmarkType.LightInject, "builder.Register<{0}>()" },
-                { BenchmarkType.Reflex, "using Reflex.Core;" },
-                { BenchmarkType.Zenject, "builder.Bind<Greeter>().AsTransient()" },
+                { BenchmarkType.Reflex, "builder.AddTransient(typeof({0}))" },
+                { BenchmarkType.Zenject, "builder.Bind<{0}>().AsTransient()" },
             };
 
         private static readonly Dictionary<BenchmarkType, string> _registerSingletonFormatMap =
@@ -65,8 +65,8 @@ namespace Trashbin
                 { BenchmarkType.VContainer, "builder.Register(typeof({0}), Lifetime.Singleton)" },
                 { BenchmarkType.Autofac, "builder.RegisterType<{0}>().SingleInstance()" },
                 { BenchmarkType.LightInject, "builder.RegisterSingleton<{0}>()" },
-                { BenchmarkType.Reflex, "using Reflex.Core;" },
-                { BenchmarkType.Zenject, "builder.Bind<Greeter>().AsSingle()" },
+                { BenchmarkType.Reflex, "builder.AddSingleton(typeof({0}))" },
+                { BenchmarkType.Zenject, "builder.Bind<{0}>().AsSingle()" },
             };
 
         private static readonly Dictionary<BenchmarkType, DefineType> _defineMap =
@@ -80,48 +80,48 @@ namespace Trashbin
                 { BenchmarkType.Zenject, DefineType.UnityOnly },
             };
         
-        [TestCase(0, BenchmarkType.SparseInject)]
         [TestCase(1, BenchmarkType.SparseInject)]
         [TestCase(2, BenchmarkType.SparseInject)]
         [TestCase(3, BenchmarkType.SparseInject)]
         [TestCase(4, BenchmarkType.SparseInject)]
         [TestCase(5, BenchmarkType.SparseInject)]
+        [TestCase(6, BenchmarkType.SparseInject)]
         
-        [TestCase(0, BenchmarkType.VContainer)]
         [TestCase(1, BenchmarkType.VContainer)]
         [TestCase(2, BenchmarkType.VContainer)]
         [TestCase(3, BenchmarkType.VContainer)]
         [TestCase(4, BenchmarkType.VContainer)]
         [TestCase(5, BenchmarkType.VContainer)]
+        [TestCase(6, BenchmarkType.VContainer)]
         
-        [TestCase(0, BenchmarkType.Autofac)]
         [TestCase(1, BenchmarkType.Autofac)]
         [TestCase(2, BenchmarkType.Autofac)]
         [TestCase(3, BenchmarkType.Autofac)]
         [TestCase(4, BenchmarkType.Autofac)]
         [TestCase(5, BenchmarkType.Autofac)]
+        [TestCase(6, BenchmarkType.Autofac)]
         
-        [TestCase(0, BenchmarkType.LightInject)]
         [TestCase(1, BenchmarkType.LightInject)]
         [TestCase(2, BenchmarkType.LightInject)]
         [TestCase(3, BenchmarkType.LightInject)]
         [TestCase(4, BenchmarkType.LightInject)]
         [TestCase(5, BenchmarkType.LightInject)]
+        [TestCase(6, BenchmarkType.LightInject)]
         
-        [TestCase(0, BenchmarkType.Reflex)]
         [TestCase(1, BenchmarkType.Reflex)]
         [TestCase(2, BenchmarkType.Reflex)]
         [TestCase(3, BenchmarkType.Reflex)]
         [TestCase(4, BenchmarkType.Reflex)]
         [TestCase(5, BenchmarkType.Reflex)]
+        [TestCase(6, BenchmarkType.Reflex)]
         
-        [TestCase(0, BenchmarkType.Zenject)]
         [TestCase(1, BenchmarkType.Zenject)]
         [TestCase(2, BenchmarkType.Zenject)]
         [TestCase(3, BenchmarkType.Zenject)]
         [TestCase(4, BenchmarkType.Zenject)]
         [TestCase(5, BenchmarkType.Zenject)]
-        public void GenerateTransientBenchmarkRegistrator(int depth, BenchmarkType benchmarkType)
+        [TestCase(6, BenchmarkType.Zenject)]
+        public void TransientGenerate(int depth, BenchmarkType benchmarkType)
         {
             var fileName = $"{benchmarkType}TransientRegistrator_Depth{depth}";
             var (_, typeNames) = Utilities.GenerateClasses(depth);
@@ -135,39 +135,45 @@ namespace Trashbin
         [TestCase(3, BenchmarkType.SparseInject)]
         [TestCase(4, BenchmarkType.SparseInject)]
         [TestCase(5, BenchmarkType.SparseInject)]
+        [TestCase(6, BenchmarkType.SparseInject)]
         
         [TestCase(1, BenchmarkType.VContainer)]
         [TestCase(2, BenchmarkType.VContainer)]
         [TestCase(3, BenchmarkType.VContainer)]
         [TestCase(4, BenchmarkType.VContainer)]
         [TestCase(5, BenchmarkType.VContainer)]
+        [TestCase(6, BenchmarkType.VContainer)]
         
         [TestCase(1, BenchmarkType.Autofac)]
         [TestCase(2, BenchmarkType.Autofac)]
         [TestCase(3, BenchmarkType.Autofac)]
         [TestCase(4, BenchmarkType.Autofac)]
         [TestCase(5, BenchmarkType.Autofac)]
+        [TestCase(6, BenchmarkType.Autofac)]
         
         [TestCase(1, BenchmarkType.LightInject)]
         [TestCase(2, BenchmarkType.LightInject)]
         [TestCase(3, BenchmarkType.LightInject)]
         [TestCase(4, BenchmarkType.LightInject)]
         [TestCase(5, BenchmarkType.LightInject)]
+        [TestCase(6, BenchmarkType.LightInject)]
         
         [TestCase(1, BenchmarkType.Reflex)]
         [TestCase(2, BenchmarkType.Reflex)]
         [TestCase(3, BenchmarkType.Reflex)]
         [TestCase(4, BenchmarkType.Reflex)]
         [TestCase(5, BenchmarkType.Reflex)]
+        [TestCase(6, BenchmarkType.Reflex)]
         
         [TestCase(1, BenchmarkType.Zenject)]
         [TestCase(2, BenchmarkType.Zenject)]
         [TestCase(3, BenchmarkType.Zenject)]
         [TestCase(4, BenchmarkType.Zenject)]
         [TestCase(5, BenchmarkType.Zenject)]
-        public void GenerateSingletonBenchmarkRegistrator(int depth, BenchmarkType benchmarkType)
+        [TestCase(6, BenchmarkType.Zenject)]
+        public void SingletonGenerate(int depth, BenchmarkType benchmarkType)
         {
-            var fileName = $"{benchmarkType}TransientRegistrator_Depth{depth}";
+            var fileName = $"{benchmarkType}SingletonRegistrator_Depth{depth}";
             var (_, typeNames) = Utilities.GenerateClasses(depth);
             
             GenerateBenchmarkRegistrator(fileName, typeNames, benchmarkType,
@@ -226,10 +232,16 @@ namespace Trashbin
                 binder[i] = binder[i].Replace("\n", "").Replace("\r", "");
             }
             
-            var registratorPath = Path.Combine(
-                Utilities.GetRootFolder(), $"SparseInject.Benchmarks.Net/{fileName}.cs");
-        
-            File.WriteAllLines(registratorPath, binder);
+            var fileDirectory = Path.Combine(Utilities.GetRootFolder(), "SparseInject.Benchmarks.Net/Registrators")
+                .Replace("\\", "/");
+            var typesFile = $"{fileDirectory}/{fileName}.cs";
+
+            if (!Directory.Exists(fileDirectory))
+            {
+                Directory.CreateDirectory(fileDirectory);
+            }
+
+            File.WriteAllLines(typesFile, binder);
         }
     }
 }

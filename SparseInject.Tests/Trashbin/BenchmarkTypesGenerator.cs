@@ -1,20 +1,21 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using NUnit.Framework;
 
 namespace Trashbin
 {
-    [Ignore("Not used in CI")]
+    [Ignore("Used only to generate classes for benchmarks")]
     public class BenchmarkTypesGenerator
     {
-        [TestCase(0)]
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(3)]
         [TestCase(4)]
         [TestCase(5)]
-        public void GenerateBenchmarkTypes(int depth)
+        [TestCase(6)]
+        public void Generate(int depth)
         {
-            var (generatedCode, _) = Utilities.GenerateClasses(depth);
+            var (generatedCode, types) = Utilities.GenerateClasses(depth);
 
             var codeLines = generatedCode.Split("\n");
 
@@ -23,8 +24,18 @@ namespace Trashbin
                 codeLines[i] = codeLines[i].Replace("\n", "").Replace("\r", "");
             }
         
-            var typesFile = Path.Combine(Utilities.GetRootFolder(), $"SparseInject.Benchmarks.Net/BenchmarkTypes_Depth{1}.cs");
+            var fileDirectory = Path.Combine(Utilities.GetRootFolder(), "SparseInject.Benchmarks.Net/BenchmarkTypes")
+                .Replace("\\", "/");
+            var typesFile = $"{fileDirectory}/BenchmarkTypes_Depth{depth}.cs";
+
+            if (!Directory.Exists(fileDirectory))
+            {
+                Directory.CreateDirectory(fileDirectory);
+            }
+            
             File.WriteAllLines(typesFile, codeLines);
+            
+            Console.WriteLine($"Generated files: {types.Count}");
         }
     }
 }
