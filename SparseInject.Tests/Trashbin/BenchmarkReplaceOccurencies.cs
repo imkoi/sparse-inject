@@ -83,7 +83,7 @@ namespace Trashbin
                         lines.Add("#endif");
                         break;
                     case BenchmarkRegistratorGenerator.DefineType.DotNetOnly:
-                        lines.Insert(0, "if #NET");
+                        lines.Insert(0, "#if NET");
                         lines.Add("#endif");
                         break;
                 }
