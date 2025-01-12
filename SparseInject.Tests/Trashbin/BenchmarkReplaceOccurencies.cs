@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace Trashbin
 {
-    //[Ignore("Used only to generate classes for benchmarks")]
+    [Ignore("Used only to generate classes for benchmarks")]
     public class BenchmarkReplaceNames
     {
         [TestCase(1, "Depth_1")]
