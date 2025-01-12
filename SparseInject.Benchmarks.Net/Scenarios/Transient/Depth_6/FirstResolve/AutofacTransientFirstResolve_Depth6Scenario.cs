@@ -1,4 +1,5 @@
-﻿using Autofac;
+#if NET
+using Autofac;
 using SparseInject.BenchmarkFramework;
 
 public class AutofacTransientFirstResolve_Depth6Scenario : Scenario
@@ -21,3 +22,4 @@ public class AutofacTransientFirstResolve_Depth6Scenario : Scenario
         _container.Resolve<Dependency_Depth6>();
     }
 }
+#endif

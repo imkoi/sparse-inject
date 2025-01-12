@@ -1,4 +1,5 @@
-﻿using Autofac;
+#if NET
+using Autofac;
 using SparseInject.BenchmarkFramework;
 
 public class AutofacSingletonBuild_Depth2Scenario : Scenario
@@ -19,3 +20,4 @@ public class AutofacSingletonBuild_Depth2Scenario : Scenario
         _builder.Build();
     }
 }
+#endif

@@ -1,4 +1,5 @@
-﻿using LightInject;
+#if NET
+using LightInject;
 using SparseInject.BenchmarkFramework;
 
 public class LightInjectTransientFirstResolve_Depth1Scenario : Scenario
@@ -19,3 +20,4 @@ public class LightInjectTransientFirstResolve_Depth1Scenario : Scenario
         _container.GetInstance(typeof(Dependency_Depth1));
     }
 }
+#endif

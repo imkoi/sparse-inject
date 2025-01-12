@@ -1,4 +1,5 @@
-﻿using LightInject;
+#if NET
+using LightInject;
 using SparseInject.BenchmarkFramework;
 
 public class LightInjectSingletonFirstResolve_Depth2Scenario : Scenario
@@ -19,3 +20,4 @@ public class LightInjectSingletonFirstResolve_Depth2Scenario : Scenario
         _container.GetInstance(typeof(Dependency_Depth2));
     }
 }
+#endif

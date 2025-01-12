@@ -1,4 +1,5 @@
-﻿using Autofac;
+#if NET
+using Autofac;
 using SparseInject.BenchmarkFramework;
 
 public class AutofacTransientRegisterAndBuild_Depth6Scenario : Scenario
@@ -14,3 +15,4 @@ public class AutofacTransientRegisterAndBuild_Depth6Scenario : Scenario
         builder.Build();
     }
 }
+#endif

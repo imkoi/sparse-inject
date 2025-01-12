@@ -1,4 +1,5 @@
-﻿using LightInject;
+#if NET
+using LightInject;
 using SparseInject.BenchmarkFramework;
 
 public class LightInjectSingletonTotal_Depth1Scenario : Scenario
@@ -14,3 +15,4 @@ public class LightInjectSingletonTotal_Depth1Scenario : Scenario
         container.GetInstance(typeof(Dependency_Depth1));
     }
 }
+#endif

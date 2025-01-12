@@ -1,4 +1,5 @@
-﻿using SparseInject.BenchmarkFramework;
+#if NET
+using SparseInject.BenchmarkFramework;
 
 public class LightInjectTransientRegisterAndBuild_Depth5Scenario : Scenario
 {
@@ -13,3 +14,4 @@ public class LightInjectTransientRegisterAndBuild_Depth5Scenario : Scenario
         builder.Compile();
     }
 }
+#endif
