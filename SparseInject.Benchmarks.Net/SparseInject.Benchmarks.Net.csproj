@@ -3,9 +3,8 @@
     <PropertyGroup>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>disable</Nullable>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
         <LangVersion>8</LangVersion>
+        <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
