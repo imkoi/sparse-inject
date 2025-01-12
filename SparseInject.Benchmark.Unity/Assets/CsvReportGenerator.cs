@@ -125,7 +125,7 @@ public class CsvReportGenerator : MonoBehaviour
         {
             var csvLines = new List<string>();
 
-            csvLines.Add("Container, Time[ms], Average, Min, Max, Dev");
+            csvLines.Add("Container;Average;Min;Max;Dev");
 
             foreach (var scenarioReport in categoryReport.ScenarioReports)
             {
@@ -136,7 +136,7 @@ public class CsvReportGenerator : MonoBehaviour
                 var max = $"{scenarioReport.MaxDuration.TotalMilliseconds:F2}";
                 var dev = $"{scenarioReport.ErrorDuration.TotalMilliseconds:F2}";
 
-                csvLines.Add($"{scenarioName}, {average}, {min}, {max}, {dev}");
+                csvLines.Add($"{scenarioName};{average};{min};{max};{dev}");
             }
 
             categories.Add((categoryReport.Name, csvLines));
