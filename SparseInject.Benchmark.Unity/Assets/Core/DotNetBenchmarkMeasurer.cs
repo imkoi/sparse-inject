@@ -1,5 +1,4 @@
-﻿#if NET
-using System;
+﻿using System;
 using System.Diagnostics;
 
 namespace SparseInject.BenchmarkFramework
@@ -43,4 +42,3 @@ namespace SparseInject.BenchmarkFramework
         }
     }
 }
-#endif
