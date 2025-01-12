@@ -49,5 +49,50 @@ namespace Trashbin
                 }
             }
         }
+        
+        [Test]
+        public void AddDefineToScenarios()
+        {
+            var path = "C:/github/sparseinject/SparseInject.Benchmarks.Net/Scenarios/";
+
+            var files = Directory.GetFiles(path, "*.cs", SearchOption.AllDirectories)
+                .Select(f => f.Replace("\\", "/"))
+                .ToArray();
+
+            foreach (var file in files)
+            {
+                var defineType = BenchmarkRegistratorGenerator.DefineType.None;
+                
+                var filesName = file.Split('/').Last();
+                
+                if (filesName.Contains("Autofac") || filesName.Contains("LightInject"))
+                {
+                    defineType = BenchmarkRegistratorGenerator.DefineType.DotNetOnly;
+                }
+                else if (filesName.Contains("Zenject") && filesName.Contains("Reflex"))
+                {
+                    defineType = BenchmarkRegistratorGenerator.DefineType.UnityOnly;
+                }
+                
+                var lines = File.ReadAllLines(file).ToList();
+                
+                switch (defineType)
+                {
+                    case BenchmarkRegistratorGenerator.DefineType.UnityOnly:
+                        lines.Insert(0, "#if UNITY_2017_1_OR_NEWER");
+                        lines.Add("#endif");
+                        break;
+                    case BenchmarkRegistratorGenerator.DefineType.DotNetOnly:
+                        lines.Insert(0, "if #NET");
+                        lines.Add("#endif");
+                        break;
+                }
+
+                if (defineType != BenchmarkRegistratorGenerator.DefineType.None)
+                {
+                    File.WriteAllLines(file, lines);
+                }
+            }
+        }
     }
 }
