@@ -16,7 +16,7 @@ namespace SparseInject.Benchmarks.Net
 
         private static void AddBenchmarkCategoryDepth1(BenchmarkRunner benchmarkRunner, int samples)
         {
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-depth1", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-depth1", new Scenario[]
             {
                 new SparseInjectTransientRegister_Depth1Scenario(),
                 new VContainerTransientRegister_Depth1Scenario(),
@@ -30,7 +30,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-build-depth1", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-build-depth1", new Scenario[]
             {
                 new SparseInjectTransientBuild_Depth1Scenario(),
                 new VContainerTransientBuild_Depth1Scenario(),
@@ -43,7 +43,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-and-build-depth1", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-and-build-depth1", new Scenario[]
             {
                 new SparseInjectTransientRegisterAndBuild_Depth1Scenario(),
                 new VContainerTransientRegisterAndBuild_Depth1Scenario(),
@@ -57,7 +57,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-first-resolve-depth1", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-first-resolve-depth1", new Scenario[]
             {
                 new SparseInjectTransientFirstResolve_Depth1Scenario(),
                 new VContainerTransientFirstResolve_Depth1Scenario(),
@@ -72,7 +72,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-second-resolve-depth1", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-second-resolve-depth1", new Scenario[]
             {
                 new SparseInjectTransientSecondResolve_Depth1Scenario(),
                 new VContainerTransientSecondResolve_Depth1Scenario(),
@@ -87,7 +87,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-total-depth1", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-total-depth1", new Scenario[]
             {
                 new SparseInjectTransientTotal_Depth1Scenario(),
                 new VContainerTransientTotal_Depth1Scenario(),
@@ -105,7 +105,7 @@ namespace SparseInject.Benchmarks.Net
 
         private static void AddBenchmarkCategoryDepth2(BenchmarkRunner benchmarkRunner, int samples)
         {
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-depth2", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-depth2", new Scenario[]
             {
                 new SparseInjectTransientRegister_Depth2Scenario(),
                 new VContainerTransientRegister_Depth2Scenario(),
@@ -119,7 +119,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-build-depth2", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-build-depth2", new Scenario[]
             {
                 new SparseInjectTransientBuild_Depth2Scenario(),
                 new VContainerTransientBuild_Depth2Scenario(),
@@ -132,7 +132,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-and-build-depth2", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-and-build-depth2", new Scenario[]
             {
                 new SparseInjectTransientRegisterAndBuild_Depth2Scenario(),
                 new VContainerTransientRegisterAndBuild_Depth2Scenario(),
@@ -146,7 +146,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-first-resolve-depth2", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-first-resolve-depth2", new Scenario[]
             {
                 new SparseInjectTransientFirstResolve_Depth2Scenario(),
                 new VContainerTransientFirstResolve_Depth2Scenario(),
@@ -161,7 +161,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-second-resolve-depth2", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-second-resolve-depth2", new Scenario[]
             {
                 new SparseInjectTransientSecondResolve_Depth2Scenario(),
                 new VContainerTransientSecondResolve_Depth2Scenario(),
@@ -176,7 +176,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-total-depth2", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-total-depth2", new Scenario[]
             {
                 new SparseInjectTransientTotal_Depth2Scenario(),
                 new VContainerTransientTotal_Depth2Scenario(),
@@ -194,7 +194,7 @@ namespace SparseInject.Benchmarks.Net
 
         private static void AddBenchmarkCategoryDepth3(BenchmarkRunner benchmarkRunner, int samples)
         {
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-depth3", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-depth3", new Scenario[]
             {
                 new SparseInjectTransientRegister_Depth3Scenario(),
                 new VContainerTransientRegister_Depth3Scenario(),
@@ -208,7 +208,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-build-depth3", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-build-depth3", new Scenario[]
             {
                 new SparseInjectTransientBuild_Depth3Scenario(),
                 new VContainerTransientBuild_Depth3Scenario(),
@@ -221,7 +221,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-and-build-depth3", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-and-build-depth3", new Scenario[]
             {
                 new SparseInjectTransientRegisterAndBuild_Depth3Scenario(),
                 new VContainerTransientRegisterAndBuild_Depth3Scenario(),
@@ -235,7 +235,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-first-resolve-depth3", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-first-resolve-depth3", new Scenario[]
             {
                 new SparseInjectTransientFirstResolve_Depth3Scenario(),
                 new VContainerTransientFirstResolve_Depth3Scenario(),
@@ -250,7 +250,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-second-resolve-depth3", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-second-resolve-depth3", new Scenario[]
             {
                 new SparseInjectTransientSecondResolve_Depth3Scenario(),
                 new VContainerTransientSecondResolve_Depth3Scenario(),
@@ -265,7 +265,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-total-depth3", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-total-depth3", new Scenario[]
             {
                 new SparseInjectTransientTotal_Depth3Scenario(),
                 new VContainerTransientTotal_Depth3Scenario(),
@@ -283,7 +283,7 @@ namespace SparseInject.Benchmarks.Net
 
         private static void AddBenchmarkCategoryDepth4(BenchmarkRunner benchmarkRunner, int samples)
         {
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-depth4", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-depth4", new Scenario[]
             {
                 new SparseInjectTransientRegister_Depth4Scenario(),
                 new VContainerTransientRegister_Depth4Scenario(),
@@ -297,7 +297,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-build-depth4", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-build-depth4", new Scenario[]
             {
                 new SparseInjectTransientBuild_Depth4Scenario(),
                 new VContainerTransientBuild_Depth4Scenario(),
@@ -310,7 +310,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-and-build-depth4", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-and-build-depth4", new Scenario[]
             {
                 new SparseInjectTransientRegisterAndBuild_Depth4Scenario(),
                 new VContainerTransientRegisterAndBuild_Depth4Scenario(),
@@ -324,7 +324,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-first-resolve-depth4", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-first-resolve-depth4", new Scenario[]
             {
                 new SparseInjectTransientFirstResolve_Depth4Scenario(),
                 new VContainerTransientFirstResolve_Depth4Scenario(),
@@ -339,7 +339,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-second-resolve-depth4", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-second-resolve-depth4", new Scenario[]
             {
                 new SparseInjectTransientSecondResolve_Depth4Scenario(),
                 new VContainerTransientSecondResolve_Depth4Scenario(),
@@ -354,7 +354,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-total-depth4", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-total-depth4", new Scenario[]
             {
                 new SparseInjectTransientTotal_Depth4Scenario(),
                 new VContainerTransientTotal_Depth4Scenario(),
@@ -372,7 +372,7 @@ namespace SparseInject.Benchmarks.Net
 
         private static void AddBenchmarkCategoryDepth5(BenchmarkRunner benchmarkRunner, int samples)
         {
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-depth5", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-depth5", new Scenario[]
             {
                 new SparseInjectTransientRegister_Depth5Scenario(),
                 new VContainerTransientRegister_Depth5Scenario(),
@@ -386,7 +386,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-build-depth5", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-build-depth5", new Scenario[]
             {
                 new SparseInjectTransientBuild_Depth5Scenario(),
                 new VContainerTransientBuild_Depth5Scenario(),
@@ -399,7 +399,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-and-build-depth5", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-and-build-depth5", new Scenario[]
             {
                 new SparseInjectTransientRegisterAndBuild_Depth5Scenario(),
                 new VContainerTransientRegisterAndBuild_Depth5Scenario(),
@@ -413,7 +413,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-first-resolve-depth5", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-first-resolve-depth5", new Scenario[]
             {
                 new SparseInjectTransientFirstResolve_Depth5Scenario(),
                 new VContainerTransientFirstResolve_Depth5Scenario(),
@@ -428,7 +428,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-second-resolve-depth5", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-second-resolve-depth5", new Scenario[]
             {
                 new SparseInjectTransientSecondResolve_Depth5Scenario(),
                 new VContainerTransientSecondResolve_Depth5Scenario(),
@@ -443,7 +443,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-total-depth5", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-total-depth5", new Scenario[]
             {
                 new SparseInjectTransientTotal_Depth5Scenario(),
                 new VContainerTransientTotal_Depth5Scenario(),
@@ -461,7 +461,7 @@ namespace SparseInject.Benchmarks.Net
 
         private static void AddBenchmarkCategoryDepth6(BenchmarkRunner benchmarkRunner, int samples)
         {
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-depth6", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-depth6", new Scenario[]
             {
                 new SparseInjectTransientRegister_Depth6Scenario(),
                 new VContainerTransientRegister_Depth6Scenario(),
@@ -475,7 +475,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-build-depth6", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-build-depth6", new Scenario[]
             {
                 new SparseInjectTransientBuild_Depth6Scenario(),
                 new VContainerTransientBuild_Depth6Scenario(),
@@ -488,7 +488,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-register-and-build-depth6", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-register-and-build-depth6", new Scenario[]
             {
                 new SparseInjectTransientRegisterAndBuild_Depth6Scenario(),
                 new VContainerTransientRegisterAndBuild_Depth6Scenario(),
@@ -502,7 +502,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-first-resolve-depth6", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-first-resolve-depth6", new Scenario[]
             {
                 new SparseInjectTransientFirstResolve_Depth6Scenario(),
                 new VContainerTransientFirstResolve_Depth6Scenario(),
@@ -517,7 +517,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-second-resolve-depth6", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-second-resolve-depth6", new Scenario[]
             {
                 new SparseInjectTransientSecondResolve_Depth6Scenario(),
                 new VContainerTransientSecondResolve_Depth6Scenario(),
@@ -532,7 +532,7 @@ namespace SparseInject.Benchmarks.Net
 #endif
             }, samples);
 
-            benchmarkRunner.AddBenchmarkCategory("singleton-total-depth6", new Scenario[]
+            benchmarkRunner.AddBenchmarkCategory("transient-total-depth6", new Scenario[]
             {
                 new SparseInjectTransientTotal_Depth6Scenario(),
                 new VContainerTransientTotal_Depth6Scenario(),
