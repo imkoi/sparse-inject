@@ -13,9 +13,9 @@ namespace Trashbin
         [TestCase(4, "Depth_4")]
         [TestCase(5, "Depth_5")]
         [TestCase(6, "Depth_6")]
-        public void TransientGenerate(int depth, string folderName)
+        public void RenameFileDepthLevel(int depth, string folderName)
         {
-            var path = $"C:/github/sparseinject/SparseInject.Benchmark.Unity/Assets/Benchmark/Scenarios/Singleton/{folderName}";
+            var path = $"C:/github/sparseinject/SparseInject.Benchmark.Net/Scenarios/Singleton/{folderName}";
 
             var files = Directory.GetFiles(path, "*.cs", SearchOption.AllDirectories)
                 .Select(f => f.Replace("\\", "/"))
@@ -58,7 +58,7 @@ namespace Trashbin
         [TestCase(6, "Depth_6", "Transient", "Singleton")]
         public void ReplaceFileName(int depth, string folderName, string replaceFrom, string replaceTo)
         {
-            var path = $"C:/github/sparseinject/SparseInject.Benchmark.Unity/Assets/Benchmark/Scenarios/Singleton/{folderName}";
+            var path = $"C:/github/sparseinject/SparseInject.Benchmark.Net/Scenarios/Singleton/{folderName}";
 
             var files = Directory.GetFiles(path, "*.cs", SearchOption.AllDirectories)
                 .Select(f => f.Replace("\\", "/"))
@@ -80,6 +80,24 @@ namespace Trashbin
                     {
                         File.Move(file, newName);
                     }
+                }
+            }
+        }
+        
+        [Test]
+        public void DeleteMetaFilesFromBenchmarkProject()
+        {
+            var path = $"C:/github/sparseinject/SparseInject.Benchmarks.Net/Scenarios";
+
+            var files = Directory.GetFiles(path, "*.meta", SearchOption.AllDirectories)
+                .Select(f => f.Replace("\\", "/"))
+                .ToArray();
+
+            foreach (var file in files)
+            {
+                if (file.EndsWith(".meta"))
+                {
+                    File.Delete(file);
                 }
             }
         }
