@@ -224,7 +224,6 @@ namespace SparseInject
             }
             else
             {
-                // TODO: this functional not work as expected
                 Array.Copy(_contractsConcretesIndices, index, _contractsConcretesIndices, index + 1, _lastContractsConcretesIndex - index);
 
                 _contractsConcretesIndices[index] = concreteIndex;
