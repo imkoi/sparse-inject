@@ -114,7 +114,7 @@ namespace SparseInject
                                 _contractIds.Add(parameterType, contractId);
                             }
                         }
-                        else if (concrete.IsScope()) // TODO: is it work as expected?
+                        else if (concrete.IsScope())
                         {
                             contractId = _contractIds.Count;
 

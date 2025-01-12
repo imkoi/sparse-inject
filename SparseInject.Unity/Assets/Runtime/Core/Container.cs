@@ -476,7 +476,6 @@ namespace SparseInject
 
             if (_parentContainer != null)
             {
-                // TODO: add test that have recursion case
                 return _parentContainer.ContractExist(contractId);
             }
 
