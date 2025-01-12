@@ -146,7 +146,7 @@ namespace SparseInject
                 ConstructExceptionRecursiveByReflection(x.ParameterType, stack, out exception);
             }
         
-            stack.RemoveAt(stack.Count - 1); // TODO: check if this code reachable
+            stack.RemoveAt(stack.Count - 1);
         }
     }
 }
