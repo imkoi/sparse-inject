@@ -17,8 +17,6 @@ public class Benchmark : MonoBehaviour
     {
         _cancellationTokenSource = new CancellationTokenSource();
         _progress = new BenchmarkProgress();
-        
-        _progress.Changed += ProgressChanged;
 
         var diskReportStorage = new DiskReportStorage(GetTempBenchmarkReportFile());
         var benchmarkRunner = new BenchmarkRunner(
@@ -28,6 +26,15 @@ public class Benchmark : MonoBehaviour
             new GarbageCollectorCleaner(),
             new DotNetBenchmarkMeasurer(),
             _progress);
+
+        if (benchmarkRunner.IsRootStart)
+        {
+            _progress.Changed += ProgressChanged;
+        }
+        else
+        {
+            _progressSlider.gameObject.SetActive(false);
+        }
         
         TransientBenchmarkUtility.AddCategories(benchmarkRunner, 10);
         SingletonBenchmarkUtility.AddCategories(benchmarkRunner, 10);
@@ -35,15 +42,22 @@ public class Benchmark : MonoBehaviour
         try
         {
             var benchmarkReport = await benchmarkRunner.RunAsync(_cancellationTokenSource.Token);
-            
-            File.WriteAllText(GetBenchmarkReportFile(), benchmarkReport.ToString());
+
+            if (benchmarkRunner.IsRootStart)
+            {
+                File.WriteAllText(GetBenchmarkReportFile(), benchmarkReport.ToString());
+            }
         }
         catch (Exception exception)
         {
             Debug.LogException(exception);
         }
-        
-        _progress.Changed -= ProgressChanged;
+        finally
+        {
+            _progress.Changed -= ProgressChanged;
+            
+            Application.Quit();
+        }
     }
 
     private void OnDestroy()

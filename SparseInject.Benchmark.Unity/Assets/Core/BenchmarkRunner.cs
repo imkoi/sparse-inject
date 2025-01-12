@@ -74,6 +74,8 @@ namespace SparseInject.BenchmarkFramework
                             
                             _progress.Report((float)sampleIndex / totalSamplesCount);
                         }
+
+                        await Task.Yield();
                     }
                 }
                 

@@ -5,6 +5,7 @@
         <Nullable>disable</Nullable>
         <LangVersion>8</LangVersion>
         <TargetFramework>net8.0</TargetFramework>
+        <OutputType>Exe</OutputType>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
