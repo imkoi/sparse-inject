@@ -179,7 +179,7 @@ namespace Trashbin
             GenerateBenchmarkRegistrator(fileName, typeNames, benchmarkType,
                 _usingMap, _builderTypeMap, _registerSingletonFormatMap);
         }
-        
+
         private void GenerateBenchmarkRegistrator(
             string fileName,
             List<string> types,
@@ -189,45 +189,51 @@ namespace Trashbin
             Dictionary<BenchmarkType, string> registerFormatMap)
         {
             var sb = new StringBuilder();
-
-            var defineSymbol = string.Empty;
-
-            switch (_defineMap[benchmarkType])
-            {
-                case DefineType.UnityOnly:
-                    defineSymbol = "UNITY_2017_1_OR_NEWER";
-                    break;
-                case DefineType.DotNetOnly:
-                    defineSymbol = "NET";
-                    break;
-            }
-
-            if (!string.IsNullOrEmpty(defineSymbol))
-            {
-                sb.AppendLine($"#if {defineSymbol}");
-            }
             
-            sb.AppendLine(usingMap[benchmarkType]);
-            sb.AppendLine();
-            sb.AppendLine($"public static class {fileName}");
-            sb.AppendLine("{");
-            sb.AppendLine($"    public static void Register({builderTypeMap[benchmarkType]} builder)");
-            sb.AppendLine("    {");
-            foreach (var typeName in types)
+            if (benchmarkType == BenchmarkType.VContainer)
             {
-                sb.AppendLine($"        {string.Format(registerFormatMap[benchmarkType], typeName)};");
-            }
-            sb.AppendLine("    }");
-            sb.AppendLine("}");
-            
-            if (!string.IsNullOrEmpty(defineSymbol))
-            {
+                sb.AppendLine("#if UNITY_2017_1_OR_NEWER");
+                AddBenchmarkRegistrator(fileName, types, sb, benchmarkType, usingMap, builderTypeMap, 
+                    new Dictionary<BenchmarkType, string>()
+                    {
+                        { BenchmarkType.VContainer, "builder.Register<{0}>(Lifetime.Singleton)" },
+                    });
                 sb.AppendLine("#endif");
+                
+                sb.AppendLine("#if NET");
+                AddBenchmarkRegistrator(fileName, types, sb, benchmarkType, usingMap, builderTypeMap, registerFormatMap);
+                sb.AppendLine("#endif");
+            }
+            else
+            {
+                var defineSymbol = string.Empty;
+
+                switch (_defineMap[benchmarkType])
+                {
+                    case DefineType.UnityOnly:
+                        defineSymbol = "UNITY_2017_1_OR_NEWER";
+                        break;
+                    case DefineType.DotNetOnly:
+                        defineSymbol = "NET";
+                        break;
+                }
+
+                if (!string.IsNullOrEmpty(defineSymbol))
+                {
+                    sb.AppendLine($"#if {defineSymbol}");
+                }
+            
+                AddBenchmarkRegistrator(fileName, types, sb, benchmarkType, usingMap, builderTypeMap, registerFormatMap);
+            
+                if (!string.IsNullOrEmpty(defineSymbol))
+                {
+                    sb.AppendLine("#endif");
+                }
             }
 
             var binder = sb.ToString().Split("\n");
         
-            for (int i = 0; i < binder.Length; i++)
+            for (var i = 0; i < binder.Length; i++)
             {
                 binder[i] = binder[i].Replace("\n", "").Replace("\r", "");
             }
@@ -242,6 +248,29 @@ namespace Trashbin
             }
 
             File.WriteAllLines(typesFile, binder);
+        }
+        
+        private void AddBenchmarkRegistrator(
+            string fileName,
+            List<string> types,
+            StringBuilder sb,
+            BenchmarkType benchmarkType, 
+            Dictionary<BenchmarkType, string> usingMap,
+            Dictionary<BenchmarkType, string> builderTypeMap,
+            Dictionary<BenchmarkType, string> registerFormatMap)
+        {
+            sb.AppendLine(usingMap[benchmarkType]);
+            sb.AppendLine();
+            sb.AppendLine($"public static class {fileName}");
+            sb.AppendLine("{");
+            sb.AppendLine($"    public static void Register({builderTypeMap[benchmarkType]} builder)");
+            sb.AppendLine("    {");
+            foreach (var typeName in types)
+            {
+                sb.AppendLine($"        {string.Format(registerFormatMap[benchmarkType], typeName)};");
+            }
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
         }
     }
 }
