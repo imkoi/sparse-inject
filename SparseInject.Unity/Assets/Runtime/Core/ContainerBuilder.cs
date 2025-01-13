@@ -43,19 +43,13 @@ namespace SparseInject
             _concretes = new Concrete[capacity];
             _contractsConcretesIndices = new int[capacity];
             
-            for (var i = 0; i < capacity; i++)
-            {
-                _contractsConcretesIndices[i] = -1;
-            }
+            ArrayUtilities.Fill(_contractsConcretesIndices, -1);
 
             capacity *= 2;
             _contractsSparse = new int[capacity];
             _contractsDense = new Contract[capacity];
-            
-            for (var i = 0; i < capacity; i++)
-            {
-                _contractsSparse[i] = -1;
-            }
+
+            ArrayUtilities.Fill(_contractsSparse, -1);
         }
         
         public Container Build()
@@ -99,14 +93,6 @@ namespace SparseInject
                 _concretesCount,
                 _valueDisposablesIndices,
                 _valueDisposablesCount);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetOrAddContractId<TContract>(out Type contractType)
-        {
-            contractType = typeof(TContract);
-
-            return GetOrAddContractId(contractType);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -154,10 +140,9 @@ namespace SparseInject
             return ref concrete;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void AddContract<T>(int concreteIndex)
+        private void AddContract(Type contractType, Type collectionContractType, int concreteIndex)
         {
-            var contractId = GetOrAddContractId<T>(out var contractType);
+            var contractId = GetOrAddContractId(contractType);
             var contractIndex = GetContractIndex(contractId);
             ref var contract = ref _contractsDense[contractIndex];
 
@@ -187,8 +172,7 @@ namespace SparseInject
             }
 
             // collection contract
-            
-            var collectionContractId = GetOrAddContractId<T[]>(out _);
+            var collectionContractId = GetOrAddContractId(collectionContractType);
             var collectionContractIndex = GetContractIndex(collectionContractId);
             ref var collectionContract = ref _contractsDense[collectionContractIndex];
 
@@ -268,10 +252,7 @@ namespace SparseInject
                 
                 Array.Resize(ref _contractsConcretesIndices, newSize);
 
-                for (var i = oldSize; i < newSize; i++)
-                {
-                    _contractsConcretesIndices[i] = -1;
-                }
+                ArrayUtilities.Fill(_contractsConcretesIndices, -1, oldSize);
             }
         }
 

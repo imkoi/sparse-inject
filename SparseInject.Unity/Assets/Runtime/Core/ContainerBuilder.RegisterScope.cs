@@ -47,7 +47,7 @@ namespace SparseInject
             
             ref var concrete = ref AddConcrete(typeof(TScopeConcrete), out var index);
 
-            AddContract<TScopeContract>(index);
+            AddContract(typeof(TScopeContract), typeof(TScopeContract[]), index);
 
             concrete.MarkScope();
             concrete.Value = install;

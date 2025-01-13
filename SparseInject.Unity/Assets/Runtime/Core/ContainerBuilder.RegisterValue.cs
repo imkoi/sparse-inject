@@ -18,8 +18,8 @@ namespace SparseInject
             }
             
             ref var concrete = ref AddConcrete(typeof(TConcreteContract), out var index);
-  
-            AddContract<TConcreteContract>(index);
+            
+            AddContract(typeof(TConcreteContract), typeof(TConcreteContract[]), index);
             
             concrete.MarkSingleton();
             concrete.MarkValue();
@@ -54,7 +54,7 @@ namespace SparseInject
 
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
 
-            AddContract<TContract>(index);
+            AddContract(typeof(TContract), typeof(TContract[]), index);
             
             concrete.MarkSingleton();
             concrete.MarkValue();
@@ -84,8 +84,8 @@ namespace SparseInject
             
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
 
-            AddContract<TContract0>(index);
-            AddContract<TContract1>(index);
+            AddContract(typeof(TContract0), typeof(TContract0[]), index);
+            AddContract(typeof(TContract1), typeof(TContract1[]), index);
 
             concrete.MarkSingleton();
             concrete.MarkValue();
@@ -116,9 +116,9 @@ namespace SparseInject
             
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
 
-            AddContract<TContract0>(index);
-            AddContract<TContract1>(index);
-            AddContract<TContract2>(index);
+            AddContract(typeof(TContract0), typeof(TContract0[]), index);
+            AddContract(typeof(TContract1), typeof(TContract1[]), index);
+            AddContract(typeof(TContract2), typeof(TContract2[]), index);
 
             concrete.MarkSingleton();
             concrete.MarkValue();

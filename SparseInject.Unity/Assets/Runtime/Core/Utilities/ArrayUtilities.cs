@@ -1,4 +1,4 @@
-namespace SparseInject
+﻿namespace SparseInject
 {
 #if UNITY_2017_1_OR_NEWER
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
