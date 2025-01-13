@@ -193,10 +193,14 @@ namespace Trashbin
             if (benchmarkType == BenchmarkType.VContainer)
             {
                 sb.AppendLine("#if UNITY_2017_1_OR_NEWER");
+                var registerMethod = registerFormatMap == _registerTransientFormatMap
+                    ? "builder.Register<{0}>(Lifetime.Transient)"
+                    : "builder.Register<{0}>(Lifetime.Singleton)";
+                
                 AddBenchmarkRegistrator(fileName, types, sb, benchmarkType, usingMap, builderTypeMap, 
-                    new Dictionary<BenchmarkType, string>()
+                    new Dictionary<BenchmarkType, string>
                     {
-                        { BenchmarkType.VContainer, "builder.Register<{0}>(Lifetime.Singleton)" },
+                        { BenchmarkType.VContainer, registerMethod },
                     });
                 sb.AppendLine("#endif");
                 

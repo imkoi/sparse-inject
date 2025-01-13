@@ -1,3 +1,107 @@
+#if UNITY_2017_1_OR_NEWER
+using VContainer;
+
+public static class VContainerTransientRegistrator_Depth4
+{
+    public static void Register(ContainerBuilder builder)
+    {
+        builder.Register<Dependency_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D1D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D1D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D1D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D1D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D1D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D1D6_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D1D7_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D1D8_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D2D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D2D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D2D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D2D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D2D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D2D6_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D2D7_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D2D8_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D3D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D3D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D3D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D3D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D3D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D3D6_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D3D7_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D3D8_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D4D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D4D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D4D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D4D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D4D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D4D6_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D4D7_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D4D8_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D5D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D5D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D5D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D5D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D5D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D5D6_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D5D7_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD1D5D8_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D1D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D1D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D1D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D1D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D1D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D1D6_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D1D7_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D1D8_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D2D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D2D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D2D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D2D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D2D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D2D6_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D2D7_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D2D8_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D3D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D3D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D3D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D3D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D3D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D3D6_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D3D7_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D3D8_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D4D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D4D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D4D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D4D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D4D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D4D6_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D4D7_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D4D8_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D5D1_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D5D2_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D5D3_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D5D4_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D5D5_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D5D6_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D5D7_Depth4>(Lifetime.Transient);
+        builder.Register<DependencyD2D5D8_Depth4>(Lifetime.Transient);
+    }
+}
+#endif
+#if NET
 using VContainer;
 
 public static class VContainerTransientRegistrator_Depth4
@@ -99,4 +203,5 @@ public static class VContainerTransientRegistrator_Depth4
         builder.Register(typeof(DependencyD2D5D8_Depth4), Lifetime.Transient);
     }
 }
+#endif
 
