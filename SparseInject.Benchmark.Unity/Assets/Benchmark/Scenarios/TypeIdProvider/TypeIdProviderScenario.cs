@@ -22,14 +22,17 @@ public class TypeIdProviderScenario : Scenario
         {
             var type = _types[i];
 
-            idProvider.GetId(type);
+            idProvider.GetOrAddId(type);
         }
 
         for (var i = 0; i < typesLength; i++)
         {
             var type = _types[i];
 
-            idProvider.GetId(type);
+            if(!idProvider.TryGetId(type, out var id))
+            {
+                
+            }
         }
     }
 }

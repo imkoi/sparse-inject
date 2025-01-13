@@ -35,7 +35,6 @@ public class DictionaryScenario : Scenario
 
             if (!idProvider.TryGetValue(type, out _))
             {
-                idProvider.Add(type, i);
             }
         }
     }
