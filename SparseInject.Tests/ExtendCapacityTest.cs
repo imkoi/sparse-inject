@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using SparseInject;
@@ -54,6 +55,60 @@ public class ExtendCapacityTest
         ArrayCache.PullReserved(2048).Array.Length.Should().BeGreaterThan(2048);
         
         ArrayCache.PushReserved(2048);
+    }
+    
+    [Test]
+    public void ArrayFill_StartFromWithBatch_SlotsExtendedCorrectly()
+    {
+        // 17
+        var nums = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 };
+        ArrayUtilities.Fill(nums, -1, 0);
+        nums.Count(num => num == -1).Should().Be(nums.Length);
+        
+        nums = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 };
+        ArrayUtilities.Fill(nums, -1, 1);
+        nums.Count(num => num == -1).Should().Be(nums.Length - 1);
+        
+        nums = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 };
+        ArrayUtilities.Fill(nums, -1, 17);
+        nums.Count(num => num == -1).Should().Be(0);
+        
+        // 32
+        nums = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32 };
+        ArrayUtilities.Fill(nums, -1, 0);
+        nums.Count(num => num == -1).Should().Be(nums.Length);
+        
+        nums = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32 };
+        ArrayUtilities.Fill(nums, -1, 16);
+        nums.Count(num => num == -1).Should().Be(nums.Length - 16);
+        
+        nums = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32 };
+        ArrayUtilities.Fill(nums, -1, 32);
+        nums.Count(num => num == -1).Should().Be(0);
+        
+        // 37
+        nums = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37 };
+        ArrayUtilities.Fill(nums, -1, 0);
+        nums.Count(num => num == -1).Should().Be(nums.Length);
+        
+        nums = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37 };
+        ArrayUtilities.Fill(nums, -1, 7);
+        nums.Count(num => num == -1).Should().Be(nums.Length - 7);
+        
+        nums = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37 };
+        ArrayUtilities.Fill(nums, -1, 37);
+        nums.Count(num => num == -1).Should().Be(0);
+        
+        nums = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37 };
+        ArrayUtilities.Fill(nums, -1, 36);
+        nums.Count(num => num == -1).Should().Be(1);
     }
     
     [Test]

@@ -31,7 +31,7 @@ namespace SparseInject
         {
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
 
-            AddContract<TContract>(index);
+            AddContract(typeof(TContract), typeof(TContract[]), index);
 
             if (lifetime == Lifetime.Singleton)
             {
@@ -52,8 +52,8 @@ namespace SparseInject
         {
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
 
-            AddContract<TContract0>(index);
-            AddContract<TContract1>(index);
+            AddContract(typeof(TContract0), typeof(TContract0[]), index);
+            AddContract(typeof(TContract1), typeof(TContract1[]), index);
 
             if (lifetime == Lifetime.Singleton)
             {
@@ -75,9 +75,9 @@ namespace SparseInject
         {
             ref var concrete = ref AddConcrete(typeof(TConcrete), out var index);
             
-            AddContract<TContract0>(index);
-            AddContract<TContract1>(index);
-            AddContract<TContract2>(index);
+            AddContract(typeof(TContract0), typeof(TContract0[]), index);
+            AddContract(typeof(TContract1), typeof(TContract1[]), index);
+            AddContract(typeof(TContract2), typeof(TContract2[]), index);
             
             if (lifetime == Lifetime.Singleton)
             {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace SparseInject.BenchmarkFramework
 {
@@ -8,12 +9,17 @@ namespace SparseInject.BenchmarkFramework
         public void Measure(string categoryName, string benchmarkName)
         {
             var arguments = $"{BenchmarkConstants.RunBenchmarkCommand} {categoryName}:{benchmarkName}";
-            var processModule = Process.GetCurrentProcess().MainModule;
-            
-            if (processModule != null)
-            {
-                var executablePath = processModule.FileName;
 
+            var processModule = Process.GetCurrentProcess().MainModule;
+            var executablePath = processModule?.FileName;
+            
+            if (!File.Exists(executablePath))
+            {
+                throw new FileNotFoundException($"Executable not found: {executablePath}");
+            }
+            
+            if (!string.IsNullOrEmpty(executablePath))
+            {
                 var processStartInfo = new ProcessStartInfo
                 {
                     FileName = executablePath,

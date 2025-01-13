@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace SparseInject
 {
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #if UNITY_2017_1_OR_NEWER
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.DivideByZeroChecks, false)]
@@ -11,16 +11,21 @@ namespace SparseInject
 #endif
     public class TypeIdProvider
     {
+        private readonly float _resizeFactor;
+        public int MaxCapacity = 16777216;
+        
         private static readonly int[] _primes = new int[]
         {
             3, 7, 13, 31, 61, 127, 251, 509, 1021, 2039, 4093, 8191, 16381, 32749, 65521,
-            131071, 262139, 524287, 1048573, 2097143, 4194301, 8388593, 16777213, 33554393
+            131071, 262139, 524287, 1048573, 2097143, 4194301, 8388593, 16777213, 33554467
         };
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct Entry
         {
-            public Type Key;
             public int Value;
+            public int HashCode;
+            public Type Key;
         }
 
         private Entry[] _entries;
@@ -28,19 +33,18 @@ namespace SparseInject
         private int _capacity;
 
         private int _primeIndex;
+        private int _resizeThreshold;
 
         public int Count => _count;
 
-        private const int BitMask = 1 << 25;
-
-        public TypeIdProvider(int capacity = 128)
+        public TypeIdProvider(int capacity = 128, float resizeFactor = 0.75f)
         {
-            capacity *= 2;
-
-            if (capacity > 8388607 * 2)
+            if (capacity >= MaxCapacity)
             {
                 throw new ArgumentOutOfRangeException(nameof(capacity), "The capacity must be less than 8388608.");
             }
+
+            _resizeFactor = resizeFactor;
 
             var prime = _primes[_primeIndex];
             while (prime < capacity)
@@ -49,12 +53,13 @@ namespace SparseInject
                 prime = _primes[_primeIndex];
             }
 
+            _resizeThreshold = (int)(prime * _resizeFactor);
             _capacity = prime;
             _entries = new Entry[prime];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetId(Type key)
+        public int GetOrAddId(Type key)
         {
             if (key == null)
             {
@@ -63,32 +68,58 @@ namespace SparseInject
 
             var capacity = TryResize();
             var entries = _entries;
-            var originalIndex = (key.GetHashCode() & 0x7FFFFFFF) % capacity;
+            var hashCode = key.GetHashCode() & 0x7FFFFFFF;
+            var originalIndex = hashCode % capacity;
             var index = originalIndex;
 
             ref var entry = ref entries[index];
 
-            while ((entry.Value & BitMask) != 0 && entry.Key != key)
+            while (entry.Value != 0 && !(entry.HashCode == hashCode && entry.Key == key))
             {
                 index = (index + 1) % capacity;
                 entry = ref entries[index];
             }
 
-            if (index != originalIndex)
+            if (entry.Value == 0)
             {
                 entry.Key = key;
-                entry.Value = _count | BitMask;
-
-                _count++;
+                entry.HashCode = hashCode;
+                entry.Value = ++_count;
             }
 
-            return entry.Value & 0x01FFFFFF;
+            return entry.Value - 1;
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetId(Type key, out int id)
+        {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            var capacity = _capacity;
+            var entries = _entries;
+            var hashCode = key.GetHashCode() & 0x7FFFFFFF;
+            var index = hashCode % capacity;
+
+            ref var entry = ref entries[index];
+
+            while (entry.Value != 0 && !(entry.HashCode == hashCode && entry.Key == key))
+            {
+                index = (index + 1) % capacity;
+                entry = ref entries[index];
+            }
+
+            id = entry.Value - 1;
+
+            return entry.Value != 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int TryResize()
         {
-            if (_count >= _capacity * 0.5f) // multiply _capacity by some number to make less hash collisions
+            if (_count >= _resizeThreshold)
             {
                 _primeIndex++;
 
@@ -98,42 +129,207 @@ namespace SparseInject
                 }
 
                 _capacity = _primes[_primeIndex];
+                
+                _resizeThreshold = (int) (_capacity * _resizeFactor);
 
                 Resize(_capacity);
             }
 
             return _capacity;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         private void Resize(int newCapacity)
         {
-            if (newCapacity > 8388607 * 2)
-            {
-                throw new ArgumentOutOfRangeException("The capacity must be less than 8388608.");
-            }
+            const int batchCount = 8;
 
             var newEntries = new Entry[newCapacity];
             var oldEntries = _entries;
             var oldCount = oldEntries.Length;
 
-            for (var i = 0; i < oldCount; i++)
+            var batchIterations = oldCount / batchCount;
+            var lastIterationsStart = oldCount - batchIterations * batchCount;
+            
+            if (batchIterations < 1)
+            {
+                lastIterationsStart = 0;
+            }
+            
+            ref var newEntry = ref newEntries[0];
+            var index = -1;
+ 
+            for (var i = 0; i < batchIterations; i += batchCount)
             {
                 ref var oldEntry = ref oldEntries[i];
-
-                if ((oldEntry.Value & BitMask) != 0)
+            
+                if (oldEntry.Value != 0)
                 {
-                    var index = (oldEntry.Key.GetHashCode() & 0x7FFFFFFF) % newCapacity;
-
-                    ref var newEntry = ref newEntries[index];
-
-                    while ((newEntry.Value & BitMask) != 0)
+                    index = oldEntry.HashCode % newCapacity;
+            
+                    newEntry = ref newEntries[index];
+            
+                    while (newEntry.Value != 0)
                     {
                         index = (index + 1) % newCapacity;
                         newEntry = ref newEntries[index];
                     }
-
+            
                     newEntry.Key = oldEntry.Key;
+                    newEntry.HashCode = oldEntry.HashCode;
+                    newEntry.Value = oldEntry.Value;
+                }
+
+                oldEntry = ref oldEntries[i + 1];
+                
+                if (oldEntry.Value != 0)
+                {
+                    index = oldEntry.HashCode % newCapacity;
+            
+                    newEntry = ref newEntries[index];
+            
+                    while (newEntry.Value != 0)
+                    {
+                        index = (index + 1) % newCapacity;
+                        newEntry = ref newEntries[index];
+                    }
+            
+                    newEntry.Key = oldEntry.Key;
+                    newEntry.HashCode = oldEntry.HashCode;
+                    newEntry.Value = oldEntry.Value;
+                }
+                
+                oldEntry = ref oldEntries[i + 2];
+                
+                if (oldEntry.Value != 0)
+                {
+                    index = oldEntry.HashCode % newCapacity;
+            
+                    newEntry = ref newEntries[index];
+            
+                    while (newEntry.Value != 0)
+                    {
+                        index = (index + 1) % newCapacity;
+                        newEntry = ref newEntries[index];
+                    }
+            
+                    newEntry.Key = oldEntry.Key;
+                    newEntry.HashCode = oldEntry.HashCode;
+                    newEntry.Value = oldEntry.Value;
+                }
+                
+                oldEntry = ref oldEntries[i + 3];
+                
+                if (oldEntry.Value != 0)
+                {
+                    index = oldEntry.HashCode % newCapacity;
+            
+                    newEntry = ref newEntries[index];
+            
+                    while (newEntry.Value != 0)
+                    {
+                        index = (index + 1) % newCapacity;
+                        newEntry = ref newEntries[index];
+                    }
+            
+                    newEntry.Key = oldEntry.Key;
+                    newEntry.HashCode = oldEntry.HashCode;
+                    newEntry.Value = oldEntry.Value;
+                }
+                
+                oldEntry = ref oldEntries[i + 4];
+                
+                if (oldEntry.Value != 0)
+                {
+                    index = oldEntry.HashCode % newCapacity;
+            
+                    newEntry = ref newEntries[index];
+            
+                    while (newEntry.Value != 0)
+                    {
+                        index = (index + 1) % newCapacity;
+                        newEntry = ref newEntries[index];
+                    }
+            
+                    newEntry.Key = oldEntry.Key;
+                    newEntry.HashCode = oldEntry.HashCode;
+                    newEntry.Value = oldEntry.Value;
+                }
+                
+                oldEntry = ref oldEntries[i + 5];
+                
+                if (oldEntry.Value != 0)
+                {
+                    index = oldEntry.HashCode % newCapacity;
+            
+                    newEntry = ref newEntries[index];
+            
+                    while (newEntry.Value != 0)
+                    {
+                        index = (index + 1) % newCapacity;
+                        newEntry = ref newEntries[index];
+                    }
+            
+                    newEntry.Key = oldEntry.Key;
+                    newEntry.HashCode = oldEntry.HashCode;
+                    newEntry.Value = oldEntry.Value;
+                }
+                
+                oldEntry = ref oldEntries[i + 6];
+                
+                if (oldEntry.Value != 0)
+                {
+                    index = oldEntry.HashCode % newCapacity;
+            
+                    newEntry = ref newEntries[index];
+            
+                    while (newEntry.Value != 0)
+                    {
+                        index = (index + 1) % newCapacity;
+                        newEntry = ref newEntries[index];
+                    }
+            
+                    newEntry.Key = oldEntry.Key;
+                    newEntry.HashCode = oldEntry.HashCode;
+                    newEntry.Value = oldEntry.Value;
+                }
+                
+                oldEntry = ref oldEntries[i + 7];
+                
+                if (oldEntry.Value != 0)
+                {
+                    index = oldEntry.HashCode % newCapacity;
+            
+                    newEntry = ref newEntries[index];
+            
+                    while (newEntry.Value != 0)
+                    {
+                        index = (index + 1) % newCapacity;
+                        newEntry = ref newEntries[index];
+                    }
+            
+                    newEntry.Key = oldEntry.Key;
+                    newEntry.HashCode = oldEntry.HashCode;
+                    newEntry.Value = oldEntry.Value;
+                }
+            }
+
+            for (var i = lastIterationsStart; i < oldCount; i++)
+            {
+                ref var oldEntry = ref oldEntries[i];
+            
+                if (oldEntry.Value != 0)
+                {
+                    index = oldEntry.HashCode % newCapacity;
+            
+                    newEntry = ref newEntries[index];
+            
+                    while (newEntry.Value != 0)
+                    {
+                        index = (index + 1) % newCapacity;
+                        newEntry = ref newEntries[index];
+                    }
+            
+                    newEntry.Key = oldEntry.Key;
+                    newEntry.HashCode = oldEntry.HashCode;
                     newEntry.Value = oldEntry.Value;
                 }
             }

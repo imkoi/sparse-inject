@@ -22,7 +22,7 @@ public class Benchmark : MonoBehaviour
         var benchmarkRunner = new BenchmarkRunner(
             Environment.GetCommandLineArgs(),
             diskReportStorage,
-            new DotNetMemorySnapshotFactory(),
+            new UnityMemorySnapshotFactory(),
             new GarbageCollectorCleaner(),
             new DotNetBenchmarkMeasurer(),
             _progress);

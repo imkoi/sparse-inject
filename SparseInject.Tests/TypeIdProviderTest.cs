@@ -17,7 +17,7 @@ public class TypeIdProviderTest
         var type = typeof(TypeIdProviderTest);
         var typeIdProvider = new TypeIdProvider(capacity);
         
-        typeIdProvider.GetId(type).Should().Be(typeIdProvider.GetId(type));
+        typeIdProvider.GetOrAddId(type).Should().Be(typeIdProvider.GetOrAddId(type));
     }
     
     [Test]
@@ -35,7 +35,7 @@ public class TypeIdProviderTest
         for (var i = 0; i < types.Length; i++)
         {
             var type = types[i];
-            var typeId = typeIdProvider.GetId(type);
+            var typeId = typeIdProvider.GetOrAddId(type);
             
             ids[i] = typeId;
         }
@@ -43,13 +43,12 @@ public class TypeIdProviderTest
         for (var i = 0; i < types.Length; i++)
         {
             var type = types[i];
-            var typeId = typeIdProvider.GetId(type);
+            var typeId = typeIdProvider.GetOrAddId(type);
             
             typeId.Should().Be(ids[i]);
         }
     }
     
-    [Ignore("Failing, not used in di")]
     [Test]
     [TestCase(1)]
     [TestCase(3)]
@@ -65,15 +64,45 @@ public class TypeIdProviderTest
         for (var i = 0; i < types.Length; i++)
         {
             var type = types[i];
-            var typeId = typeIdProvider.GetId(type);
+            var typeId = typeIdProvider.GetOrAddId(type);
 
             uniqueIds.Add(typeId);
         }
 
         uniqueIds.Count.Should().Be(types.Length);
     }
+    
+    [Test]
+    [TestCase(1)]
+    [TestCase(3)]
+    [TestCase(32)]
+    [TestCase(128)]
+    [TestCase(1000)]
+    public void ManyTypes_TryGetIds_ReturnUniqueIds(int capacity)
+    {
+        var types = typeof(TypeIdProviderTest).Assembly.GetTypes();
+        var typeIdProvider = new TypeIdProvider(capacity);
+        var uniqueIds = new HashSet<int>();
 
-    [Ignore("Failing, not used in di")]
+        for (var i = 0; i < types.Length; i++)
+        {
+            var type = types[i];
+            var typeId = typeIdProvider.GetOrAddId(type);
+
+            uniqueIds.Add(typeId);
+        }
+
+        uniqueIds.Count.Should().Be(types.Length);
+
+        for (int i = 0; i < types.Length; i++)
+        {
+            var type = types[i];
+            typeIdProvider.TryGetId(type, out var typeId);
+
+            uniqueIds.Contains(typeId).Should().BeTrue();
+        }
+    }
+    
     [Test]
     public void ProviderCreated_WhenCapacityLessThanMax_NotThrow()
     {
@@ -95,12 +124,21 @@ public class TypeIdProviderTest
     {
         var typeIdProvider = new TypeIdProvider();
         
-        typeIdProvider.Invoking(subject => subject.GetId(null))
+        typeIdProvider.Invoking(subject => subject.GetOrAddId(null))
             .Should()
             .Throw<ArgumentNullException>();
     }
     
-    [Ignore("Failing, not used in di")]
+    [Test]
+    public void TryGetId_WhenPassNullType_ThrowArgumentOutOfRangeException()
+    {
+        var typeIdProvider = new TypeIdProvider();
+        
+        typeIdProvider.Invoking(subject => subject.TryGetId(null, out _))
+            .Should()
+            .Throw<ArgumentNullException>();
+    }
+    
     [Test]
     [TestCase(1)]
     [TestCase(3)]
@@ -115,7 +153,7 @@ public class TypeIdProviderTest
         for (var i = 0; i < types.Length; i++)
         {
             var type = types[i];
-            typeIdProvider.GetId(type);
+            typeIdProvider.GetOrAddId(type);
         }
         
         typeIdProvider.Count.Should().Be(types.Length);

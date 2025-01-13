@@ -1,19 +1,18 @@
 ﻿using SparseInject.BenchmarkFramework;
 
-namespace DefaultNamespace
+public class UnityMemorySnapshotFactory : IMemorySnapshotFactory
 {
-    public class UnityMemorySnapshotFactory : IMemorySnapshotFactory
+    public MemorySnapshot Create()
     {
-        public MemorySnapshot Create()
-        {
-            throw new System.NotImplementedException();
-            // unity not provide method to track untracked memory, maybe thats why its called untracked :/
-        }
+        // unity not provide method to track untracked memory, maybe thats why its called untracked :/
 
-        public MemorySnapshot Create(MemorySnapshot subtract)
-        {
-            throw new System.NotImplementedException();
-            // unity not provide method to track untracked memory, maybe thats why its called untracked :/
-        }
+        return new MemorySnapshot(0, 0, 0);
+    }
+
+    public MemorySnapshot Create(MemorySnapshot subtract)
+    {
+        // unity not provide method to track untracked memory, maybe thats why its called untracked :/
+            
+        return new MemorySnapshot(0, 0, 0);
     }
 }
