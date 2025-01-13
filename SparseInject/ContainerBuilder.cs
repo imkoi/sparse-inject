@@ -109,10 +109,7 @@ namespace SparseInject
 
                     Array.Resize(ref _contractsSparse, newSize);
                 
-                    for (var i = oldSize; i < newSize; i++)
-                    {
-                        _contractsSparse[i] = -1;
-                    }
+                    ArrayUtilities.Fill(_contractsSparse, -1, oldSize);
                 }
 
                 _contractIds.Add(contractType, contractId);

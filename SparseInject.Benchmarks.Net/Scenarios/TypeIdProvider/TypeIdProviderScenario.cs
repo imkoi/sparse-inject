@@ -29,7 +29,7 @@ public class TypeIdProviderScenario : Scenario
         {
             var type = _types[i];
 
-            idProvider.GetOrAddId(type);
+            idProvider.TryGetId(type, out _);
         }
     }
 }
