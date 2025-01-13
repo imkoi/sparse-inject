@@ -394,10 +394,6 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-
-
-
-
 # UNITY PACKAGE PROJECT
 SparseInject.Unity/[Ll]ibrary/
 SparseInject.Unity/[Tt]emp/
@@ -407,6 +403,7 @@ SparseInject.Unity/[Bb]uilds/
 SparseInject.Unity/[Ll]ogs/
 SparseInject.Unity/[Mm]emoryCaptures/
 SparseInject.Unity/[Uu]serSettings/
+SparseInject.Unity/[Uu]serSettings/*
 
 SparseInject.Unity/.idea/
 SparseInject.Unity/.vs/
@@ -445,6 +442,7 @@ SparseInject.Benchmark.Unity/[Bb]uilds/
 SparseInject.Benchmark.Unity/[Ll]ogs/
 SparseInject.Benchmark.Unity/[Mm]emoryCaptures/
 SparseInject.Benchmark.Unity/[Uu]serSettings/
+SparseInject.Benchmark.Unity/[Uu]serSettings/*
 
 SparseInject.Benchmark.Unity/.idea/
 SparseInject.Benchmark.Unity/.vs/
