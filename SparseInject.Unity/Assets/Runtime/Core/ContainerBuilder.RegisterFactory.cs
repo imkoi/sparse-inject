@@ -64,7 +64,7 @@ namespace SparseInject
             
             ref var concrete = ref AddConcrete(typeof(Func<TConcrete>), out var index);
 
-            AddContract<Func<TContract>>(index);
+            AddContract(typeof(Func<TContract>), typeof(Func<TContract>[]), index);
 
             concrete.MarkFactory(true);
             concrete.MarkSingleton();
@@ -106,7 +106,7 @@ namespace SparseInject
             
             ref var concrete = ref AddConcrete(typeof(Func<TParameter, TConcrete>), out var index);
 
-            AddContract<Func<TParameter, TContract>>(index);
+            AddContract(typeof(Func<TParameter, TContract>), typeof(Func<TParameter, TContract>[]), index);
 
             concrete.MarkFactory(true);
             concrete.MarkSingleton();
