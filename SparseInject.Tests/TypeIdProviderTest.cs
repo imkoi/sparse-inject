@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using FluentAssertions;
 using NUnit.Framework;
 using SparseInject;
@@ -70,6 +71,35 @@ public class TypeIdProviderTest
         }
 
         uniqueIds.Count.Should().Be(types.Length);
+    }
+    
+    [Test]
+    public void ManyTypeGetIds_WhenExceedCapacity_ThrowIndexOutOfRangeException()
+    {
+        var types = typeof(TypeIdProviderTest).Assembly.GetTypes();
+        var typeIdProvider = new TypeIdProvider(1);
+
+        var oldPrimes = TypeIdProvider._primes;
+
+        TypeIdProvider._primes = new int[] { 2, 3, 5, 7, 11 };
+
+        try
+        {
+            this.Invoking(_ =>
+                {
+                    for (var i = 0; i < types.Length; i++)
+                    {
+                        var type = types[i];
+                        typeIdProvider.GetOrAddId(type);
+                    }
+                })
+                .Should()
+                .Throw<IndexOutOfRangeException>();
+        }
+        finally
+        {
+            TypeIdProvider._primes = oldPrimes;
+        }
     }
     
     [Test]

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -14,7 +15,7 @@ namespace SparseInject
         private readonly float _resizeFactor;
         public int MaxCapacity = 16777216;
         
-        private static readonly int[] _primes = new int[]
+        internal static int[] _primes = new int[]
         {
             3, 7, 13, 31, 61, 127, 251, 509, 1021, 2039, 4093, 8191, 16381, 32749, 65521,
             131071, 262139, 524287, 1048573, 2097143, 4194301, 8388593, 16777213, 33554467
@@ -138,6 +139,8 @@ namespace SparseInject
             return _capacity;
         }
         
+        // method has unrolled loop and entries are rarely will be dense, so i skip it
+        [ExcludeFromCodeCoverage]
         private void Resize(int newCapacity)
         {
             const int batchCount = 8;
