@@ -57,8 +57,9 @@
         public static void Fill(int[] array, int value, int startFrom)
         {
             var count = array.Length;
-            var batchIterations = (count - startFrom) / 32 * 32;
-            var lastIterationsIndex = startFrom + batchIterations * 32;
+            var elementsToFill = count - startFrom;
+            var batchIterations = elementsToFill / 32 * 32;
+            var lastIterationsIndex = startFrom + batchIterations;
 
             for (var i = startFrom; i < lastIterationsIndex; i += 32)
             {
