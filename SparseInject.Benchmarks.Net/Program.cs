@@ -38,8 +38,8 @@ public class Program
             new DictionaryScenario(),
         }, 10);
         
-        TransientBenchmarkUtility.AddCategories(benchmarkRunner, 10);
-        SingletonBenchmarkUtility.AddCategories(benchmarkRunner, 10);
+        // TransientBenchmarkUtility.AddCategories(benchmarkRunner, 10);
+        // SingletonBenchmarkUtility.AddCategories(benchmarkRunner, 10);
         
         var summary = await benchmarkRunner.RunAsync(cancellationTokenSource.Token);
 

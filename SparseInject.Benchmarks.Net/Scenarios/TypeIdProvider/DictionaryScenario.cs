@@ -5,7 +5,7 @@ using SparseInject.BenchmarkFramework;
 public class DictionaryScenario : Scenario
 {
     public override string Name => "Dictionary";
-    public override int ExecuteCount => 100;
+    public override int ExecuteCount => 1000;
 
     private Type[] _types;
 
@@ -17,7 +17,7 @@ public class DictionaryScenario : Scenario
     public override void Execute()
     {
         var typesLength = _types.Length;
-        var idProvider = new Dictionary<Type, int>();
+        var idProvider = new Dictionary<Type, int>(typesLength);
 
         for (var i = 0; i < typesLength; i++)
         {
@@ -33,10 +33,14 @@ public class DictionaryScenario : Scenario
         {
             var type = _types[i];
 
-            if (!idProvider.TryGetValue(type, out _))
-            {
+            idProvider.TryGetValue(type, out _);
+        }
+        
+        for (var i = 0; i < typesLength; i++)
+        {
+            var type = _types[i];
 
-            }
+            idProvider.TryGetValue(type, out _);
         }
     }
 }

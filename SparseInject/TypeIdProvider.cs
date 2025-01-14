@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace SparseInject
 {
@@ -12,28 +11,21 @@ namespace SparseInject
 #endif
     public class TypeIdProvider
     {
-        private readonly float _resizeFactor;
-        public int MaxCapacity = 16777216;
-        
-        internal static int[] _primes = new int[]
-        {
-            3, 7, 13, 31, 61, 127, 251, 509, 1021, 2039, 4093, 8191, 16381, 32749, 65521,
-            131071, 262139, 524287, 1048573, 2097143, 4194301, 8388593, 16777213, 33554467
-        };
+        public const int MaxCapacity = 16777216;
 
-        [StructLayout(LayoutKind.Sequential)]
+        private readonly float _resizeFactor;
+
         private struct Entry
         {
             public int Value;
-            public int HashCode;
+            public int Hash;
             public Type Key;
         }
 
         private Entry[] _entries;
+
         private int _count;
         private int _capacity;
-
-        private int _primeIndex;
         private int _resizeThreshold;
 
         public int Count => _count;
@@ -44,21 +36,20 @@ namespace SparseInject
             {
                 throw new ArgumentOutOfRangeException(nameof(capacity), "The capacity must be less than 8388608.");
             }
-
-            capacity = (int) (capacity * (1f + 1f - resizeFactor));
+            
+            capacity *= 2;
 
             _resizeFactor = resizeFactor;
+            _capacity = NextPowerOfTwo(capacity);
 
-            var prime = _primes[_primeIndex];
-            while (prime < capacity)
+            if (_capacity > MaxCapacity)
             {
-                _primeIndex++;
-                prime = _primes[_primeIndex];
+                _capacity = MaxCapacity;
             }
 
-            _resizeThreshold = (int)(prime * _resizeFactor);
-            _capacity = prime;
-            _entries = new Entry[prime];
+            _entries = new Entry[_capacity];
+
+            _resizeThreshold = (int) (_capacity * _resizeFactor);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -70,29 +61,30 @@ namespace SparseInject
             }
 
             var capacity = TryResize();
-            var entries = _entries;
             var hashCode = key.GetHashCode() & 0x7FFFFFFF;
-            var originalIndex = hashCode % capacity;
-            var index = originalIndex;
+            var mask = capacity - 1;
+            var index = hashCode & mask;
 
-            ref var entry = ref entries[index];
+            ref var entry = ref _entries[index];
 
-            while (entry.Value != 0 && !(entry.HashCode == hashCode && entry.Key == key))
+            while (entry.Value != 0 && !(entry.Hash == hashCode && entry.Key == key))
             {
-                index = (index + 1) % capacity;
-                entry = ref entries[index];
+                index = (index + 1) & mask;
+                entry = ref _entries[index];
             }
 
-            if (entry.Value == 0)
+            if (entry.Value != 0)
             {
-                entry.Key = key;
-                entry.HashCode = hashCode;
-                entry.Value = ++_count;
+                return entry.Value - 1;
             }
 
-            return entry.Value - 1;
+            entry.Key = key;
+            entry.Hash = hashCode;
+            entry.Value = ++_count;
+
+            return _count - 1;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetId(Type key, out int id)
         {
@@ -102,21 +94,21 @@ namespace SparseInject
             }
 
             var capacity = _capacity;
-            var entries = _entries;
             var hashCode = key.GetHashCode() & 0x7FFFFFFF;
-            var index = hashCode % capacity;
+            var mask = capacity - 1;
+            var index = hashCode & mask;
+            
+            ref var entry = ref _entries[index];
 
-            ref var entry = ref entries[index];
-
-            while (entry.Value != 0 && !(entry.HashCode == hashCode && entry.Key == key))
+            while (entry.Value != 0 && !(entry.Hash == hashCode && entry.Key == key))
             {
-                index = (index + 1) % capacity;
-                entry = ref entries[index];
+                index = (index + 1) & mask;
+                entry = ref _entries[index];
             }
 
             id = entry.Value - 1;
-
-            return entry.Value != 0;
+            
+            return id >= 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -124,61 +116,69 @@ namespace SparseInject
         {
             if (_count >= _resizeThreshold)
             {
-                _primeIndex++;
+                var newCapacity = _capacity << 1;
 
-                if (_primeIndex >= _primes.Length)
+                if (newCapacity > MaxCapacity)
                 {
-                    throw new IndexOutOfRangeException("The prime index is out of range.");
+                    throw new IndexOutOfRangeException("Reached the maximum capacity.");
                 }
 
-                _capacity = _primes[_primeIndex];
-                
-                _resizeThreshold = (int) (_capacity * _resizeFactor);
-
-                Resize(_capacity);
+                Resize(newCapacity);
             }
 
             return _capacity;
         }
-        
-        // method has unrolled loop and entries are rarely will be dense, so i skip it
+
         [ExcludeFromCodeCoverage]
         private void Resize(int newCapacity)
         {
-            const int batchCount = 8;
-
-            var newEntries = new Entry[newCapacity];
             var oldEntries = _entries;
-            var oldCount = oldEntries.Length;
-
-            ref var newEntry = ref newEntries[0];
-            ref var oldEntry = ref oldEntries[0];
-            var index = -1;
- 
-            for (var i = 0; i < oldCount; i++)
-            {
-                oldEntry = ref oldEntries[i];
+            var oldLength = oldEntries.Length;
+            var newEntries = new Entry[newCapacity];
+            var mask = newCapacity - 1;
             
+            ref var newEntry = ref newEntries[0];
+            
+            for (var i = 0; i < oldLength; i++)
+            {
+                var oldEntry = oldEntries[i];
+                
                 if (oldEntry.Value != 0)
                 {
-                    index = oldEntry.HashCode % newCapacity;
-            
+                    var index = oldEntry.Hash & mask;
                     newEntry = ref newEntries[index];
-            
+                    
                     while (newEntry.Value != 0)
                     {
-                        index = (index + 1) % newCapacity;
+                        index = (index + 1) & mask;
                         newEntry = ref newEntries[index];
                     }
-            
-                    newEntry.Key = oldEntry.Key;
-                    newEntry.HashCode = oldEntry.HashCode;
-                    newEntry.Value = oldEntry.Value;
+
+                    newEntry = oldEntry;
                 }
             }
-
+            
             _capacity = newCapacity;
+            _resizeThreshold = (int) (newCapacity * _resizeFactor);
             _entries = newEntries;
+        }
+
+        private static int NextPowerOfTwo(int x)
+        {
+            if (x < 2)
+            {
+                return 2;
+            }
+
+            x--;
+            x |= x >> 1;
+            x |= x >> 2;
+            x |= x >> 4;
+            x |= x >> 8;
+            x |= x >> 16;
+            x++;
+            
+            return x;
         }
     }
 }
