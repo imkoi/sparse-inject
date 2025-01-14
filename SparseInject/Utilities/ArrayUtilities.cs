@@ -10,7 +10,7 @@
         public static void Fill(int[] array, int value)
         {
             var count = array.Length;
-            var batchIterations = count / 32;
+            var batchIterations = count / 32 * 32;
 
             for (var i = 0; i < batchIterations; i += 32)
             {
@@ -48,20 +48,19 @@
                 array[i + 31] = value;
             }
 
-            for (var i = batchIterations * 32; i < count; i++)
+            for (; batchIterations < count; batchIterations++)
             {
-                array[i] = value;
+                array[batchIterations] = value;
             }
         }
         
         public static void Fill(int[] array, int value, int startFrom)
         {
             var count = array.Length;
-            var elementsToFill = count - startFrom;
-            var batchIterations = elementsToFill / 32;
-            var lastIterationsStart = startFrom + batchIterations * 32;
+            var batchIterations = (count - startFrom) / 32 * 32;
+            var lastIterationsIndex = startFrom + batchIterations * 32;
 
-            for (var i = startFrom; i < lastIterationsStart; i += 32)
+            for (var i = startFrom; i < lastIterationsIndex; i += 32)
             {
                 array[i] = value;
                 array[i + 1] = value;
@@ -97,9 +96,9 @@
                 array[i + 31] = value;
             }
 
-            for (var i = lastIterationsStart; i < count; i++)
+            for (; lastIterationsIndex < count; lastIterationsIndex++)
             {
-                array[i] = value;
+                array[lastIterationsIndex] = value;
             }
         }
     }
