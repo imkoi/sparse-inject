@@ -118,10 +118,7 @@ namespace SparseInject
             {
                 var newCapacity = _capacity << 1;
 
-                if (newCapacity > MaxCapacity)
-                {
-                    throw new IndexOutOfRangeException("Reached the maximum capacity.");
-                }
+                ThrowIfCapacityExceededMaximum(newCapacity);
 
                 Resize(newCapacity);
             }
@@ -129,7 +126,6 @@ namespace SparseInject
             return _capacity;
         }
 
-        [ExcludeFromCodeCoverage]
         private void Resize(int newCapacity)
         {
             var oldEntries = _entries;
@@ -161,6 +157,16 @@ namespace SparseInject
             _capacity = newCapacity;
             _resizeThreshold = (int) (newCapacity * _resizeFactor);
             _entries = newEntries;
+        }
+
+        [ExcludeFromCodeCoverage]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ThrowIfCapacityExceededMaximum(int capacity)
+        {
+            if (capacity > MaxCapacity)
+            {
+                throw new IndexOutOfRangeException("Reached the maximum capacity.");
+            }
         }
 
         private static int NextPowerOfTwo(int x)

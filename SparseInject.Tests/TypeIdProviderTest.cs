@@ -22,6 +22,7 @@ public class TypeIdProviderTest
     }
     
     [Test]
+    [TestCase(0)]
     [TestCase(1)]
     [TestCase(3)]
     [TestCase(32)]

@@ -4,7 +4,7 @@ using SparseInject.BenchmarkFramework;
 public class TypeIdProviderScenario : Scenario
 {
     public override string Name => "TypeIdProvider";
-    public override int ExecuteCount => 100;
+    public override int ExecuteCount => 1000;
 
     private Type[] _types;
 
@@ -16,7 +16,7 @@ public class TypeIdProviderScenario : Scenario
     public override void Execute()
     {
         var typesLength = _types.Length;
-        var idProvider = new SparseInject.TypeIdProvider();
+        var idProvider = new SparseInject.TypeIdProvider(typesLength);
 
         for (var i = 0; i < typesLength; i++)
         {
@@ -29,10 +29,14 @@ public class TypeIdProviderScenario : Scenario
         {
             var type = _types[i];
 
-            if(!idProvider.TryGetId(type, out var id))
-            {
-                
-            }
+            idProvider.TryGetId(type, out _);
+        }
+        
+        for (var i = 0; i < typesLength; i++)
+        {
+            var type = _types[i];
+
+            idProvider.TryGetId(type, out _);
         }
     }
 }
