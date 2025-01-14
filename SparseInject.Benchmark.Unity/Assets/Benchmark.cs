@@ -36,6 +36,12 @@ public class Benchmark : MonoBehaviour
             _progressSlider.gameObject.SetActive(false);
         }
         
+        benchmarkRunner.AddBenchmarkCategory("type-id-provider", new Scenario[]
+        {
+            new TypeIdProviderScenario(),
+            new DictionaryScenario(),
+        }, 10);
+        
         TransientBenchmarkUtility.AddCategories(benchmarkRunner, 10);
         SingletonBenchmarkUtility.AddCategories(benchmarkRunner, 10);
 
