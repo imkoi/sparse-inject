@@ -12,7 +12,7 @@ namespace SparseInject
     public partial class ContainerBuilder : IScopeBuilder
     {
         private readonly Container _parentContainer;
-        private readonly Dictionary<Type, int> _contractIds;
+        private readonly TypeIdProvider _contractIds;
         
         private int[] _contractsSparse;
         private Contract[] _contractsDense;
@@ -27,14 +27,14 @@ namespace SparseInject
         
         private int _lastContractsConcretesIndex;
         
-        public ContainerBuilder(int capacity = 1024) : this(null, new Dictionary<Type, int>(capacity), capacity)
+        public ContainerBuilder(int capacity = 1024) : this(null, new TypeIdProvider(capacity), capacity)
         {
             
         }
 
         internal ContainerBuilder(
             Container parentContainer,
-            Dictionary<Type, int> contractIds,
+            TypeIdProvider contractIds,
             int capacity)
         {
             _parentContainer = parentContainer;
@@ -98,10 +98,8 @@ namespace SparseInject
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetOrAddContractId(Type contractType)
         {
-            if (!_contractIds.TryGetValue(contractType, out var contractId))
+            if (_contractIds.TryAdd(contractType, out var contractId))
             {
-                contractId = _contractIds.Count;
-                
                 if (contractId >= _contractsSparse.Length)
                 {
                     var oldSize = _contractsSparse.Length;
@@ -111,8 +109,6 @@ namespace SparseInject
                 
                     ArrayUtilities.Fill(_contractsSparse, -1, oldSize);
                 }
-
-                _contractIds.Add(contractType, contractId);
             }
 
             return contractId;

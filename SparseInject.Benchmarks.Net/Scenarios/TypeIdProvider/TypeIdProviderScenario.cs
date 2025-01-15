@@ -22,21 +22,21 @@ public class TypeIdProviderScenario : Scenario
         {
             var type = _types[i];
 
-            idProvider.GetOrAddId(type);
+            idProvider.TryAdd(type, out _);
         }
 
         for (var i = 0; i < typesLength; i++)
         {
             var type = _types[i];
 
-            idProvider.TryGetId(type, out _);
+            idProvider.TryGetValue(type, out _);
         }
         
         for (var i = 0; i < typesLength; i++)
         {
             var type = _types[i];
 
-            idProvider.TryGetId(type, out _);
+            idProvider.TryGetValue(type, out _);
         }
     }
 }
