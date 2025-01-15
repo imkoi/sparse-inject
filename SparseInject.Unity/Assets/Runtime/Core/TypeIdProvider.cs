@@ -32,6 +32,11 @@ namespace SparseInject
 
         public TypeIdProvider(int capacity = 1024, float resizeFactor = 0.75f)
         {
+            if (capacity < 8)
+            {
+                capacity = 8;
+            }
+
             if (capacity >= MaxCapacity)
             {
                 throw new ArgumentOutOfRangeException(nameof(capacity), "The capacity must be less than 8388608.");
@@ -53,7 +58,7 @@ namespace SparseInject
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetOrAddId(Type key)
+        public bool TryAdd(Type key, out int value)
         {
             if (key == null)
             {
@@ -75,18 +80,22 @@ namespace SparseInject
 
             if (entry.Value != 0)
             {
-                return entry.Value - 1;
+                value = entry.Value - 1;
+                
+                return false;
             }
 
             entry.Key = key;
             entry.Hash = hashCode;
             entry.Value = ++_count;
+            
+            value = entry.Value - 1;
 
-            return _count - 1;
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGetId(Type key, out int id)
+        public bool TryGetValue(Type key, out int id)
         {
             if (key == null)
             {
@@ -169,13 +178,88 @@ namespace SparseInject
             }
         }
 
-        private static int NextPowerOfTwo(int x)
+        [ExcludeFromCodeCoverage]
+        internal bool ContainsValue(int value, out Type key)
         {
-            if (x < 2)
+            value++;
+            
+            var entries = _entries;
+            var count = entries.Length;
+            var batchCount = count / 8 * 8;
+
+            var mask = -1;
+
+            for (var i = 0; i < batchCount; i += 8)
             {
-                return 2;
+                mask = 0;
+                mask |= (entries[i].Value == value ? 1 : 0) << 0;
+                mask |= (entries[i + 1].Value == value ? 1 : 0) << 1;
+                mask |= (entries[i + 2].Value == value ? 1 : 0) << 2;
+                mask |= (entries[i + 3].Value == value ? 1 : 0) << 3;
+                mask |= (entries[i + 4].Value == value ? 1 : 0) << 4;
+                mask |= (entries[i + 5].Value == value ? 1 : 0) << 5;
+                mask |= (entries[i + 6].Value == value ? 1 : 0) << 6;
+                mask |= (entries[i + 7].Value == value ? 1 : 0) << 7;
+
+                if (mask != 0)
+                {
+                    return ContainsValue(value, out key, i);
+                }
             }
 
+            key = null;
+            
+            return false;
+        }
+        
+        [ExcludeFromCodeCoverage]
+        private bool ContainsValue(int value, out Type key, int startIndex)
+        {
+            key = null;
+            
+            var entries = _entries;
+            var targetIndex = -1;
+
+            if (entries[startIndex].Value == value)
+            {
+                targetIndex = 0;
+            }
+            else if (entries[startIndex + 1].Value == value)
+            {
+                targetIndex = 1;
+            }
+            else if (entries[startIndex + 2].Value == value)
+            {
+                targetIndex = 2;
+            }
+            else if (entries[startIndex + 3].Value == value)
+            {
+                targetIndex = 3;
+            }
+            else if (entries[startIndex + 4].Value == value)
+            {
+                targetIndex = 4;
+            }
+            else if (entries[startIndex + 5].Value == value)
+            {
+                targetIndex = 5;
+            }
+            else if (entries[startIndex + 6].Value == value)
+            {
+                targetIndex = 6;
+            }
+            else if (entries[startIndex + 7].Value == value)
+            {
+                targetIndex = 7;
+            }
+
+            key = entries[startIndex + targetIndex].Key;
+
+            return targetIndex >= 0;
+        }
+
+        private static int NextPowerOfTwo(int x)
+        {
             x--;
             x |= x >> 1;
             x |= x >> 2;

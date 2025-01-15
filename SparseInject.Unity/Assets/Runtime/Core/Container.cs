@@ -14,7 +14,7 @@ namespace SparseInject
     {
         private Type _containerType;
         private Container _parentContainer;
-        private Dictionary<Type, int> _contractIds;
+        private TypeIdProvider _contractIds;
         private int[] _contractsSparse;
         private Contract[] _contractsDense;
         private int[] _contractsConcretesIndices;
@@ -40,7 +40,7 @@ namespace SparseInject
         internal Container(
             Type containerType,
             Container parentContainer,
-            Dictionary<Type, int> contractIds,
+            TypeIdProvider contractIds,
             int[] contractsSparse,
             Contract[] contractsDense,
             int[] contractsConcretesIndices,
@@ -458,7 +458,7 @@ namespace SparseInject
 
         internal Concrete GetConcreteByContractType(Type type)
         {
-            var contractId = _contractIds[type];
+            _contractIds.TryGetValue(type, out var contractId);
             var denseIndex = _contractsSparse[contractId];
 
             var contract = _contractsDense[denseIndex];

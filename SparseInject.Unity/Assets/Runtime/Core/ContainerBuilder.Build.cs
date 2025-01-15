@@ -106,19 +106,13 @@ namespace SparseInject
 
                             if (!_contractIds.TryGetValue(elementType, out contractId))
                             {
-                                contractId = _contractIds.Count;
-
-                                _contractIds.Add(elementType, contractId);
-
-                                contractId = _contractIds.Count;
-                                _contractIds.Add(parameterType, contractId);
+                                _contractIds.TryAdd(elementType, out contractId);
+                                _contractIds.TryAdd(parameterType, out contractId); 
                             }
                         }
                         else if (concrete.IsScope())
                         {
-                            contractId = _contractIds.Count;
-
-                            _contractIds.Add(parameterType, contractId);
+                            _contractIds.TryAdd(parameterType, out contractId);
                         }
                         else
                         {
@@ -149,20 +143,12 @@ namespace SparseInject
                         continue;
                     }
 
-                    if (!_parentContainer.ContractExist(contractId))
+                    if (!_parentContainer.ContractExist(contractId) && 
+                        _contractIds.ContainsValue(contractId, out var key))
                     {
-                        foreach (var pair in _contractIds)
+                        if (!key.IsArray)
                         {
-                            if (pair.Value != contractId)
-                            {
-                                continue;
-                            }
-
-                            if (!pair.Key.IsArray)
-                            {
-                                throw new SparseInjectException(
-                                    $"Dependency '{pair.Key}' of '{containerType}' not registered");
-                            }
+                            throw new SparseInjectException($"Dependency '{key}' of '{containerType}' not registered");
                         }
                     }
                 }
