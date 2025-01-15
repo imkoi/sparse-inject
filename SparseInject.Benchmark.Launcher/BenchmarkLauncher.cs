@@ -80,7 +80,11 @@ public static class BenchmarkLauncher
 
                 if (process.ExitCode != 0)
                 {
-                    throw new InvalidOperationException($"Benchmark process exited with code {process.ExitCode}: {error}");
+                    Console.WriteLine($"Benchmark process exited with code {process.ExitCode}: {error}");
+
+                    i--;
+                    
+                    continue;
                 }
 
                 benchmarkIndex++;

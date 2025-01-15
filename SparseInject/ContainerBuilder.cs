@@ -96,25 +96,6 @@ namespace SparseInject
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetOrAddContractId(Type contractType)
-        {
-            if (_contractIds.TryAdd(contractType, out var contractId))
-            {
-                if (contractId >= _contractsSparse.Length)
-                {
-                    var oldSize = _contractsSparse.Length;
-                    var newSize = contractId * 2;
-
-                    Array.Resize(ref _contractsSparse, newSize);
-                
-                    ArrayUtilities.Fill(_contractsSparse, -1, oldSize);
-                }
-            }
-
-            return contractId;
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ref Concrete AddConcrete(Type concreteType, out int index)
         {
             index = _concretesCount;
@@ -135,7 +116,24 @@ namespace SparseInject
 
         private void AddContract(Type contractType, Type collectionContractType, int concreteIndex)
         {
-            var contractId = GetOrAddContractId(contractType);
+            _contractIds.TryAdd(contractType, out var contractId);
+            _contractIds.TryAdd(collectionContractType, out var collectionContractId);
+
+            var highestContractId = contractId > collectionContractId 
+                ? contractId 
+                : collectionContractId;
+            
+            var oldSize = _contractsSparse.Length;
+                
+            if (highestContractId >= oldSize)
+            {
+                var newSize = contractId * 2;
+
+                Array.Resize(ref _contractsSparse, newSize);
+                
+                ArrayUtilities.Fill(_contractsSparse, -1, oldSize);
+            }
+
             var contractIndex = GetContractIndex(contractId);
             ref var contract = ref _contractsDense[contractIndex];
 
@@ -164,8 +162,6 @@ namespace SparseInject
                 contract.SetConcretesCount(++concretesCount);
             }
 
-            // collection contract
-            var collectionContractId = GetOrAddContractId(collectionContractType);
             var collectionContractIndex = GetContractIndex(collectionContractId);
             ref var collectionContract = ref _contractsDense[collectionContractIndex];
 
