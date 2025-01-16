@@ -12,17 +12,23 @@ public static class SparseInjectTool
     private const string EnableReflectionBakingName = "SparseInject/Enable Reflection Baking";
     private const string DisableReflectionBakingName = "SparseInject/Disable Reflection Baking";
 
-    [RuntimeInitializeOnLoadMethod]
-    private static void UpdateCheckboxes()
+    [InitializeOnLoadMethod]
+    private static void OnInitializeOnLoad()
     {
-        var isReflectionBakingEnabled = IsSourceGeneratorsEnabled();
+        EditorApplication.update += OnFirstEditorUpdate; // menu items still not added on editor open
+    }
+
+    private static void OnFirstEditorUpdate()
+    {
+        EditorApplication.update -= OnFirstEditorUpdate;
+
+        UpdateCheckboxes();
         
-        Menu.SetChecked(EnableReflectionBakingName, isReflectionBakingEnabled);
-        Menu.SetChecked(DisableReflectionBakingName, !isReflectionBakingEnabled);
+        EditorWindow.GetWindow<EditorWindow>().Repaint();
     }
          
     [MenuItem(EnableReflectionBakingName)]
-    private static void EnableReflectionBaking()
+    public static void EnableReflectionBaking()
     {
         if (IsSourceGeneratorsEnabled())
         {
@@ -68,12 +74,12 @@ public static class SparseInjectTool
         }
         
         AssetDatabase.Refresh();
-        
+
         UpdateCheckboxes();
     }
  
     [MenuItem(DisableReflectionBakingName)]
-    private static void DisableReflectionBaking()
+    public static void DisableReflectionBaking()
     {
         if (!IsSourceGeneratorsEnabled())
         {
@@ -104,7 +110,7 @@ public static class SparseInjectTool
             Directory.CreateDirectory(enabledSourceGeneratorsFolder);
         }
         
-        var sourceGeneratorFiles = Directory.GetFiles(enabledSourceGeneratorsFolder);
+        var sourceGeneratorFiles = Directory.GetFiles(enabledSourceGeneratorsFolder).Where(file => !file.Contains("README.txt"));
 
         foreach (var sourceGeneratorFile in sourceGeneratorFiles)
         {
@@ -114,8 +120,16 @@ public static class SparseInjectTool
         }
         
         AssetDatabase.Refresh();
-        
+
         UpdateCheckboxes();
+    }
+    
+    private static void UpdateCheckboxes()
+    {
+        var isReflectionBakingEnabled = IsSourceGeneratorsEnabled();
+        
+        Menu.SetChecked(EnableReflectionBakingName, isReflectionBakingEnabled);
+        Menu.SetChecked(DisableReflectionBakingName, !isReflectionBakingEnabled);
     }
 
     private static bool IsSourceGeneratorsEnabled()
