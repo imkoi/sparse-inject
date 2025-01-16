@@ -1,4 +1,6 @@
-﻿namespace SparseInject.ReflectionBaking.Tests.Generic
+﻿using System;
+
+namespace SparseInject.ReflectionBaking.Tests.Generic
 {
     public class GenericTestInstaller
     {
@@ -8,6 +10,11 @@
             scopeBuilder.Register<IGenericDependencyB, GenericDependencyB<string>>();
             scopeBuilder.Register<IGenericDependencyC0, IGenericDependencyC1, GenericDependencyC<string>>();
             scopeBuilder.Register<IGenericDependencyD0, IGenericDependencyD1, IGenericDependencyD2, GenericDependencyD<string>>();
+
+            scopeBuilder.Register<ManyGenerics<string, int, IDisposable>>();
+            
+            //TODO: fix this case
+            scopeBuilder.Register<ManyGenerics<string, int, GenericDependencyA<string>>>();
         }
     }
     
@@ -24,4 +31,6 @@
     public interface IGenericDependencyD1 { }
     public interface IGenericDependencyD2 { }
     public class GenericDependencyD<T> : IGenericDependencyD0, IGenericDependencyD1, IGenericDependencyD2 { }
+    
+    public class ManyGenerics<T0, T1, T2> { }
 }

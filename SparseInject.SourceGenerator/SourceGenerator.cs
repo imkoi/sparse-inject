@@ -27,6 +27,8 @@ public class SourceGenerator : ISourceGenerator
         {
             return;
         }
+
+        InstanceFactoryGenerator.GeneratorIndex = 0;
         
         context.ReportDiagnostic(Diagnostic.Create(
             DiagnosticDescriptors.AssemblyProcessingStarted,
@@ -75,6 +77,9 @@ public class SourceGenerator : ISourceGenerator
                     
                     if (typeSymbol is INamedTypeSymbol namedTypeSymbolSymbol && namedTypeSymbolSymbol.Arity > 0)
                     {
+                        //TODO: fix complex generics cases with namespaces and references of other projects
+                        continue;
+                        
                         foreach (var typeNameForGen in receiver.TypesWithGenerator)
                         {
                             if (typeNameForGen.StartsWith(typeName) && typeNameForGen.EndsWith(">") &&

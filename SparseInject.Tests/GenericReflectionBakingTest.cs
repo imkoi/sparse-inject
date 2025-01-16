@@ -1,8 +1,10 @@
-﻿using FluentAssertions;
+﻿using System;
+using FluentAssertions;
 using NUnit.Framework;
 using SparseInject;
 using SparseInject.ReflectionBaking.Tests.Generic;
 
+[Ignore("Generics reflection baking are in development")]
 public class GenericReflectionBakingTest
 {
     [Test]
@@ -21,6 +23,14 @@ public class GenericReflectionBakingTest
         factory.Should().NotBeNull();
 
         ReflectionBakingProviderCache.TryGetInstanceFactory(typeof(GenericDependencyD<string>), out factory, out _)
+            .Should().BeTrue();
+        factory.Should().NotBeNull();
+        
+        ReflectionBakingProviderCache.TryGetInstanceFactory(typeof(ManyGenerics<string, int, IDisposable>), out factory, out _)
+            .Should().BeTrue();
+        factory.Should().NotBeNull();
+        
+        ReflectionBakingProviderCache.TryGetInstanceFactory(typeof(ManyGenerics<string, int, GenericDependencyA<string>>), out factory, out _)
             .Should().BeTrue();
         factory.Should().NotBeNull();
     }

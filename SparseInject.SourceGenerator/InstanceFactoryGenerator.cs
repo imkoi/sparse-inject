@@ -5,6 +5,8 @@ namespace SparseInject.SourceGenerator;
 
 public static class InstanceFactoryGenerator
 {
+    public static int GeneratorIndex { get; set; }
+    
     public static bool TryGenerate(TypeDefinition typeDefinition,
         CodeWriter codeWriter, GeneratorExecutionContext context, out string resultGeneratorName,
         out string correctedTypeName)
@@ -134,14 +136,10 @@ public static class InstanceFactoryGenerator
             containingType = containingType.ContainingType;
         }
         
-        var className = typeSymbol.Name;
+        var className = GeneratorIndex.ToString();
+        GeneratorIndex++;
 
-        if (typeDefinition.GenericArgs != null)
-        {
-            className += "_" + string.Join("_", typeDefinition.GenericArgs);
-        }
-        
-        generatorName += $"{className}_SparseInject_InstanceFactory";
+        generatorName += $"SparseInject_InstanceFactory_{className}";
         resultGeneratorName += generatorName;
 
         writer.WriteLine("#if UNITY_2017_1_OR_NEWER");
