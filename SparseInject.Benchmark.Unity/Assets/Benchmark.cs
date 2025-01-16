@@ -11,31 +11,18 @@ public class Benchmark : MonoBehaviour
     [SerializeField] private Slider _progressSlider;
     
     private CancellationTokenSource _cancellationTokenSource;
-    private BenchmarkProgress _progress;
     
-    private async void Awake()
+    private void Awake()
     {
-        _cancellationTokenSource = new CancellationTokenSource();
-        _progress = new BenchmarkProgress();
-
+        var commandArgs = Environment.GetCommandLineArgs();
+        
         var diskReportStorage = new DiskReportStorage(GetTempBenchmarkReportFile());
         var benchmarkRunner = new BenchmarkRunner(
-            Environment.GetCommandLineArgs(),
+            commandArgs,
             diskReportStorage,
             new UnityMemorySnapshotFactory(),
-            new GarbageCollectorCleaner(),
-            new DotNetBenchmarkMeasurer(),
-            _progress);
+            new GarbageCollectorCleaner());
 
-        if (benchmarkRunner.IsRootStart)
-        {
-            _progress.Changed += ProgressChanged;
-        }
-        else
-        {
-            _progressSlider.gameObject.SetActive(false);
-        }
-        
         benchmarkRunner.AddBenchmarkCategory("type-id-provider", new Scenario[]
         {
             new TypeIdProviderScenario(),
@@ -47,12 +34,7 @@ public class Benchmark : MonoBehaviour
 
         try
         {
-            var benchmarkReport = await benchmarkRunner.RunAsync(_cancellationTokenSource.Token);
-
-            if (benchmarkRunner.IsRootStart)
-            {
-                File.WriteAllText(GetBenchmarkReportFile(), benchmarkReport.ToString());
-            }
+            benchmarkRunner.Run();
         }
         catch (Exception exception)
         {
@@ -60,31 +42,12 @@ public class Benchmark : MonoBehaviour
         }
         finally
         {
-            _progress.Changed -= ProgressChanged;
-            
             Application.Quit();
         }
-    }
-
-    private void OnDestroy()
-    {
-        _progress.Changed -= ProgressChanged;
-        _cancellationTokenSource.Cancel();
-        _cancellationTokenSource.Dispose();
-    }
-
-    private void ProgressChanged(float progress)
-    {
-        _progressSlider.value = progress;
     }
 
     private string GetTempBenchmarkReportFile()
     {
         return Path.Combine(Application.persistentDataPath, "temp-benchmark-report.txt").Replace("\\", "/");
-    }
-    
-    private string GetBenchmarkReportFile()
-    {
-        return Path.Combine(Application.persistentDataPath, "benchmark-report.txt").Replace("\\", "/");
     }
 }

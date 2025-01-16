@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SparseInject.BenchmarkFramework
 {
@@ -13,27 +11,19 @@ namespace SparseInject.BenchmarkFramework
         private readonly IReportStorage _reportStorage;
         private readonly IMemorySnapshotFactory _memorySnapshotFactory;
         private readonly IResourceCleaner _resourceCleaner;
-        private readonly IBenchmarkMeasurer _benchmarkMeasurer;
-        private readonly IProgress<float> _progress;
 
         private readonly Dictionary<string, BenchmarkCategory> _categories;
-
-        public bool IsRootStart => _args == null || !_args.Any(arg => arg.Contains(BenchmarkConstants.RunBenchmarkCommand)) ;
 
         public BenchmarkRunner(
             string[] args,
             IReportStorage reportStorage,
             IMemorySnapshotFactory memorySnapshotFactory,
-            IResourceCleaner resourceCleaner,
-            IBenchmarkMeasurer benchmarkMeasurer,
-            IProgress<float> progress)
+            IResourceCleaner resourceCleaner)
         {
             _args = args;
             _reportStorage = reportStorage;
             _memorySnapshotFactory = memorySnapshotFactory;
             _resourceCleaner = resourceCleaner;
-            _benchmarkMeasurer = benchmarkMeasurer;
-            _progress = progress;
             _categories = new Dictionary<string, BenchmarkCategory>(8);
         }
     
@@ -42,66 +32,14 @@ namespace SparseInject.BenchmarkFramework
             _categories.Add(categoryName, new BenchmarkCategory(categoryName, benchmarks, samples));
         }
 
-        public async Task<BenchmarkReport> RunAsync(CancellationToken cancellationToken)
+        public BenchmarkReport Run()
         {
-            if (IsRootStart)
+            var scenarioInfo = GetScenarioInfoByArguments(_args);
+
+            if (scenarioInfo.scenario == null)
             {
-                _reportStorage.CleanSamples();
-
-                var totalSamplesCount = _categories.Values.Sum(c => c.Samples * c.Benchmarks.Count);
-                var sampleIndex = 0;
-                
-                foreach (var category in _categories.Values)
-                {
-                    foreach (var scenario in category.Benchmarks)
-                    {
-                        var categoryName = category.Name;
-                        var scenarioName = scenario.Name;
-                        var samples = category.Samples;
-
-                        for (var i = 0; i < samples; i++)
-                        {
-                            _benchmarkMeasurer.Measure(categoryName, scenarioName);
-                            
-                            while (_reportStorage.GetSamples(categoryName, scenarioName).Count <= i)
-                            {
-                                await TaskUtility.WaitForSecondsAsync(TimeSpan.FromSeconds(2f), cancellationToken);
-                                
-                                Console.WriteLine($"Possible stack at {categoryName}::{scenarioName}");
-                            }
-
-                            sampleIndex++;
-                            
-                            _progress.Report((float)sampleIndex / totalSamplesCount);
-                        }
-
-                        await Task.Yield();
-                    }
-                }
-                
-                var categoryReports = new List<BenchmarkCategoryReport>();
-                
-                foreach (var category in _categories.Values)
-                {
-                    var scenarioReports = new List<BenchmarkScenarioReport>();
-                    
-                    foreach (var scenario in category.Benchmarks)
-                    {
-                        var samples = _reportStorage.GetSamples(
-                            category.Name,
-                            scenario.Name);
-                        
-                        scenarioReports.Add(new BenchmarkScenarioReport(scenario.Name, samples));
-                    }
-                    
-                    categoryReports.Add(new BenchmarkCategoryReport(category.Name, scenarioReports));
-                }
-                
-                return new BenchmarkReport(categoryReports);
+                throw new Exception($"No scenario found for {string.Join(" ", _args)}");
             }
-
-            var launchArgument = string.Join(" ", _args);
-            var scenarioInfo = GetScenarioInfoByArguments(launchArgument);
 
             var sample = SampleScenario(scenarioInfo.scenario);
 
@@ -148,9 +86,10 @@ namespace SparseInject.BenchmarkFramework
             return new BenchmarkSampleReport(time, afterMemorySnapshot.PrivateMemoryMb);
         }
 
-        private (BenchmarkCategory category, Scenario scenario) GetScenarioInfoByArguments(string arguments)
+        private (BenchmarkCategory category, Scenario scenario) GetScenarioInfoByArguments(string[] arguments)
         {
-            var categoryAndScenario = arguments.Split(' ').Last().Split(":");
+            var validArguments = arguments.First(a => a.StartsWith("run-benchmark-"));
+            var categoryAndScenario = validArguments.Replace("run-benchmark-", "").Split(":");
             
             foreach (var category in _categories.Values)
             {
