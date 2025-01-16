@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace SparseInject
@@ -27,7 +26,7 @@ namespace SparseInject
         
         private int _lastContractsConcretesIndex;
         
-        public ContainerBuilder(int capacity = 1024) : this(null, new TypeIdProvider(capacity), capacity)
+        public ContainerBuilder(int capacity = 1024) : this(null, new TypeIdProvider(capacity * 2), capacity)
         {
             
         }
