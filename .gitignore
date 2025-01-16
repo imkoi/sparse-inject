@@ -404,6 +404,7 @@ SparseInject.Unity/[Ll]ogs/
 SparseInject.Unity/[Mm]emoryCaptures/
 SparseInject.Unity/[Uu]serSettings/
 SparseInject.Unity/[Uu]serSettings/*
+SparseInject.Unity/.utmp"
 
 SparseInject.Unity/.idea/
 SparseInject.Unity/.vs/
@@ -443,6 +444,7 @@ SparseInject.Benchmark.Unity/[Ll]ogs/
 SparseInject.Benchmark.Unity/[Mm]emoryCaptures/
 SparseInject.Benchmark.Unity/[Uu]serSettings/
 SparseInject.Benchmark.Unity/[Uu]serSettings/*
+SparseInject.Benchmark.Unity/.utmp/
 
 SparseInject.Benchmark.Unity/.idea/
 SparseInject.Benchmark.Unity/.vs/
