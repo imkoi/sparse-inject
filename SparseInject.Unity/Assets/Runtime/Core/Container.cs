@@ -112,7 +112,7 @@ namespace SparseInject
         {
             if (!_fallbackElements.TryGetValue(type, out var elementType))
             {
-                elementType = type.IsArray ? type.GetElementType() : null;
+                elementType = type.BaseType == TypeCache.ArrayType ? type.GetElementType() : null;
                 
                 _fallbackElements.Add(type, elementType);
             }

@@ -100,7 +100,7 @@ namespace SparseInject
 
                     if (!_contractIds.TryGetValue(parameterType, out contractId))
                     {
-                        if (parameterType.IsArray)
+                        if (parameterType.BaseType == TypeCache.ArrayType)
                         {
                             var elementType = parameterType.GetElementType();
 
@@ -146,7 +146,7 @@ namespace SparseInject
                     if (!_parentContainer.ContractExist(contractId) && 
                         _contractIds.ContainsValue(contractId, out var key))
                     {
-                        if (!key.IsArray)
+                        if (!(key.BaseType == TypeCache.ArrayType))
                         {
                             throw new SparseInjectException($"Dependency '{key}' of '{containerType}' not registered");
                         }
