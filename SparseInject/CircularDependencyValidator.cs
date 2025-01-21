@@ -89,7 +89,7 @@ namespace SparseInject
                 
                     for (var j = 0; j < constructorContract.GetConcretesCount(); j++)
                     {
-                        var concreteIdx = contractsConcretesIndices[j + constructorContract.GetConcretesIndex()];
+                        var concreteIdx = contractsConcretesIndices[j + constructorContract.GetConcretesIndex()] - 1;
                         
                         ThrowIfInvalidRecursive(originConcreteIndex, ref originContainerInfo, concreteIdx,
                             ref nextContainerInfo, depth + 1);

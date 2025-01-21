@@ -41,8 +41,6 @@ namespace SparseInject
             
             _concretes = new Concrete[capacity];
             _contractsConcretesIndices = new int[capacity];
-            
-            ArrayUtilities.Fill(_contractsConcretesIndices, -1);
 
             capacity *= 2;
             _contractsSparse = new int[capacity];
@@ -188,13 +186,13 @@ namespace SparseInject
 
             if (index == _lastContractsConcretesIndex)
             {
-                _contractsConcretesIndices[index] = concreteIndex;
+                _contractsConcretesIndices[index] = concreteIndex + 1;
             }
             else
             {
                 Array.Copy(_contractsConcretesIndices, index, _contractsConcretesIndices, index + 1, _lastContractsConcretesIndex - index);
 
-                _contractsConcretesIndices[index] = concreteIndex;
+                _contractsConcretesIndices[index] = concreteIndex + 1;
 
                 for (; nextIndexGrow < _dependenciesCount; nextIndexGrow++)
                 {
@@ -233,12 +231,9 @@ namespace SparseInject
         {
             if (targetCount > _contractsConcretesIndices.Length)
             {
-                var oldSize = _contractsConcretesIndices.Length;
                 var newSize = targetCount * 2;
                 
                 Array.Resize(ref _contractsConcretesIndices, newSize);
-
-                ArrayUtilities.Fill(_contractsConcretesIndices, -1, oldSize);
             }
         }
 
