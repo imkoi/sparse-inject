@@ -47,8 +47,6 @@ namespace SparseInject
             capacity *= 2;
             _contractsSparse = new int[capacity];
             _contractsDense = new Contract[capacity];
-
-            ArrayUtilities.Fill(_contractsSparse, -1);
         }
         
         public Container Build()
@@ -129,8 +127,6 @@ namespace SparseInject
                 var newSize = contractId * 2;
 
                 Array.Resize(ref _contractsSparse, newSize);
-                
-                ArrayUtilities.Fill(_contractsSparse, -1, oldSize);
             }
 
             var contractIndex = GetContractIndex(contractId);
@@ -176,13 +172,13 @@ namespace SparseInject
                 collectionContract.Type = contractType;
                 collectionContract.SetConcretesIndex(collectionConcretesIndex);
                 
-                nextIndexGrow = _contractsSparse[contractId] + 2;
+                nextIndexGrow = _contractsSparse[contractId] + 1;
                 
                 collectionContract.MarkCollection();
             }
             else
             {
-                nextIndexGrow = _contractsSparse[contractId] + 2;
+                nextIndexGrow = _contractsSparse[contractId] + 1;
             }
 
             var nextContractsConcretesCount = _lastContractsConcretesIndex + 1;
@@ -216,11 +212,13 @@ namespace SparseInject
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetContractIndex(int contractId)
         {
-            ref var contractIndex = ref _contractsSparse[contractId];
+            var contractIndex = _contractsSparse[contractId] - 1;
             
             if (contractIndex < 0)
             {
                 contractIndex = _dependenciesCount++;
+
+                _contractsSparse[contractId] = contractIndex + 1;
             }
             
             if (contractIndex >= _contractsDense.Length)

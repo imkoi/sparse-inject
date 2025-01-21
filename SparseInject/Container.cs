@@ -82,7 +82,7 @@ namespace SparseInject
             if (_contractIds.TryGetValue(type, out var id))
             {
                 var container = this;
-                var contractIndex = _contractsSparse[id];
+                var contractIndex = _contractsSparse[id] - 1;
                 
                 while (contractIndex < 0)
                 {
@@ -93,7 +93,7 @@ namespace SparseInject
                         break;
                     }
                     
-                    contractIndex = container._contractsSparse[id];
+                    contractIndex = container._contractsSparse[id] - 1;
                 }
 
                 if (contractIndex >= 0)
@@ -308,12 +308,12 @@ namespace SparseInject
                 for (var j = 0; j < constructorContractsCount; j++)
                 {
                     var constructorDependencyId = _dependencyReferences[j + constructorContractsIndex];
-                    contractIndex = _contractsSparse[constructorDependencyId];
+                    contractIndex = _contractsSparse[constructorDependencyId] - 1;
 
                     // not exist in current scope - find in created one
                     if (contractIndex < 0)
                     {
-                        contractIndex = createdContainer._contractsSparse[constructorDependencyId];
+                        contractIndex = createdContainer._contractsSparse[constructorDependencyId] - 1;
 
                         // not exist in current scope - find in parent
                         if (contractIndex < 0)
@@ -322,7 +322,7 @@ namespace SparseInject
                             
                             while (parent != null)
                             {
-                                contractIndex = parent._contractsSparse[constructorDependencyId];
+                                contractIndex = parent._contractsSparse[constructorDependencyId] - 1;
                                 
                                 if (contractIndex < 0)
                                 {
@@ -359,7 +359,7 @@ namespace SparseInject
                 for (var j = 0; j < constructorContractsCount; j++)
                 {
                     var constructorDependencyId = _dependencyReferences[j + constructorContractsIndex];
-                    contractIndex = _contractsSparse[constructorDependencyId];
+                    contractIndex = _contractsSparse[constructorDependencyId] - 1;
 
                     if (contractIndex < 0)
                     {
@@ -367,7 +367,7 @@ namespace SparseInject
                         
                         while (parent != null)
                         {
-                            contractIndex = parent._contractsSparse[constructorDependencyId];
+                            contractIndex = parent._contractsSparse[constructorDependencyId] - 1;
                                 
                             if (contractIndex < 0)
                             {
@@ -459,7 +459,7 @@ namespace SparseInject
         internal Concrete GetConcreteByContractType(Type type)
         {
             _contractIds.TryGetValue(type, out var contractId);
-            var denseIndex = _contractsSparse[contractId];
+            var denseIndex = _contractsSparse[contractId] - 1;
 
             var contract = _contractsDense[denseIndex];
             var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + contract.GetConcretesCount() - 1];
@@ -469,7 +469,7 @@ namespace SparseInject
 
         public bool ContractExist(int contractId)
         {
-            if (_contractsSparse[contractId] >= 0)
+            if (_contractsSparse[contractId] > 0)
             {
                 return true;
             }
@@ -484,7 +484,7 @@ namespace SparseInject
 
         public bool TryFindContainerWithContract(int contractId, out Container container)
         {
-            if (_contractsSparse[contractId] >= 0)
+            if (_contractsSparse[contractId] > 0)
             {
                 container = this;
                 return true;
@@ -494,7 +494,7 @@ namespace SparseInject
 
             while (parent != null)
             {
-                if (parent._contractsSparse[contractId] < 0)
+                if (parent._contractsSparse[contractId] <= 0)
                 {
                     parent = parent._parentContainer;
                 }
