@@ -140,7 +140,7 @@ namespace SparseInject
 
         private object ResolveSingleConcrete(int concretesCount, ref Contract contract)
         {
-            var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + concretesCount - 1];
+            var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + concretesCount - 1] - 1;
             ref var concrete = ref _concretes[concreteIndex];
 
             var instance = default(object);
@@ -190,7 +190,7 @@ namespace SparseInject
             
             for (var i = 0; i < concretesCount; i++)
             {
-                concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + i];
+                concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + i] - 1;
                 ref var concrete = ref _concretes[concreteIndex];
 
                 var instance = default(object);
@@ -462,7 +462,7 @@ namespace SparseInject
             var denseIndex = _contractsSparse[contractId] - 1;
 
             var contract = _contractsDense[denseIndex];
-            var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + contract.GetConcretesCount() - 1];
+            var concreteIndex = _contractsConcretesIndices[contract.GetConcretesIndex() + contract.GetConcretesCount() - 1] - 1;
 
             return _concretes[concreteIndex];
         }

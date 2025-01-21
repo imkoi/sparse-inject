@@ -28,7 +28,7 @@ namespace SparseInject
                 for (var concreteIdx = 0; concreteIdx < contract.GetConcretesCount(); concreteIdx++)
                 {
                     var contractConcreteIndex = contract.GetConcretesIndex() + concreteIdx;
-                    var concreteIndex = containerInfo.ContractsConcretesIndices[contractConcreteIndex];
+                    var concreteIndex = containerInfo.ContractsConcretesIndices[contractConcreteIndex] - 1;
                     var concrete = containerInfo.Concretes[concreteIndex];
                     
                     var dependencyIds = new List<int>();
