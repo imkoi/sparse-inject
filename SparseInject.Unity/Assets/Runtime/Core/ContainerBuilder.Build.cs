@@ -138,7 +138,7 @@ namespace SparseInject
                 {
                     contractId = _parentContainer.GetDependencyContractId(constructorContractsIndex + i); // get contractId of dependency
 
-                    if (_contractsSparse[contractId] >= 0) // if dependency exist in scope - skip
+                    if (_contractsSparse[contractId] > 0) // if dependency exist in scope - skip
                     {
                         continue;
                     }

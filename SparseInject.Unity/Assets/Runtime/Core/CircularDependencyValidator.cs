@@ -52,7 +52,7 @@ namespace SparseInject
             {
                 var nextContainerInfo = containerInfo;
                 var constructorContractId = concreteConstructorContractIds[i + constructorContractsIndex];
-                var constructorContractIndex = contractsSparse[constructorContractId];
+                var constructorContractIndex = contractsSparse[constructorContractId] - 1;
                 
                 if (constructorContractIndex < 0 &&
                     parentContainer != null &&
@@ -66,13 +66,13 @@ namespace SparseInject
                     contractsConcretesIndices = targetContainerInfo.ContractsConcretesIndices;
                     concreteConstructorContractIds = targetContainerInfo.ConcreteConstructorContractIds;
                     
-                    constructorContractIndex = contractsSparse[constructorContractId];
+                    constructorContractIndex = contractsSparse[constructorContractId] - 1;
                     nextContainerInfo = targetContainerInfo;
                 }
 
                 if (constructorContractIndex < 0)
                 {
-                    constructorContractIndex = originContainerInfo.ContractsSparse[constructorContractId];
+                    constructorContractIndex = originContainerInfo.ContractsSparse[constructorContractId] - 1;
 
                     if (constructorContractIndex >= 0)
                     {
