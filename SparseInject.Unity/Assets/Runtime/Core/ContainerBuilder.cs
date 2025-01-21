@@ -122,9 +122,7 @@ namespace SparseInject
                 
             if (highestContractId >= oldSize)
             {
-                var newSize = contractId * 2;
-
-                Array.Resize(ref _contractsSparse, newSize);
+                Array.Resize(ref _contractsSparse, highestContractId * 2);
             }
 
             var contractIndex = GetContractIndex(contractId);
@@ -178,9 +176,11 @@ namespace SparseInject
             {
                 nextIndexGrow = _contractsSparse[contractId] + 1;
             }
-
-            var nextContractsConcretesCount = _lastContractsConcretesIndex + 1;
-            TryExtendCapacityContractConcreteIndices(nextContractsConcretesCount);
+            
+            if (_lastContractsConcretesIndex + 1 > _contractsConcretesIndices.Length)
+            {
+                ExtendCapacityContractConcreteIndices();
+            }
 
             var index = collectionConcretesIndex + collectionConcretesCount;
 
@@ -190,16 +190,7 @@ namespace SparseInject
             }
             else
             {
-                Array.Copy(_contractsConcretesIndices, index, _contractsConcretesIndices, index + 1, _lastContractsConcretesIndex - index);
-
-                _contractsConcretesIndices[index] = concreteIndex + 1;
-
-                for (; nextIndexGrow < _dependenciesCount; nextIndexGrow++)
-                {
-                    ref var contractToProcess = ref _contractsDense[nextIndexGrow];
-
-                    contractToProcess.SetConcretesIndex(contractToProcess.GetConcretesIndex() + 1);
-                }
+                InsertConcreteIndexToContract(index, concreteIndex, nextIndexGrow);
             }
             
             _lastContractsConcretesIndex++;
@@ -227,14 +218,28 @@ namespace SparseInject
             return contractIndex;
         }
 
-        private void TryExtendCapacityContractConcreteIndices(int targetCount)
+        private void InsertConcreteIndexToContract(int index, int concreteIndex, int nextIndexGrow)
         {
-            if (targetCount > _contractsConcretesIndices.Length)
+            Array.Copy(_contractsConcretesIndices, index, _contractsConcretesIndices,
+                index + 1, _lastContractsConcretesIndex - index);
+
+            _contractsConcretesIndices[index] = concreteIndex + 1;
+
+            for (; nextIndexGrow < _dependenciesCount; nextIndexGrow++)
             {
-                var newSize = targetCount * 2;
-                
-                Array.Resize(ref _contractsConcretesIndices, newSize);
+                ref var contractToProcess = ref _contractsDense[nextIndexGrow];
+
+                contractToProcess.SetConcretesIndex(contractToProcess.GetConcretesIndex() + 1);
             }
+        }
+        
+        private void ExtendCapacityContractConcreteIndices()
+        {
+            var targetCount = _lastContractsConcretesIndex + 1;
+            
+            var newSize = targetCount * 2;
+                
+            Array.Resize(ref _contractsConcretesIndices, newSize);
         }
 
         internal void MarkConcreteDisposable(int concreteIndex)

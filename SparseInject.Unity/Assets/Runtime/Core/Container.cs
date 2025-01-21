@@ -299,60 +299,7 @@ namespace SparseInject
 
             if (concrete.IsScope())
             {
-                var containerBuilder = new ContainerBuilder(this, _contractIds, 32);
-
-                ((Action<IScopeBuilder, IScopeResolver>)concrete.Value).Invoke(containerBuilder, this);
-
-                createdContainer = containerBuilder.BuildInternal(contract.Type, this);
-
-                for (var j = 0; j < constructorContractsCount; j++)
-                {
-                    var constructorDependencyId = _dependencyReferences[j + constructorContractsIndex];
-                    contractIndex = _contractsSparse[constructorDependencyId] - 1;
-
-                    // not exist in current scope - find in created one
-                    if (contractIndex < 0)
-                    {
-                        contractIndex = createdContainer._contractsSparse[constructorDependencyId] - 1;
-
-                        // not exist in current scope - find in parent
-                        if (contractIndex < 0)
-                        {
-                            var parent = _parentContainer;
-                            
-                            while (parent != null)
-                            {
-                                contractIndex = parent._contractsSparse[constructorDependencyId] - 1;
-                                
-                                if (contractIndex < 0)
-                                {
-                                    parent = parent._parentContainer;
-                                }
-                                else
-                                {
-                                    break;
-                                }
-                            }
-
-                            if (parent != null)
-                            {
-                                reserved.Array[j + reserved.StartIndex] = parent.ResolveInternal(contractIndex);
-                            }
-                            else
-                            {
-                                reserved.Array[j + reserved.StartIndex] = TryGetEmptyArray(ref concrete, j);
-                            }
-                        }
-                        else
-                        {
-                            reserved.Array[j + reserved.StartIndex] = createdContainer.ResolveInternal(contractIndex);
-                        }
-                    }
-                    else
-                    {
-                        reserved.Array[j + reserved.StartIndex] = ResolveInternal(contractIndex);
-                    }
-                }
+                createdContainer = CreateInnerContainer(ref contract, ref concrete, reserved);
             }
             else
             {
@@ -454,6 +401,70 @@ namespace SparseInject
             return concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
                 parameters: constructorParameters, culture: null);
 #endif
+        }
+
+        private Container CreateInnerContainer(ref Contract contract, ref Concrete concrete,
+            ArrayCache.Reserved reserved)
+        {
+            var constructorContractsCount = concrete.GetConstructorContractsCount();
+            var constructorContractsIndex = concrete.GetConstructorContractsIndex();
+            
+            var containerBuilder = new ContainerBuilder(this, _contractIds, 32);
+
+            ((Action<IScopeBuilder, IScopeResolver>)concrete.Value).Invoke(containerBuilder, this);
+
+            var createdContainer = containerBuilder.BuildInternal(contract.Type, this);
+
+            for (var j = 0; j < constructorContractsCount; j++)
+            {
+                var constructorDependencyId = _dependencyReferences[j + constructorContractsIndex];
+                var contractIndex = _contractsSparse[constructorDependencyId] - 1;
+
+                // not exist in current scope - find in created one
+                if (contractIndex < 0)
+                {
+                    contractIndex = createdContainer._contractsSparse[constructorDependencyId] - 1;
+
+                    // not exist in current scope - find in parent
+                    if (contractIndex < 0)
+                    {
+                        var parent = _parentContainer;
+
+                        while (parent != null)
+                        {
+                            contractIndex = parent._contractsSparse[constructorDependencyId] - 1;
+
+                            if (contractIndex < 0)
+                            {
+                                parent = parent._parentContainer;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
+                        if (parent != null)
+                        {
+                            reserved.Array[j + reserved.StartIndex] = parent.ResolveInternal(contractIndex);
+                        }
+                        else
+                        {
+                            reserved.Array[j + reserved.StartIndex] = TryGetEmptyArray(ref concrete, j);
+                        }
+                    }
+                    else
+                    {
+                        reserved.Array[j + reserved.StartIndex] = createdContainer.ResolveInternal(contractIndex);
+                    }
+                }
+                else
+                {
+                    reserved.Array[j + reserved.StartIndex] = ResolveInternal(contractIndex);
+                }
+            }
+
+            return createdContainer;
         }
 
         internal Concrete GetConcreteByContractType(Type type)
