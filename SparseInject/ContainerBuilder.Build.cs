@@ -146,7 +146,7 @@ namespace SparseInject
                     if (!_parentContainer.ContractExist(contractId) && 
                         _contractIds.ContainsValue(contractId, out var key))
                     {
-                        if (!key.BaseType.IsArray)
+                        if (!key.IsArray)
                         {
                             throw new SparseInjectException($"Dependency '{key}' of '{containerType}' not registered");
                         }
