@@ -135,7 +135,7 @@ namespace SparseInject
             {
                 concretesIndex = _lastContractsConcretesIndex;
                 
-                if (contractType.BaseType == TypeCache.ArrayType)
+                if (contractType.IsArray)
                 {
                     contract.Type = contractType.GetElementType();
                     contract.MarkCollection();
