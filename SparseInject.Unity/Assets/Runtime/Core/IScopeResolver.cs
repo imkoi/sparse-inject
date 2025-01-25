@@ -5,5 +5,6 @@ namespace SparseInject
     public interface IScopeResolver : IDisposable
     {
         T Resolve<T>() where T : class;
+        object Resolve(Type type);
     }
 }

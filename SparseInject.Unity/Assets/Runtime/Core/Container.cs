@@ -77,7 +77,7 @@ namespace SparseInject
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private object Resolve(Type type)
+        public object Resolve(Type type)
         {
             if (_contractIds.TryGetValue(type, out var id))
             {
