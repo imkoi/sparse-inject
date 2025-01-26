@@ -361,45 +361,43 @@ namespace SparseInject
             }
 
 #if UNITY_2021_2_OR_NEWER || NET
+            var obj = default(object);
+            
             if (concrete.HasInstanceFactory())
             {
-                if (concrete.IsScope())
-                {
-                    var scope = concrete.GeneratedInstanceFactory.Create(constructorParameters) as Scope;
-
-                    scope.SetContainer(createdContainer);
-
-                    return scope;
-                }
-                
-                return concrete.GeneratedInstanceFactory.Create(constructorParameters);
+                obj = concrete.GeneratedInstanceFactory.Create(constructorParameters);
             }
-            
-            if (concrete.IsScope())
+            else
             {
-                var scope = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
-                    parameters: constructorParameters, culture: null) as Scope;
-
-                scope.SetContainer(createdContainer);
-
-                return scope;
+                obj = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                    parameters: constructorParameters, culture: null);
             }
-            
-            return concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
-                parameters: constructorParameters, culture: null);
+
+            for (var j = 0; j < constructorContractsCount; j++)
+            {
+                constructorParameters[j] = null;
+            }
+
+            if (!concrete.IsScope())
+            {
+                return obj;
+            }
+
+            var scope = (Scope) obj;
+            scope.SetContainer(createdContainer);
+
+            return obj;
 #else
+            var obj = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
+                    parameters: constructorParameters, culture: null);
+
             if (concrete.IsScope())
             {
-                var scope = concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
-                    parameters: constructorParameters, culture: null) as Scope;
-
-                scope._container = createdContainer;
-
-                return scope;
+                var scope = (Scope) obj;
+                scope.SetContainer(createdContainer);
             }
-            
-            return concrete.ConstructorInfo.Invoke(BindingFlags.Default, binder: null,
-                parameters: constructorParameters, culture: null);
+
+            return obj;
 #endif
         }
 
