@@ -8,7 +8,7 @@ namespace SparseInject
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.DivideByZeroChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
 #endif
-    public static class ReflectionUtility
+    internal static class ReflectionUtility
     {
         public static (ConstructorInfo info, ParameterInfo[] parameters) GetInjectableConstructor(Type type)
         {

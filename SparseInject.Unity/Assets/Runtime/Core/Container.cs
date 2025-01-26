@@ -478,7 +478,7 @@ namespace SparseInject
             return _concretes[concreteIndex];
         }
 
-        public bool ContractExist(int contractId)
+        internal bool ContractExist(int contractId)
         {
             if (_contractsSparse[contractId] > 0)
             {
@@ -493,7 +493,7 @@ namespace SparseInject
             return false;
         }
 
-        public bool TryFindContainerWithContract(int contractId, out Container container)
+        internal bool TryFindContainerWithContract(int contractId, out Container container)
         {
             if (_contractsSparse[contractId] > 0)
             {
@@ -523,7 +523,7 @@ namespace SparseInject
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetDependencyContractId(int contractIndex)
+        internal int GetDependencyContractId(int contractIndex)
         {
             return _dependencyReferences[contractIndex];
         }
