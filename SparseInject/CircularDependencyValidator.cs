@@ -10,7 +10,7 @@ namespace SparseInject
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.DivideByZeroChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
 #endif
-    public static class CircularDependencyValidator
+    internal static class CircularDependencyValidator
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void ThrowIfInvalid(ContainerInfo containerInfo)
