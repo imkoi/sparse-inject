@@ -11,12 +11,11 @@ namespace SparseInject
     internal static class ArrayCache
     {
         internal static object[][] _cache;
-        private static object[] _reserved = new object[1024];
         private static int _count;
 
         private static Reserved _originalReserved = new Reserved()
         {
-            Array = _reserved
+            Array = new object[128]
         };
 
         public static object[][] GetConstructorParametersPool(int maxConstructorLength)
@@ -74,6 +73,16 @@ namespace SparseInject
         public static void PushReserved(int count)
         {
             _count -= count;
+
+            var index = _count;
+            var endCount = index + count;
+
+            var array = _originalReserved.Array;
+
+            for (; index < endCount; index++)
+            {
+                array[index] = null;
+            }
         }
         
         public struct Reserved
