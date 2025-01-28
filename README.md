@@ -198,24 +198,44 @@ This metric shows the time a user spends on container configuration and build.
 > **Life-hack for VContainer users**: Disable reflection baking, and it will give you a **30% configuration time boost**,  
 > while having a relatively slow degradation in resolve time.
 
----
-### Allocations
+## Memory usage and allocations
+This metric shows how much memory overhead you will encounter when using DI containers.
+
+Here, I compare memory usage only with **VContainer** because:
+1. I'm too lazy to manually profile all containers 😢
+2. **VContainer** looks more robust and feature-complete in my opinion.
+3. It includes circular dependency checks, which are mandatory for large projects.
+4. **VContainer** can minimize reflection usage with source generators, helping to keep the VM size small.
+
+[Sources 📂](Images%2FPerfromanceV1_0_0%2FAndroid%2Fil2cpp-source-generators%2Fmemory)
+
+![allocation-size.png](Images%2FPerfromanceV1_0_0%2FAndroid%2Fil2cpp-source-generators%2Fmemory%2Fallocation-size.png)
+![gc-alloc-count.png](Images%2FPerfromanceV1_0_0%2FAndroid%2Fil2cpp-source-generators%2Fmemory%2Fgc-alloc-count.png)
+![empty-heap-space.png](Images%2FPerfromanceV1_0_0%2FAndroid%2Fil2cpp-source-generators%2Fmemory%2Fempty-heap-space.png)
 > [!NOTE]
-> Its hard to explain how much allocations SparseInject have, but for example in this benchmark on bindings stage:
-> SparseInject call _GC.Alloc_ **270**972 times, while VContainer call **618**832 _GC.Alloc_.
-> SparseInject allocated 25.7 MB of ram (mostly for reflection) while VContainer allocated 32.7 MB
-#### Container Configuration Stage
-On this stage we registering dependencies to our container, to get information about types we will want to resolve
-- allocated 3 big arrays (default 4k elements) to store info regarding dependencies - could be reallocated when capacity reached (are you making gta 7 or just playing with code in bad way?)
-- allocated 2 dictionaries with capacity (default 4k elements) for mapping types with id to not use reflection at runtime at all - allocations depends on type hashCode
-- allocated types of dependencies and cached - depend on number of registration of unique types
+> **SparseInject** makes **4 times fewer allocations** than **VContainer**.
+>
+> **SparseInject** has a **GC allocation size 2 times smaller** than **VContainer**.
+>
+> **SparseInject** leaves **2 times less empty space** in the heap compared to **VContainer**!
 
-#### Container Building Stage
-On this stage we building container to have ability to resolve instances, but before container build we bake all dependencies and cache reflection
-- allocated **one** large array that reference all dependencies foreach implementation - Allocated ONCE
-- allocated reflection data regarding constructor, constructor parameters, types of this parameters - Allocations depends on type
+> [!WARNING]
+> Metrics was gathered through unity profiler and memory profiler after built and root resolve.
 
-#### Resolve Stage
-On this stage we resolving our instances
-- allocated object foreach instance through FormatterService - depend on number of resolving dependencies
-- allocated arrays **in case of Collection injection** - we should provide unique collection foreach instance
+---
+### Cons
+As we know, nothing in life is perfect, and I want to warn developers❤️ about the cons of **SparseInject**:
+
+1. **Complex Codebase**  
+   The codebase is small but complex due to the data structures implemented to maintain high performance. While it’s more enjoyable to explore the implementations of **VContainer** or **Reflex**, this complexity is why **SparseInject** has **100% test coverage**.
+2. **Hard Debugging**  
+   Debugging can be challenging. To make it easier, I’ve added [ContainerGraph.cs](sparseinject%2FGraph%2FContainerGraph.cs), which helps visualize your container’s structure for better clarity during debugging.
+3. **Dotnet 8 AOT Compatibility**  
+   While **SparseInject** works with .NET 8 AOT, some reflection calls like `Array.CreateInstance()` can slow it down. It’s still relatively fast, but this is something to keep in mind.
+4. **Higher VM Memory Usage**  
+   **SparseInject** uses slightly more VM memory than **VContainer** (about 15% more). This is due to its support for jagged collections resolution, which **VContainer** does not support.
+
+SparseInject
+![SparseInject.png](Images%2FPerfromanceV1_0_0%2FAndroid%2Fil2cpp-source-generators%2Fmemory%2Fsparse-inject-memory.png)
+VContainer
+![VContainer.png](Images%2FPerfromanceV1_0_0%2FAndroid%2Fil2cpp-source-generators%2Fmemory%2Fvcontainer-memory.png)
