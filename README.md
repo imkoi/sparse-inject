@@ -125,6 +125,7 @@ In my performance measurements, I would provide the most relevant benchmark scen
 - [VContainerTransientRegistrator_Depth6.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FRegistrators%2FVContainerTransientRegistrator_Depth6.cs)
 - [ZenjectTransientRegistrator_Depth6.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FRegistrators%2FZenjectTransientRegistrator_Depth6.cs)
 
+
 ## Total time
 This metric shows the time a user spends on container configuration and the first resolve. **This is the most critical metric affecting loading times**.
 
@@ -139,6 +140,44 @@ This metric shows the time a user spends on container configuration and the firs
 > While reflex looks pretty fast - you need to remeber that it dont have circular dependency checks
 > and has 90x slower first resolve time and 7 times slower next resolve times, because he analyze registered types on first resolve
 
+
+## Resolve time
+This metric shows the time a user spends on creating game instances. **This is critical at runtime, to avoid lags and freezes**.
+
+#### Scenarios Sources 📂
+- [ReflexTransientFirstResolve_Depth6Scenario.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FScenarios%2FTransient%2FDepth_6%2FFirstResolve%2FReflexTransientFirstResolve_Depth6Scenario.cs)
+- [SparseInjectTransientFirstResolve_Depth6Scenario.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FScenarios%2FTransient%2FDepth_6%2FFirstResolve%2FSparseInjectTransientFirstResolve_Depth6Scenario.cs)
+- [VContainerTransientFirstResolve_Depth6Scenario.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FScenarios%2FTransient%2FDepth_6%2FFirstResolve%2FVContainerTransientFirstResolve_Depth6Scenario.cs)
+- [ZenjectTransientFirstResolve_Depth6Scenario.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FScenarios%2FTransient%2FDepth_6%2FFirstResolve%2FZenjectTransientFirstResolve_Depth6Scenario.cs)
+- [ManualTransientFirstResolve_Depth6Scenario.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FScenarios%2FTransient%2FDepth_6%2FFirstResolve%2FManualTransientFirstResolve_Depth6Scenario.cs)
+- [ReflexTransientSecondResolve_Depth6Scenario.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FScenarios%2FTransient%2FDepth_6%2FSecondResolve%2FReflexTransientSecondResolve_Depth6Scenario.cs)
+- [SparseInjectTransientSecondResolve_Depth6Scenario.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FScenarios%2FTransient%2FDepth_6%2FSecondResolve%2FSparseInjectTransientSecondResolve_Depth6Scenario.cs)
+- [VContainerTransientSecondResolve_Depth6Scenario.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FScenarios%2FTransient%2FDepth_6%2FSecondResolve%2FVContainerTransientSecondResolve_Depth6Scenario.cs)
+- [ZenjectTransientSecondResolve_Depth6Scenario.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FScenarios%2FTransient%2FDepth_6%2FSecondResolve%2FZenjectTransientSecondResolve_Depth6Scenario.cs)
+- [ManualTransientSecondResolve_Depth6Scenario.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FScenarios%2FTransient%2FDepth_6%2FSecondResolve%2FManualTransientSecondResolve_Depth6Scenario.cs)
+
+![il2cpp-android-first-resolve.png](Images%2FPerfromanceV1_0_0%2FAndroid%2Fil2cpp-source-generators%2Fil2cpp-android-first-resolve.png)
+> [!NOTE]
+> **SparseInject** is **2 times faster than VContainer** and **90x faster than Reflex**.
+
+> [!WARNING]
+> ManualResolver - simple [static methods](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FManualResolvers%2FManualResolver_Depth6.cs) that create instances through the native `new` operator
+> **Why is SparseInject faster than instancing through the native `new` operator?**  
+> This happens because of how Unity handles reference type instantiation:
+> 1. On the first method call, Unity allocates or fetches all metadata for the referenced classes in method.
+> 2. This metadata is cached in a static variable to avoid fetching it on subsequent calls.
+>
+> In contrast, **SparseInject** allocates class metadata during the container build stage, so resolving an instance simply fetches the pre-allocated metadata.  
+> As a result, resolve through `new` operator is **slower** on the first instance creation compared to a DI container like SparseInject.
+
+![il2cpp-android-second-resolve.png](Images%2FPerfromanceV1_0_0%2FAndroid%2Fil2cpp-source-generators%2Fil2cpp-android-second-resolve.png)
+> [!NOTE]
+> **SparseInject** is almost **3 times faster than VContainer** and **7x faster than Reflex**.
+
+> [!WARNING]
+> Now we see that instancing through simple static methods are 2.5 faster as it not have algorithm to find dependencies
+
+
 ## Configuration time
 This metric shows the time a user spends on container configuration and build.
 
@@ -149,56 +188,17 @@ This metric shows the time a user spends on container configuration and build.
 - [ZenjectTransientRegisterAndBuild_Depth6Scenario.cs](SparseInject.Benchmark.Unity%2FAssets%2FBenchmark%2FScenarios%2FTransient%2FDepth_6%2FRegisterAndBuild%2FZenjectTransientRegisterAndBuild_Depth6Scenario.cs)
 
 ![il2cpp-android-registration-and-build.png](Images%2FPerfromanceV1_0_0%2FAndroid%2Fil2cpp-source-generators%2Fil2cpp-android-registration-and-build.png)
+> [!Note]
+> We see that **SparseInject** is **15 times faster** than **VContainer**!
+
 > [!WARNING]
-> Winner is Reflex as he doesn't analyze types on building and doesn't perform circular dependency checks.  
-> However, we see that **SparseInject** is **15 times faster** than **VContainer**!
+> However, **Reflex is winner** as he doesn't analyze types on building and doesn't perform circular dependency checks.  
 
 > [!WARNING]
 > **Life-hack for VContainer users**: Disable reflection baking, and it will give you a **30% configuration time boost**,  
 > while having a relatively slow degradation in resolve time.
 
 ---
-### Features
-- Transient and Singleton bindings - singletons will be disposed on container / scopes dispose
-- Value bindings - bind values as singletons
-- Collections injection - its possible to inject ISomeType[] collection into constructors
-- Scopes - gives possibility to provide new isolated bindings that will be disposed after scope destroy
-- Separated binding and resolving stages - you cant bind new dependencies into container on runtime
-- Container only injection - there is no possibility to inject methods, properties and fields
-
----
-### Performance
-In comparison to VContainer with Reflection:
-- 11x faster binding times than VContainer
-- 40% faster resolve than VContainer
-- 30% less allocations
-- Smaller build size than VContainer
-- Careful usage of reflection functional - even typeof are always cached
-
-  | Metric                                       | SparseInject    | VContainer      | Difference            |
-    |----------------------------------------------|------------------|-----------------|-----------------------|
-  | Bind Time                                    | **2923**,563 ms  | **34114,22** ms | **91**.43% **Faster** |
-  | Resolve Time [Min]                           | **40**,5466 ms   | **67**,8947 ms  | **40**.26% Faster     |
-  | Resolve Time [Avg]                           | **44**,88753 ms  | **72**,28737 ms | **37**.91% Faster     |
-  | Resolve Time [Max]                           | **67**,6113 ms   | **97**,1772 ms  | **30**.42% Faster     |
-  | Resolve Time [Total Spend]                   | **8079**,756 ms  | **13011**,73 ms | **37**.91% Faster     |
-  | **Session Time** [DI time spent per session] | **11003**,319 ms | **47125**,95 ms | **76**.65% **Faster** |
-
-In comparison to VContainer with **Reflection Baking enabled**:
-- 15x faster binding times than VContainer
-- Same resolve speed on first resolve, 15% slower on next resolves, **BUT** Its important to remember that most games use instances that resolved just once
-- 30% less allocations
-- Up to 2x smaller build size (depend on amount of methods and fields in classes, 2x improve with constructors only)
-
-| Metric                                       | SparseInject   | VContainer **Reflection Baking** | Difference             |
-|----------------------------------------------|-----------------|----------------------------------|------------------------|
-| Bind Time                                    | **2974**,29 ms  | **47184**,44 ms                  | **93**.7% **Faster**   |
-| Resolve Time [Min]                           | **36**,1111 ms  | **31**,1136 ms                   | **16**.06% Slower      |
-| Resolve Time [Avg]                           | **40**,30264 ms | **33**,82388 ms                  | **19**.15% Slower      |
-| Resolve Time [Max]                           | **65**,71 ms    | **64**,9757 ms                   | **1**.13%   Slower     |
-| Resolve Time [Total Spend]                   | **32161**,5 ms  | **26991**,45 ms                  | **19**.15%    Slower   |
-| **Session Time** [DI time spent per session] | **35135**,79 ms | **74175**,89 ms                  | **52**.63%  **Faster** |
---- 
 ### Allocations
 > [!NOTE]
 > Its hard to explain how much allocations SparseInject have, but for example in this benchmark on bindings stage:
