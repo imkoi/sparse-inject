@@ -38,7 +38,20 @@ https://github.com/imkoi/sparse-inject.git?path=/SparseInject.Unity/Assets/#1.0.
 3. Enter url and click **Add**.
 
 ---
-### How To
+### Content tree
+- [Usages](#usages)
+- [Limitations](#-limitations)
+- - [Why limitations are important](#why-limitations-are-important)
+- - [What limitations exist](#what-limitations-exists)
+- [Benchmarks](#benchmarks)
+- - [CPU Total Time](#total-time)
+- - [CPU Resolve Time](#resolve-time)
+- - [CPU Registration And Build  Time](#registration-and-build-time)
+- - [Memory Usage and Allocations](#memory-usage-and-allocations)
+- [Cons](#cons)
+
+---
+### Usages
 #### Transient
 Gives ability to create new instance on each resolve
 ```csharp 
@@ -104,6 +117,57 @@ class Program
     }
 }
 ```
+---
+### 🚧 Limitations
+### Why Limitations are important?
+
+1. #### ⏱️ Ease of Use
+   - A minimal learning curve is essential for developers. The API should be intuitive and easy for newcomers to adopt quickly. Clear, well-known patterns ensure every developer on your project feels comfortable using it without steep onboarding.
+
+2. #### 🔄 Migration Flexibility
+   - To ensure an easy transition to other DI containers in the future, the feature set and dependencies on the current implementation must be minimal. This reduces the lock-in effect and allows flexibility for evolving project needs.
+
+3. #### 🚀 Performance by Default
+   - In large projects, it's challenging to enforce how APIs are used. Poorly optimized features can severely impact application performance and loading times. For this reason, only performant-by-default features will be implemented, minimizing the risk of misuse.
+
+4. #### 🧠 Encouraging Simplicity and Clean Code
+   - By imposing limitations, developers are guided toward writing simpler, cleaner code. This approach promotes maintainable solutions while reducing unnecessary complexity in implementation.
+
+5. #### 👤 Managed by a Single Developer
+   - Since the project is managed and supported by one person, maintaining a large feature set would lead to time-consuming edge cases and complexity. Limiting the scope ensures better quality and more sustainable development.
+
+### What Limitations exists?
+1. #### ❌ No Inject Attribute
+   - Adding an `Inject` attribute introduces a dependency on a specific DI container implementation, making your code harder to test and increasing memory usage.
+   - **Instead:** Decouple your logic from views or components that rely on resource-heavy dependencies.
+
+2. #### ❌ No Lazy Injection
+   - Lazy injection is excluded because the same behavior can be achieved using factories, offering a more explicit and manageable approach.
+
+3. #### ❌ No Inject Key
+   - Inject keys are not supported because factories with parameters can achieve the same functionality, promoting clarity and flexibility.
+
+4. #### ❌ No Conditional Bindings
+   - Conditional bindings are omitted because their functionality can be replicated using factories with parameters, avoiding unnecessary complexity.
+
+5. #### ❌ No Open Generics Injection
+   - Open generics injection is avoided due to its negative impact on performance, especially in AOT (Ahead-of-Time) scenarios where reflection is costly.
+   - **Instead:** Achieve the same functionality using simpler, explicit code.
+
+6. #### ❌ No Runtime Modifications After Container Build
+   - Allowing bindings to be modified after the container is configured is considered a bad practice. It introduces unpredictable behavior during the resolve phase.
+   - **Instead:** Finalize configurations during the build stage.
+
+7. #### ❌ No Dynamic Type Registration
+   - This decision ensures potential registration issues are caught at compile time, improving code clarity and reducing runtime errors.
+
+8. #### ❌ No Unity-Specific Extensions
+   - Unity-specific extensions are not provided to avoid dependencies on the Unity engine.
+   - **However:** I recommend to register your prefabs as singletons or factories return instance of prefab.
+
+9. #### ❌ No Extra Features Outside DI Responsibility
+   - Features like decorators and other unrelated functionalities are not included to maintain a focused and lightweight DI container.
+   - **Philosophy:** Keep It Purposeful (KIP).
 
 ---
 ### Benchmarks
@@ -179,7 +243,7 @@ This metric shows the time a user spends on creating game instances. **This is c
 > Now we see that instancing through simple static methods are 2.5 faster as it not have algorithm to find dependencies
 
 
-## Configuration time
+## Registration and Build time
 This metric shows the time a user spends on container configuration and build.
 
 #### Scenarios Sources 📂
