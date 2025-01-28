@@ -20,7 +20,8 @@
 - ✂️ Easily **exclude specific business logic** from the DI container
 - 🔄 Smoothly **migrate from SparseInject to any other container**
 #### 🛡️ **Stable**
-- ✅ **100% test coverage**, compared to VContainer’s 70% coverage
+- 💯 **100% test coverage**, compared to 60% coverage of competitors
+- ✅ **Smaller SparseInject codebase** has 2x more test cases than competitors
 #### 🌎 **Run Everywhere**
 - 🔗 **No dependencies** on specific engines — works with any C# environment
 - 📱 **AOT-ready**: Uses minimal reflection to ensure maximum compatibility
