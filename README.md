@@ -137,8 +137,6 @@ var gameplayController = container.Resolve<GameplayController>();
 var playerFactory = container.Resolve<Func<PlayerController>>(); 
 ```
 
-</details>
-
 <summary>Accessing Parent Scope Registrations in a Child Scope</summary>
 
 ```csharp
