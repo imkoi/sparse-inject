@@ -52,7 +52,7 @@ https://github.com/imkoi/sparse-inject.git?path=/SparseInject.Unity/Assets/#1.0.
 
 ---
 ### Usages
-#### Transient
+### Transient
 Gives ability to create new instance on each resolve
 ```csharp 
 using System; 
@@ -65,7 +65,7 @@ class Program
     }
 }
 ```
-#### Singletons
+### Singletons
 Gives ability to return same instance on each resolve
 ```csharp 
 using System; 
@@ -78,7 +78,7 @@ class Program
     }
 }
 ```
-#### Collections
+### Collections
 Gives ability to resolve array of specific types
 ```csharp 
 using System; 
@@ -91,7 +91,7 @@ class Program
     }
 }
 ```
-#### Factory
+### Factory
 Key Purposes:
 - Custom Resolve Logic – Enable the creation of instances with custom resolve behavior to fit specific requirements
 - On-Demand Instantiation – Allow instances to be created precisely when they are needed
@@ -180,7 +180,7 @@ var menuAudioService = audioServiceFactory.Invoke("Menu");
 
 </details>
 
-#### Scopes
+### Scopes
 Key Purposes:
 - Lifecycle Management – scopes create and manage their dependencies lifetimes
 - Encapsulation of Registrations – dependencies registered within a scope remain isolated and cannot be accessed by the parent scope, while the scope itself can still resolve dependencies from its parent
