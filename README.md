@@ -105,18 +105,119 @@ class Program
 }
 ```
 #### Scopes
-Gives ability to split perfromance overhead and incapsulate speific types
-```csharp 
-using System; 
+##### Key Goals of Scopes
+1. **Encapsulation of Registrations**
+   - Scopes allow registrations to be accessible only within the scope where they are defined.
+   - When a dependency is resolved in a scope, the scope first checks its own registrations. If the dependency is not found, it looks in the parent scope.
+   - Parent scopes do not have access to child scope registrations.
+   - Registrations inside a scope are processed only when the scope is created.
+2. **Access to Parent Dependencies**
+   - Scopes can access dependencies registered in the parent container, allowing reuse of shared services while isolating scope-specific dependencies.
+3. **Overriding Registrations in Scopes**
+   - Scopes enable overriding of dependencies defined in the parent container, allowing context-specific implementations.
+4. **Lifecycle Management**
+   - Scopes can manage their own disposables. When a scope is disposed, all disposable instances created within the scope are also disposed.
 
-class Program 
+<details>
+<summary>Encapsulating Registrations in a Scope</summary>
+
+```csharp
+// GameplayController inject Func<PlayerController> to constructor
+containerBuilder.RegisterScope<GameplayController>(innerBuilder =>
 {
-    static void Main() 
-    {
-        Console.WriteLine("Hello, SparseInject!");
-    }
-}
+    innerBuilder.RegisterFactory(scope => new PlayerController(scope.Resolve<IAudioService>()));
+});
+
+var container = containerBuilder.Build();
+
+// return instance with injected Func<PlayerController> to constructor
+var gameplayController = container.Resolve<GameplayController>();
+
+// will throw exception, because Func<PlayerController> exist only inside GameplayController scope
+var playerFactory = container.Resolve<Func<PlayerController>>(); 
 ```
+
+</details>
+
+<summary>Accessing Parent Scope Registrations in a Child Scope</summary>
+
+```csharp
+containerBuilder.Register<RewardService>(Lifetime.Singleton);
+
+// GameplayController inject RewardService
+containerBuilder.RegisterScope<GameplayController>(innerBuilder =>
+{
+    // registrations
+});
+
+var container = containerBuilder.Build();
+
+// return instance of type RewardService from root container
+var rewardService = container.Resolve<RewardService>();
+
+// return instance with injected RewardService from root container
+var gameplayController = container.Resolve<GameplayController>();
+```
+
+<summary>Overriding Registrations in a Scope</summary>
+
+```csharp
+containerBuilder.Register<IAudioService, MenuAudioService>(Lifetime.Singleton);
+
+// GameplayController inject IAudioService
+containerBuilder.RegisterScope<GameplayController>(innerBuilder =>
+{
+    // GameplayAudioService will use stereo instead of mono sounds
+    innerBuilder.Register<IAudioService, GameplayAudioService>(Lifetime.Singleton).MarkDisposable();
+});
+
+var container = containerBuilder.Build();
+
+// return instance of type MenuAudioService from root container
+var audioService = container.Resolve<IAudioService>(); 
+
+// return instance with injected GameplayAudioService from GameplayController scope
+var gameplayController = container.Resolve<GameplayController>();
+```
+
+<summary>Lifecycle of Scope and its Registrations</summary>
+
+```csharp
+// GameplayController inject IAudioService
+containerBuilder.RegisterScope<GameplayController>(innerBuilder =>
+{
+    //We mark it as disposable, to call Dispose method of instance when scope will be destroyed
+    innerBuilder.Register<IAudioService, GameplayAudioService>(Lifetime.Singleton).MarkDisposable();
+});
+
+var container = containerBuilder.Build();
+
+// return instance with injected GameplayAudioService
+var gameplayController = container.Resolve<GameplayController>();
+
+// this is Scope.Dispose call, it will dispose GameplayAudioService and all data allocated for scope
+gameplayController.Dispose(); 
+```
+
+<summary>Instantiating a Scope at Specific Time</summary>
+
+```csharp
+containerBuilder.RegisterScope<GameplayController>(innerBuilder =>
+{
+    // registrations
+});
+containerBuilder.RegisterFactory(scope => scope.Resolve<GameController>());
+
+var container = containerBuilder.Build();
+
+// could be cached and used in any time
+var gameplayControllerFactory = container.Resolve<Func<GameplayController>>();
+
+// return instance of scope
+var gameplayController = gameplayControllerFactory.Invoke(); 
+```
+</details>
+
 ---
 ### 🚧 Limitations
 ### Why Limitations are important?
