@@ -92,31 +92,100 @@ class Program
 }
 ```
 #### Factory
-Gives ability to create your instance by specific logic and parameter
-```csharp 
-using System; 
+Key Purposes:
+- Custom Resolve Logic – Enable the creation of instances with custom resolve behavior to fit specific requirements
+- On-Demand Instantiation – Allow instances to be created precisely when they are needed
+- Contextual Instantiation – Facilitate the creation of instances based on specific variables or parameters
 
-class Program 
-{
-    static void Main() 
-    {
-        Console.WriteLine("Hello, SparseInject!");
-    }
-}
+<details>
+<summary>Code Example</summary>
+
+Custom Resolve Logic
+```csharp
+var containerBuilder = new ContainerBuilder();
+
+containerBuilder.RegisterFactory(() => new GameplayController());
+
+var container = containerBuilder.Build();
+
+// could be cached and used in any time
+var gameplayControllerFactory = container.Resolve<Func<GameplayController>>();
+
+// return instance of object
+var gameplayController = gameplayControllerFactory.Invoke(); 
 ```
+
+Parameterized Instantiation
+```csharp
+var containerBuilder = new ContainerBuilder();
+
+containerBuilder.RegisterFactory<string, IAudioService>(key =>
+{
+    switch (key)
+    {
+        case "Gameplay":
+            return new GameplayAudioService();
+        case "Menu":
+            return new MenuAudioService();
+        default:
+            throw new NotImplementedException();
+    }
+});
+
+var container = containerBuilder.Build();
+
+// could be cached and used in any time
+var audioServiceFactory = container.Resolve<Func<string, IAudioService>>();
+
+// return instance of GameplayAudioService
+var gameplayAudioService = audioServiceFactory.Invoke("Gameplay"); 
+
+// return instance of MenuAudioService
+var menuAudioService = audioServiceFactory.Invoke("Menu"); 
+```
+
+Scoped Parameterized Instantiation
+```csharp
+var containerBuilder = new ContainerBuilder();
+
+containerBuilder.Register<GameplayAudioService>();
+containerBuilder.Register<MenuAudioService>();
+containerBuilder.RegisterFactory<string, IAudioService>(scope =>
+{
+    return key =>
+    {
+        switch (key)
+        {
+            case "Gameplay":
+                return scope.Resolve<GameplayAudioService>();
+            case "Menu":
+                return scope.Resolve<MenuAudioService>();
+            default:
+                throw new NotImplementedException();
+        }
+    };
+});
+
+var container = containerBuilder.Build();
+
+// could be cached and used in any time
+var audioServiceFactory = container.Resolve<Func<string, IAudioService>>();
+
+// return instance of GameplayAudioService
+var gameplayAudioService = audioServiceFactory.Invoke("Gameplay"); 
+
+// return instance of MenuAudioService
+var menuAudioService = audioServiceFactory.Invoke("Menu"); 
+```
+
+</details>
+
 #### Scopes
-##### Key Goals of Scopes
-1. **Encapsulation of Registrations**
-   - Scopes allow registrations to be accessible only within the scope where they are defined.
-   - When a dependency is resolved in a scope, the scope first checks its own registrations. If the dependency is not found, it looks in the parent scope.
-   - Parent scopes do not have access to child scope registrations.
-   - Registrations inside a scope are processed only when the scope is created.
-2. **Access to Parent Dependencies**
-   - Scopes can access dependencies registered in the parent container, allowing reuse of shared services while isolating scope-specific dependencies.
-3. **Overriding Registrations in Scopes**
-   - Scopes enable overriding of dependencies defined in the parent container, allowing context-specific implementations.
-4. **Lifecycle Management**
-   - Scopes can manage their own disposables. When a scope is disposed, all disposable instances created within the scope are also disposed.
+Key Purposes:
+- Lifecycle Management – scopes create and manage their dependencies lifetimes
+- Encapsulation of Registrations – dependencies registered within a scope remain isolated and cannot be accessed by the parent scope, while the scope itself can still resolve dependencies from its parent
+- Overriding Registrations – scopes allow override registrations, enabling different implementations in different contexts
+- Performance Optimization – registrations done only when scope is created, improving efficiency
 
 <details>
 <summary>Code Example</summary>
