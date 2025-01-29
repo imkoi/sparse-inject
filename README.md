@@ -119,8 +119,9 @@ class Program
    - Scopes can manage their own disposables. When a scope is disposed, all disposable instances created within the scope are also disposed.
 
 <details>
-<summary>Encapsulating Registrations in a Scope</summary>
+<summary>Code Example</summary>
 
+Encapsulating Registrations in a Scope
 ```csharp
 // GameplayController inject Func<PlayerController> to constructor
 containerBuilder.RegisterScope<GameplayController>(innerBuilder =>
@@ -137,8 +138,7 @@ var gameplayController = container.Resolve<GameplayController>();
 var playerFactory = container.Resolve<Func<PlayerController>>(); 
 ```
 
-<summary>Accessing Parent Scope Registrations in a Child Scope</summary>
-
+Accessing Parent Scope Registrations in a Child Scope
 ```csharp
 containerBuilder.Register<RewardService>(Lifetime.Singleton);
 
@@ -157,8 +157,7 @@ var rewardService = container.Resolve<RewardService>();
 var gameplayController = container.Resolve<GameplayController>();
 ```
 
-<summary>Overriding Registrations in a Scope</summary>
-
+Overriding Registrations in a Scope
 ```csharp
 containerBuilder.Register<IAudioService, MenuAudioService>(Lifetime.Singleton);
 
@@ -178,8 +177,7 @@ var audioService = container.Resolve<IAudioService>();
 var gameplayController = container.Resolve<GameplayController>();
 ```
 
-<summary>Lifecycle of Scope and its Registrations</summary>
-
+Lifecycle of Scope and its Registrations
 ```csharp
 // GameplayController inject IAudioService
 containerBuilder.RegisterScope<GameplayController>(innerBuilder =>
@@ -197,8 +195,7 @@ var gameplayController = container.Resolve<GameplayController>();
 gameplayController.Dispose(); 
 ```
 
-<summary>Instantiating a Scope at Specific Time</summary>
-
+Instantiating a Scope at Specific Time
 ```csharp
 containerBuilder.RegisterScope<GameplayController>(innerBuilder =>
 {
