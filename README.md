@@ -40,58 +40,167 @@ https://github.com/imkoi/sparse-inject.git?path=/SparseInject.Unity/Assets/#1.0.
 ---
 ### Content tree
 - [Usages](#usages)
+- - [Transients](#transient)
+- - [Singletons](#singletons)
+- - [Collections](#collections)
+- - [Factories](#factories)
+- - [Scopes](#scopes)
 - [Limitations](#-limitations)
 - - [Why limitations are important](#why-limitations-are-important)
 - - [What limitations exist](#what-limitations-exists)
 - [Benchmarks](#benchmarks)
 - - [CPU Total Time](#total-time)
 - - [CPU Resolve Time](#resolve-time)
-- - [CPU Registration And Build  Time](#registration-and-build-time)
+- - [CPU Registration And Build Time](#registration-and-build-time)
 - - [Memory Usage and Allocations](#memory-usage-and-allocations)
 - [Cons](#cons)
 
 ---
 ### Usages
 ### Transient
-Gives ability to create new instance on each resolve
-```csharp 
-using System; 
+Key Purposes of Transients
+- Creating New Instances on Each Resolve – Ensures that every resolution returns a fresh instance, preventing unintended state sharing
 
-class Program 
-{
-    static void Main() 
-    {
-        Console.WriteLine("Hello, SparseInject!");
-    }
-}
+<details>
+<summary>Code Example</summary>
+
+Use of Transient Registrations and Resolves
+```csharp
+containerBuilder.Register<PlayerController>();
+containerBuilder.Register<IAssetsProvider, AssetBundleAssetsProvider>();
+
+// You can register your concrete up to 3 generic interfaces
+// Limiting ensures clarity, maintainability, and modularity while preventing SRP violations, hidden dependencies, and debugging complexity.
+
+var container = containerBuilder.Build();
+
+// return instance of PlayerController, that WILL NOT BE equal to next resolved PlayerController
+var player = container.Resolve<PlayerController>();
+
+// return instance of AssetBundleAssetsProvider, that WILL NOT BE equal to next resolved IAssetsProvider
+var assetsProvider = container.Resolve<IAssetsProvider>();
 ```
+</details>
+
 ### Singletons
-Gives ability to return same instance on each resolve
-```csharp 
-using System; 
+Key Purposes of Singletons
+- Ensuring a Single Instance – Guarantees that resolving a singleton always returns the same instance, maintaining consistency across the application
+- Registering External Instances – Allows registering pre-existing objects or values outside the DI container for easy retrieval and reuse
 
-class Program 
-{
-    static void Main() 
-    {
-        Console.WriteLine("Hello, SparseInject!");
-    }
-}
+<details>
+<summary>Code Example</summary>
+
+Use of Singleton Registrations and Resolves
+```csharp
+containerBuilder.Register<HttpClient>(Lifetime.Singleton);
+containerBuilder.Register<IInputService, InputService>(Lifetime.Singleton);
+
+// You can register your concrete up to 3 generic interfaces
+// Limiting ensures clarity, maintainability, and modularity while preventing SRP violations, hidden dependencies, and debugging complexity.
+
+var container = containerBuilder.Build();
+
+// return instance of HttpClient, that WILL BE equal to next resolved HttpClient
+var player = container.Resolve<HttpClient>();
+
+// return instance of InputService, that WILL BE equal to next resolved IInputService
+var assetsProvider = container.Resolve<IInputService>();
 ```
+
+Use of Value Registrations and Resolves
+```csharp
+containerBuilder.RegisterValue(new HttpClient()); // this value registration is singleton by default
+containerBuilder.RegisterValue<IInputService>(_inputService); // if _inputService is typeof(InputService) we can still register it to interfaces
+
+// You can register your concrete up to 3 generic interfaces
+// Limiting ensures clarity, maintainability, and modularity while preventing SRP violations, hidden dependencies, and debugging complexity.
+
+var container = containerBuilder.Build();
+
+// return instance of HttpClient, that WILL BE equal to next resolved HttpClient
+var player = container.Resolve<HttpClient>();
+
+// return instance of InputService, that WILL BE equal to next resolved IInputService
+var assetsProvider = container.Resolve<IInputService>();
+```
+</details>
+
 ### Collections
-Gives ability to resolve array of specific types
-```csharp 
-using System; 
+Key Purposes of Collections
+- Resolving Arrays – Enables retrieving all registered instances of a given type in a single resolution, simplifying batch processing
+- Resolving Jagged Arrays – Supports resolving nested arrays of specific registrations, allowing structured dependency grouping
 
-class Program 
+<details>
+<summary>Code Example</summary>
+
+Resolve Arrays of Transient Dependencies
+```csharp
+containerBuilder.Register<IPlayerState, PlayerIdleState>();
+containerBuilder.Register<IPlayerState, PlayerMoveState>();
+containerBuilder.Register<IPlayerState, PlayerAttackState>();
+
+var container = containerBuilder.Build();
+
+// return IPlayerState[] { PlayerIdleState, PlayerMoveState, PlayerAttackState }
+// PlayerIdleState, PlayerMoveState, PlayerAttackState will be new instances each resolve, because they are transient
+var playerStates = container.Resolve<IPlayerState[]>();
+```
+
+Get Arrays of Elements from Single and Array Registrations
+```csharp
+containerBuilder.Register<IDisposable, RewardService>(Lifetime.Singleton);
+containerBuilder.RegisterValue(new IDisposable[2] { _unityAssetPool, _unityAudioService });
+
+var container = containerBuilder.Build();
+
+// return IDisposable[] { RewardService, _unityAssetPool, _unityAudioService }
+var disposables = container.Resolve<IDisposable[]>();
+
+// dispose some dependencies at end of application
+foreach (var disposable in disposables)
 {
-    static void Main() 
-    {
-        Console.WriteLine("Hello, SparseInject!");
-    }
+    disposable.Dispose();
 }
 ```
-### Factory
+
+Get Jagged Arrays
+```csharp
+containerBuilder.RegisterValue<IAssetsProvider[], IMenuAssetsProvider[]>(new MenuAssetsProvider[2]
+{
+    _inventoryAssetsProvider,
+    _shopAssetsProvider
+});
+containerBuilder.RegisterValue<IAssetsProvider[], IGameplayAssetsProvider[]>(new GameplayAssetsProvider[2]
+{
+    _playerAssetsProvider,
+    _levelAssetsProvider
+});
+
+var container = containerBuilder.Build();
+
+// return IAssetsProvider[][] { { _inventoryAssetsProvider, _shopAssetsProvider }, { _playerAssetsProvider, _levelAssetsProvider} } 
+var assetsProviders = container.Resolve<IAssetsProvider[][]>();
+
+foreach (var assetsProviderBatch in assetsProviders)
+{
+    foreach (var assetsProvider in assetsProviderBatch)
+    {
+        assetsProvider.StartPrewarmAsync(cancellationToken).Forget();
+    }
+}
+
+// user start game and exit from menu
+var menuAssetsProvider = container.Resolve<IMenuAssetsProvider[]>();
+menuAssetsProvider.Dispose();
+
+// user exit from level
+var gameplayAssetsProvider = container.Resolve<IGameplayAssetsProvider[]>();
+menuAssetsProvider.Dispose();
+```
+
+</details>
+
+### Factories
 Key Purposes:
 - Custom Resolve Logic – Enable the creation of instances with custom resolve behavior to fit specific requirements
 - On-Demand Instantiation – Allow instances to be created precisely when they are needed
@@ -102,8 +211,6 @@ Key Purposes:
 
 Custom Resolve Logic
 ```csharp
-var containerBuilder = new ContainerBuilder();
-
 containerBuilder.RegisterFactory(() => new GameplayController());
 
 var container = containerBuilder.Build();
@@ -117,8 +224,6 @@ var gameplayController = gameplayControllerFactory.Invoke();
 
 Parameterized Instantiation
 ```csharp
-var containerBuilder = new ContainerBuilder();
-
 containerBuilder.RegisterFactory<string, IAudioService>(key =>
 {
     switch (key)
@@ -146,8 +251,6 @@ var menuAudioService = audioServiceFactory.Invoke("Menu");
 
 Scoped Parameterized Instantiation
 ```csharp
-var containerBuilder = new ContainerBuilder();
-
 containerBuilder.Register<GameplayAudioService>();
 containerBuilder.Register<MenuAudioService>();
 containerBuilder.RegisterFactory<string, IAudioService>(scope =>
@@ -302,6 +405,9 @@ var gameplayController = gameplayControllerFactory.Invoke();
    - Since the project is managed and supported by one person, maintaining a large feature set would lead to time-consuming edge cases and complexity. Limiting the scope ensures better quality and more sustainable development.
 
 ### What Limitations exists?
+<details>
+<summary><b>Limitations List</b></summary>
+
 1. #### ❌ No Inject Attribute
    - Adding an `Inject` attribute introduces a dependency on a specific DI container implementation, making your code harder to test and increasing memory usage.
    - **Instead:** Decouple your logic from views or components that rely on resource-heavy dependencies.
@@ -333,6 +439,8 @@ var gameplayController = gameplayControllerFactory.Invoke();
 9. #### ❌ No Extra Features Outside DI Responsibility
    - Features like decorators and other unrelated functionalities are not included to maintain a focused and lightweight DI container.
    - **Philosophy:** Keep It Purposeful (KIP).
+
+</details>
 
 ---
 ### Benchmarks
