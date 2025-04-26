@@ -1,9 +1,9 @@
 using FluentAssertions;
 using NUnit.Framework;
 
-namespace SparseInject.Tests.Bugfixes
+namespace SparseInject.Tests.Issues
 {
-    public class Bug_7
+    public class Issue_7
     {
         interface IGlobalService {}
         class GlobalService : IGlobalService {}
