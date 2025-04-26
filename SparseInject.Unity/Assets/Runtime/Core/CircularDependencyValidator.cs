@@ -42,14 +42,14 @@ namespace SparseInject
             var constructorContractsCount = concrete.GetConstructorContractsCount();
             var constructorContractsIndex = concrete.GetConstructorContractsIndex();
             
-            var parentContainer = containerInfo.ParentContainer;
-            var contractsSparse = containerInfo.ContractsSparse;
-            var contractsDense = containerInfo.ContractsDense;
-            var contractsConcretesIndices = containerInfo.ContractsConcretesIndices;
-            var concreteConstructorContractIds = containerInfo.ConcreteConstructorContractIds;
-            
             for (var i = 0; i < constructorContractsCount; i++)
             {
+                var parentContainer = containerInfo.ParentContainer;
+                var contractsSparse = containerInfo.ContractsSparse;
+                var contractsDense = containerInfo.ContractsDense;
+                var contractsConcretesIndices = containerInfo.ContractsConcretesIndices;
+                var concreteConstructorContractIds = containerInfo.ConcreteConstructorContractIds;
+                
                 var nextContainerInfo = containerInfo;
                 var constructorContractId = concreteConstructorContractIds[i + constructorContractsIndex];
                 var constructorContractIndex = contractsSparse[constructorContractId] - 1;
