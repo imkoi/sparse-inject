@@ -34,9 +34,6 @@ namespace SparseInject.Tests.Bugfixes
             });
 
             var container = containerBuilder.Build();
-
-            var graph = container.GetGraph();
-            
             var globalScope = container.Resolve<SampleScope>();
 
             globalScope.Should().NotBeNull();
