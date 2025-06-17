@@ -84,6 +84,13 @@ public static class InstanceFactoryGenerator
                     
                     correctedTypeName = string.Join(".", typeNameSplitted);
                 }
+
+                var namespaceName = typeDefinition.Symbol.ContainingNamespace.ToDisplayString();
+
+                if (correctedTypeName.Contains(".") && correctedTypeName.StartsWith(namespaceName))
+                {
+                    correctedTypeName = correctedTypeName.Replace(namespaceName + ".", "");
+                }
                 
                 if (constructorSymbol != null)
                 {
