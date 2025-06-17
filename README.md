@@ -30,7 +30,7 @@
 ### Installation
 #### Unity Package Manager 📂
 ```
-https://github.com/imkoi/sparse-inject.git?path=/SparseInject.Unity/Assets/#1.0.1
+https://github.com/imkoi/sparse-inject.git?path=/SparseInject.Unity/Assets/#1.0.2
 ```
 
 1. Open **Window** → **Package Manager**.
