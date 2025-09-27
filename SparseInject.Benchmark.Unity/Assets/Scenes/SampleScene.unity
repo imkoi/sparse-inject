@@ -608,7 +608,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e92ea4a992f54cb28b399b4cfe9f781c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _reportPath: 
+  _reportPath: C:\Users\voxcake\AppData\LocalLow\SparseInject\SparseInject.Benchmark.Unity\il2cpp-android-source-generators\temp-benchmark-report.txt
 --- !u!4 &1880825238
 Transform:
   m_ObjectHideFlags: 0
