@@ -14,12 +14,17 @@ namespace SparseInject
         private MonoScopeBase _parentScope;
         private bool _hasParentScope;
 
-        public bool TryGetParentScope(out MonoScopeBase scope)
+        protected bool TryGetParentScope(out MonoScopeBase scope)
         {
             if (!_isParentProcessed)
             {
-                _parentScope = GetComponentInParent<MonoScopeBase>();
-                _hasParentScope = _parentScope != null;
+                var parent = transform.parent;
+
+                if (parent != null)
+                {
+                    _parentScope = (MonoScopeBase) parent.gameObject.GetComponentInParent(typeof(MonoScopeBase), true);
+                    _hasParentScope = _parentScope != null;
+                }
                 
                 _isParentProcessed = true;
             }
