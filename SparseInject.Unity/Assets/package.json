@@ -1,6 +1,6 @@
 {
   "name": "com.voxcake.sparseinject",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "displayName": "SparseInject",
   "description": "Data-oriented dependency injection container forged for game development",
   "unity": "2019.1",
