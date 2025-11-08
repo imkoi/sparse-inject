@@ -2,7 +2,7 @@
 
 namespace SparseInject
 {
-    [AttributeUsage(AttributeTargets.Assembly)]
+    [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
     public class AutoLinkInstallerAttribute : Attribute
     {
         public Type InstallerType { get; }

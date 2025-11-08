@@ -5,7 +5,7 @@ namespace SparseInject
 {
     internal static class AutoLinkInstallersFactory
     {
-        public static IEnumerable<IInstaller> Create()
+        public static IReadOnlyList<IInstaller> Create()
         {
             var installers = new List<IInstaller>();
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
